@@ -535,42 +535,37 @@ gridflow の成長を以下の複合指標で測定する。
 | 月間アクティブユーザー（個人） | 中 | 規模感の指標 |
 | GitHub stars | 低 | 認知度の目安だが実利用と乖離しやすい |
 
-#### 収益化閾値の目安
+#### マイルストーン
 
 | マイルストーン | 導入研究室数 | MAU | 意味 |
 |---|---:|---:|---|
 | 初期牽引力 | 10 | 100 | 教材・口コミが回り始める |
-| Marketplace 成立 | 50 | 500 | コミュニティ作成の Scenario Pack が流通し始める |
-| 収益化開始 | 100+ | 1,000+ | Premium Pack / Marketplace 手数料が成立する規模 |
+| コミュニティ形成 | 50 | 500 | 外部 contributor が現れ、Scenario Pack の共有が活発化 |
+| 収益化検討開始 | 100+ | 1,000+ | ユーザー基盤が十分に成長し、収益モデルを具体化できる段階 |
 
 世界の電力系研究室は数千規模で存在するため、海外展開は初期から視野に入れる。
-ドキュメント・UI の英語対応を標準とする。
+ドキュメント・CLI の英語対応を標準とする。
 
-### 10.2 収益モデル
-**人手・メンテコストが最小のデジタル商材** に絞る。
+### 10.2 収益化方針
+**初期は全機能無料。収益化はユーザー基盤が十分に成長してから考える。**
 
-#### 無料（OSS コア）
+ニッチ市場（電力系研究室）のため、Marketplace のような仕組みは母数が小さく成立しにくい。
+また学術コミュニティは無料共有の文化が強いため、初期から有料化すると普及を妨げる。
+
+#### Phase 1（ユーザー獲得期）
+全機能無料の OSS として提供。
 - core engine
-- base connector
+- 全 connector
 - benchmark engine
-- 基本教材
-- Scenario Pack format
+- 教材・Scenario Pack
 
-#### 有料
-##### Premium Scenario Packs
-一度作成すれば継続的に販売可能。
-- data center campus microgrid
-- BTM generation
-- DER aggregation
-- outage restoration
-
-##### Marketplace 手数料
-コミュニティが Scenario Pack を売買するプラットフォーム手数料。
-gridflow 側の追加人手コストはほぼゼロ。
-
-##### Enterprise ライセンス（中期以降）
-ユーザー基盤が十分に成長した段階で検討。
-初期はやらない。
+#### Phase 2（収益化検討）
+導入研究室 100件・MAU 1,000 到達後、実際のニーズに基づいて判断。
+候補（人手・メンテコストが低いものに限定）:
+- GitHub Sponsors / 寄付
+- 企業向けサポート契約
+- Premium Scenario Pack（需要が見えた場合）
+- Enterprise ライセンス（需要が見えた場合）
 
 ---
 
@@ -605,7 +600,7 @@ gridflow 側の追加人手コストはほぼゼロ。
 ### 7–12か月
 - course pack
 - grading
-- Scenario Pack Marketplace v0
+- Scenario Pack 共有基盤（GitHub ベース）
 - research lab pilot（国内外）
 - benchmark leaderboard
 - 英語ドキュメント整備
@@ -617,15 +612,14 @@ gridflow 側の追加人手コストはほぼゼロ。
 - scenario 再利用 50件
 
 ### 13–18か月
-- Premium Scenario Pack 販売開始
-- Marketplace 手数料モデル導入
 - connector 追加（pandapower / Grid2Op）
 - 外部 contributor 育成
+- 収益化モデルの検討・検証
 
 目標:
 - 導入研究室 100件
 - MAU 1,000
-- 最初の収益
+- 収益化の方向性を決定
 
 ---
 
@@ -645,7 +639,6 @@ gridflow 側の追加人手コストはほぼゼロ。
 - benchmark
 - scenario
 - orchestration
-- Marketplace
 を磨く。
 
 ### 12.3 全面統合路線
