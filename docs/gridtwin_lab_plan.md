@@ -297,6 +297,21 @@ Windows / macOS / Linux いずれも Docker Desktop 経由でサポート。
 | pandapower | pip install | Pure Python。環境制約なし |
 | Grid2Op | Docker コンテナ内で実行 | Windows ではマルチプロセスが動作しないため Linux コンテナが必須 |
 
+#### 言語方針: Python 統一、MATLAB/Simulink/Octave 非依存
+
+gridflow は **Python を唯一のアプリケーション言語** とする。MATLAB / Simulink / GNU Octave には依存しない。
+
+| 従来 MATLAB が担っていた領域 | gridflow での代替 |
+|---|---|
+| 潮流計算・OPF (MATPOWER) | pandapower, PyPSA |
+| 時系列シミュレーション | OpenDSS (dss-python), pandapower |
+| 最適化 (fmincon 等) | cvxpy, scipy.optimize |
+| 制御設計 | python-control |
+| ブロックダイアグラム (Simulink) | 初期スコープ外。将来必要なら OpenModelica を検討 |
+
+Octave は Simulink を代替できず、pandapower が MATPOWER の機能を Python ネイティブでカバーしているため、導入する利点がない。
+共同研究先から `.m` スクリプトを受け取った場合は、コネクタレベルで Octave Docker コンテナを呼ぶ対応で十分であり、コア依存にはしない。
+
 #### セットアップ
 **Docker Compose** を標準とし、`docker compose up` で全スタックが起動する設計を目指す。
 初回セットアップ目標: **30分以内**。
