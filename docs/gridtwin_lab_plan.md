@@ -276,7 +276,29 @@ flowchart LR
   B --> R[Reports / Figures / Tables]
 ```
 
-環境構築は **Docker Compose** を標準とし、`docker compose up` で全スタックが起動する設計を目指す。
+### 5.1 動作環境
+
+#### コンテナ内ランタイム
+- **OS**: Ubuntu ベースの Linux コンテナ
+- **Python**: 3.11+
+- **アーキテクチャ**: AMD64 + ARM64 マルチアーチビルド（Apple Silicon 対応必須）
+
+#### ホスト OS
+Windows / macOS / Linux いずれも Docker Desktop 経由でサポート。
+ホスト OS に直接依存する機能は持たない。
+
+#### ツール別の環境戦略
+
+| ツール | 戦略 | 理由 |
+|---|---|---|
+| OpenDSS | DSS-Extensions (DSS-Python) を使用 | 公式 COM は Windows 専用。DSS-Extensions はクロスプラットフォーム・ARM64 対応 |
+| GridLAB-D | Docker コンテナ内で実行 | Apple Silicon ネイティブビルドが不安定。公式 Docker イメージあり |
+| HELICS | pip install + Docker | 全 OS・全アーキテクチャで安定。公式 Docker イメージあり |
+| pandapower | pip install | Pure Python。環境制約なし |
+| Grid2Op | Docker コンテナ内で実行 | Windows ではマルチプロセスが動作しないため Linux コンテナが必須 |
+
+#### セットアップ
+**Docker Compose** を標準とし、`docker compose up` で全スタックが起動する設計を目指す。
 初回セットアップ目標: **30分以内**。
 
 ---
