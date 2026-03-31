@@ -638,6 +638,11 @@ sequenceDiagram
     Core-->>Docker: コンテナ停止
 ```
 
+> **分析・設計判断:**
+> - **グレースフルシャットダウン**を採用（即座のプロセス kill ではない）。中間状態を保存することで AC-5（cache/resume）への拡張パスを確保
+> - **実行中タスクの検出**は Orchestrator が持つ ExecutionContext の状態で判断。外部ツール側の状態は Connector.teardown() に委任
+> - Bootstrap（3.2.1）が起動・終了の両方を管理し、初回起動検知（UC-07）もここで行う
+
 ### 4.3.5 ログ確認フロー（UC-05）
 
 ```mermaid
@@ -668,6 +673,11 @@ sequenceDiagram
         CLI-->>User: メトリクス表示
     end
 ```
+
+> **分析・設計判断:**
+> - ログ・トレース・メトリクスの **3 モード分離**は、利用者の意図が異なるため。ログ＝何が起きたか、トレース＝どこが遅いか、メトリクス＝KPI を満たしているか
+> - 全モードが **Observability** という単一のコンポーネントを経由する。これにより QA-8 の「全 KPI がシステム内在の計測機構で取得可能」が実現される
+> - JSON 出力対応により CI/CD System と LLM Agent が構造化データとして取得可能（QA-9）
 
 ### 4.3.6 エラー発生時のデバッグフロー（UC-06）
 
@@ -730,6 +740,11 @@ sequenceDiagram
 
     Note over User: gridflow run <sample> で初回実験（QA-2: TTFS < 1h）
 ```
+
+> **分析・設計判断:**
+> - **初回起動検知**は Bootstrap が担う（3.2.1）。2 回目以降の起動では UC-04 に直行し、サンプル DL 等は実行しない
+> - **部分完了の許容:** Connector ヘルスチェックが一部失敗しても、動作する Connector だけで利用可能とする。全 Connector 正常を前提にすると、未インストールのツールが1つあるだけで全機能が使えなくなる
+> - **TTFS < 1h（QA-2）** はセットアップ完了後の最初の `gridflow run` までの時間。サンプル Scenario Pack が事前登録されるため、研究者は設定なしで即座に実行可能
 
 ### 4.3.8 アップデート・アンインストールフロー（UC-08）
 
@@ -843,6 +858,11 @@ sequenceDiagram
 ```
 
 > **Notebook パス:** 上記は CLI 経由のフローを示す。Notebook からは NotebookBridge 経由で同じ CDL/Export を呼び出す（3.3 配置図: HTTP API 経由）。フローは CLI と同一のため図は省略。
+
+> **分析・設計判断:**
+> - **QA-6（< 3 ステップでエクスポート）** を実現するために、`gridflow results export` が 1 コマンドで CDL 読取り → 形式変換 → ファイル出力を完結させる
+> - CLI と Notebook が**同じ Use Cases 層**を呼び出す設計（3.2.4）により、CLI でできることは必ず Notebook からもできる。これは研究者が CLI で素早く確認 → Notebook で深掘りするワークフロー（QA-5）を支える
+> - エクスポート形式（CSV/JSON/Parquet）は Scenario Pack 内で指定可能にし、L1 研究者でも出力形式を変更できる
 
 ### 4.3.9 LLM による実験指示フロー（UC-10）
 
