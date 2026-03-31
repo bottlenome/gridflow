@@ -596,3 +596,98 @@ sequenceDiagram
 > **静的ビューとの対応:**
 > - MetricCalculator は 3.2.1 のインターフェース境界 ③（Strategy パターン）
 > - CDL は 3.2.1 のインターフェース境界 ②（Repository パターン）
+
+### 4.3.4 起動・終了フロー（UC-04）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Docker as Docker Compose
+    participant Core as gridflow コア
+    participant Orch as Orchestrator
+    participant Registry as Scenario Registry
+    participant Connector as Connector I/F
+    participant Logger as Observability
+
+    User->>Docker: docker compose up
+    Docker->>Core: コンテナ起動
+    Core->>Orch: initialize()
+    Orch->>Registry: connect()
+    Orch->>Connector: health_check()（各 Connector）
+    Orch->>Logger: startup_complete(duration, connectors)
+    Core-->>User: 起動完了メッセージ
+
+    Note over User,Logger: --- 運用中 ---
+
+    User->>Docker: docker compose down
+    Docker->>Core: SIGTERM
+    Core->>Orch: shutdown()
+    Orch->>Orch: 実行中タスクの確認
+    alt 実行中のタスクあり
+        Orch->>Logger: warn(running_tasks)
+        Orch->>Orch: グレースフルシャットダウン（中間状態保存）
+    end
+    Orch->>Connector: teardown()（各 Connector）
+    Core-->>Docker: コンテナ停止
+```
+
+### 4.3.5 ログ確認フロー（UC-05）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Logger as Observability
+    participant CDL
+
+    alt ログ確認
+        User->>CLI: gridflow logs [--experiment <id>]
+        CLI->>Logger: query(filters)
+        Logger-->>CLI: 構造化ログ一覧
+        CLI-->>User: ログ表示
+    end
+
+    alt 実行トレース
+        User->>CLI: gridflow trace <experiment-id>
+        CLI->>Logger: get_trace(experiment_id)
+        Logger-->>CLI: ステップ一覧（名前, 時刻, 所要時間, 状態）
+        CLI-->>User: トレース表示（ボトルネックをハイライト）
+    end
+
+    alt KPI メトリクス
+        User->>CLI: gridflow metrics
+        CLI->>Logger: get_metrics()
+        Logger-->>CLI: KPI 計測値
+        CLI-->>User: メトリクス表示
+    end
+```
+
+### 4.3.6 エラー発生時のデバッグフロー（UC-06）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Orch as Orchestrator
+    participant Logger as Observability
+    participant CDL
+    participant Connector as Connector I/F
+
+    Note over Orch,Connector: UC-01 実行中にエラー発生
+    Connector-->>Orch: StepResult(status=ERROR, raw_error)
+    Orch->>Logger: error(step, connector, raw_error)
+    Orch->>CDL: store_intermediate(step, partial_data)
+    Orch-->>CLI: RunResult(status=FAILED, failed_step)
+    CLI-->>User: エラーサマリ表示（原因 + 対処手順）
+
+    User->>CLI: gridflow debug <experiment-id>
+    CLI->>CDL: get_intermediate(experiment_id)
+    CDL-->>CLI: 中間データ
+    CLI-->>User: エラー箇所の入出力データ表示
+
+    Note over User: 原因を特定・修正
+
+    User->>CLI: gridflow run --from-step <step> <pack>
+    CLI->>Orch: run_from_step(pack_id, step)
+    Note over Orch: 失敗箇所から再実行（AC-5: cache/resume）
+```
