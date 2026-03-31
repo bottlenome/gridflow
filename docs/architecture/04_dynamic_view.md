@@ -474,17 +474,53 @@ graph TB
 
 ## 4.3 シーケンス図
 
-> **注:** シーケンス図は Round 3（静的ビューの構成要素が確定した後）で作成する。各ユースケースに対応するシーケンス図を、静的ビュー（セクション 3）のクラス・コンポーネントをライフラインとして記述する予定。
+シーケンス図は静的ビュー（セクション 3）のコンポーネントをライフラインとして使用する。UC-08（アップデート・アンインストール）は UC-07 の逆操作に近いためシーケンス図を省略する。
 
-作成予定:
-- 4.3.1 実験実行フロー（UC-01）
-- 4.3.2 Scenario Pack 管理フロー（UC-02）
-- 4.3.3 ベンチマーク評価フロー（UC-03）
-- 4.3.4 起動・終了フロー（UC-04）
-- 4.3.5 ログ確認フロー（UC-05）
-- 4.3.6 エラー発生時のデバッグフロー（UC-06）
-- 4.3.7 インストール・セットアップフロー（UC-07）
-- 4.3.8 結果参照・データエクスポートフロー（UC-09）
-- 4.3.9 LLM による実験指示フロー（UC-10）
+### 4.3.1 実験実行フロー（UC-01）
 
-> UC-08（アップデート・アンインストール）はシーケンス図を省略する。フローが UC-07 の逆操作に近く、独立したシーケンス図としての情報量が少ないため。
+gridflow の最も中心的なフロー。制御フロー（左→右）とデータフロー（下方向）を示す。
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Orchestrator
+    participant Registry as Scenario Registry
+    participant Connector as Connector I/F
+    participant ExtSys as 外部システム
+    participant CDL
+    participant Logger as Observability
+
+    User->>CLI: gridflow run <scenario-pack>
+    CLI->>Orchestrator: run(scenario_pack_id, options)
+
+    Orchestrator->>Registry: load(scenario_pack_id)
+    Registry-->>Orchestrator: ScenarioPack
+
+    Orchestrator->>Orchestrator: validate(ScenarioPack)
+    Orchestrator->>Orchestrator: generate ExecutionPlan
+
+    Orchestrator->>Connector: initialize(config)
+    Connector->>ExtSys: 接続確立
+    ExtSys-->>Connector: ready
+
+    loop 各 ExecutionStep
+        Orchestrator->>Logger: step_start(step_name)
+        Orchestrator->>Connector: execute(step, context)
+        Connector->>ExtSys: ツール固有の呼出し
+        ExtSys-->>Connector: 生データ
+        Connector->>Connector: 生データ → CDL 形式に変換
+        Connector-->>Orchestrator: StepResult(CanonicalData)
+        Orchestrator->>CDL: store_result(data)
+        Orchestrator->>Logger: step_end(step_name, duration)
+    end
+
+    Orchestrator->>Connector: teardown()
+    Orchestrator-->>CLI: RunResult
+    CLI-->>User: 実行サマリ表示
+```
+
+> **静的ビューとの対応:**
+> - Orchestrator, Connector I/F, CDL は 3.2.1 のインターフェース境界 ①②
+> - `生データ → CDL 形式に変換` は Anti-Corruption Layer（2.4.1）
+> - Logger は Observability（QA-8）の具体化
