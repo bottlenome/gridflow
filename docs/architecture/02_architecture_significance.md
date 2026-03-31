@@ -44,7 +44,7 @@
 | FR-04 | **Benchmark Harness**: 電圧逸脱率、thermal overload 時間、ENS、dispatch cost、CO2、curtailment、restoration time、runtime 等の評価指標で定量的に採点・比較できる | 3.1 D | BG-4 |
 | FR-05 | **CLI + Notebook Bridge**: CLI で全操作が完結し、notebook/script で深掘りできる。Web UI は補助的な可視化手段とする | 3.1 E | BG-1, BG-2 |
 | FR-06 | **段階的カスタムレイヤー**: L1（設定変更）〜L4（ソース改変）まで、研究者のスキルレベルに応じた拡張ができる。上位レベルが下位レベルの仕組みを壊さない | 3.1 F | BG-2, BG-4 |
-| FR-07 | **Connectors**: Connector インターフェースはシミュレータ/実系統を区別しない（AS-4）。P0: OpenDSS。P1(4-6か月): HELICS。P1(13-18か月): pandapower, Grid2Op。GridLAB-D は環境安定後に追加 | 5, 6, 11 | BG-1 |
+| FR-07 | **Connectors**: Connector インターフェースはシミュレータ/実系統を区別しない（AS-4）。P0: OpenDSS。4-6か月: HELICS。13-18か月: pandapower, Grid2Op。GridLAB-D は環境安定後に追加。タイムラインは計画書セクション 11 に準拠 | 5, 6, 11 | BG-1 |
 
 ### 2.2.2 品質属性要求（Quality Attribute Scenarios）
 
