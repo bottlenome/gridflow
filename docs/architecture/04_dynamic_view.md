@@ -33,7 +33,7 @@ graph TB
 
     subgraph "実験ワークフロー"
         UC02[UC-02: Scenario Pack 管理]
-        UC01[UC-01: シミュレーション実行]
+        UC01[UC-01: 実験実行]
         UC09[UC-09: 結果参照・データエクスポート]
         UC03[UC-03: ベンチマーク評価・比較]
     end
@@ -121,12 +121,12 @@ graph TB
 
 ## 4.2 ユースケースシナリオ
 
-### UC-01: シミュレーション実行
+### UC-01: 実験実行
 
 | 項目 | 内容 |
 |---|---|
 | **主アクター** | Researcher (L1〜L4)、CI/CD System |
-| **目的** | Scenario Pack に定義された実験を実行し、結果を CDL に格納する |
+| **目的** | Scenario Pack に定義された実験を外部システム（シミュレータまたは実機）で実行し、結果を CDL に格納する |
 | **事前条件** | 環境が起動済み（UC-04a）。Scenario Pack が Registry に登録済み（UC-02） |
 | **トリガー** | `gridflow run <scenario-pack>` コマンドの実行 |
 | **関連 FR** | FR-01, FR-02, FR-03, FR-05, FR-06, FR-07 |
@@ -165,7 +165,7 @@ graph TB
 | **目的** | Scenario Pack を作成・登録・検索・バージョン管理する |
 | **事前条件** | 環境が起動済み（UC-04a） |
 | **トリガー** | `gridflow scenario <subcommand>` コマンドの実行 |
-| **関連 FR** | FR-01, FR-03, FR-05, FR-06 |
+| **関連 FR** | FR-01, FR-03, FR-05, FR-06, FR-07 |
 | **関連 QA** | QA-3（再現性）, QA-4（拡張性）, QA-5（ワークフロー効率） |
 
 **基本フロー（新規作成）:**

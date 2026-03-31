@@ -348,15 +348,15 @@ classDiagram
         +run_from_step(scenario_pack_id: str, step: str) RunResult
     }
 
-    class BenchmarkEngine {
+    class BenchmarkHarness {
         +run(experiment_ids: list, metrics: list) BenchmarkResult
         +compare(experiment_ids: list) ComparisonTable
     }
 
     Orchestrator ..> ConnectorInterface : uses ①
     Orchestrator ..> CanonicalDataLayer : stores results ②
-    BenchmarkEngine ..> CanonicalDataLayer : reads results ②
-    BenchmarkEngine ..> MetricCalculator : evaluates ③
+    BenchmarkHarness ..> CanonicalDataLayer : reads results ②
+    BenchmarkHarness ..> MetricCalculator : evaluates ③
 
     note for ConnectorInterface "AS-4: シミュレータも実機も\n同一インターフェース\n\n3.1.3 の設計判断で統一を決定"
     note for CanonicalDataLayer "P0: ファイルシステム実装\n将来: DB 実装に差替え可能\n(Repository パターン)"
@@ -437,7 +437,7 @@ CLI コマンド体系は UC-01〜UC-10 と 1:1 で対応する:
 |---|---|---|
 | `gridflow run` | UC-01 | Orchestrator.run() |
 | `gridflow scenario create/list/clone/validate/register` | UC-02 | ScenarioRegistry |
-| `gridflow benchmark run/export` | UC-03 | BenchmarkEngine |
+| `gridflow benchmark run/export` | UC-03 | BenchmarkHarness |
 | `gridflow status` / `docker compose up/down` | UC-04 | Orchestrator.status() |
 | `gridflow logs/trace/metrics` | UC-05 | Observability |
 | `gridflow debug` | UC-06 | Orchestrator + CDL |
