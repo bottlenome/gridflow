@@ -272,3 +272,153 @@ graph TB
 | Data Export | Interface Adapters | CDL → CSV/JSON/Parquet の変換 |
 | Benchmark Harness | Use Cases | 評価ロジック。Entities の Metric を入出力する |
 | CLI / Notebook | Interface Adapters | ユーザーの操作を Use Cases に変換する窓口 |
+
+---
+
+## 3.2 クラス図（主要インターフェースと設計判断）
+
+3.1.4 のレイヤー構造を、主要なインターフェースとクラスに落とし込む。全クラスを列挙するのではなく、**アーキテクチャ判断が表れるインターフェース境界**に絞って示す。
+
+### 3.2.1 核心のインターフェース境界
+
+gridflow のアーキテクチャを特徴づけるインターフェースは 3 つある:
+
+```
+① ConnectorInterface  — Orchestrator と外部ツールの境界（AS-4 の要）
+② CanonicalDataLayer  — 実行結果の格納・取得の境界（データフローの中心）
+③ MetricCalculator    — 評価指標算出の拡張点（L2 Plugin の要）
+```
+
+```mermaid
+classDiagram
+    class ConnectorInterface {
+        <<interface>>
+        +initialize(config: dict) void
+        +execute(step: ExecutionStep, context: ExecutionContext) StepResult
+        +health_check() HealthStatus
+        +teardown() void
+    }
+
+    class CanonicalDataLayer {
+        <<interface>>
+        +store_result(experiment_id: str, data: CanonicalData) void
+        +get_result(experiment_id: str) CanonicalData
+        +list_experiments() list~ExperimentMetadata~
+        +export(experiment_id: str, format: ExportFormat) Path
+    }
+
+    class MetricCalculator {
+        <<interface>>
+        +calculate(data: CanonicalData) Metric
+    }
+
+    class Orchestrator {
+        +run(scenario_pack_id: str, options: RunOptions) RunResult
+        +run_from_step(scenario_pack_id: str, step: str) RunResult
+    }
+
+    class BenchmarkEngine {
+        +run(experiment_ids: list, metrics: list) BenchmarkResult
+        +compare(experiment_ids: list) ComparisonTable
+    }
+
+    Orchestrator ..> ConnectorInterface : uses ①
+    Orchestrator ..> CanonicalDataLayer : stores results ②
+    BenchmarkEngine ..> CanonicalDataLayer : reads results ②
+    BenchmarkEngine ..> MetricCalculator : evaluates ③
+
+    note for ConnectorInterface "AS-4: シミュレータも実機も\n同一インターフェース\n\n3.1.3 の設計判断で統一を決定"
+    note for CanonicalDataLayer "P0: ファイルシステム実装\n将来: DB 実装に差替え可能\n(Repository パターン)"
+    note for MetricCalculator "FR-06 L2: 研究者が\nカスタム指標を追加可能\n(Strategy パターン)"
+```
+
+> **① ConnectorInterface** が最も重要な設計判断。3.1.3 で分析した通り、時間管理の違いを `execute()` 内部に封じ込める。
+>
+> **② CanonicalDataLayer** は Repository パターン。永続化の詳細（ファイル/DB）を隠蔽し、P0 → 将来の差替えを保証する。
+>
+> **③ MetricCalculator** は Strategy パターン。組込み指標（VoltageViolation, ENS 等）とカスタム指標を同じ I/F で扱い、L2 研究者が `calculate()` を実装するだけで独自評価指標を追加できる。
+
+### 3.2.2 Connector 実装の分類
+
+3.1.3 の時間管理パターン別に、代表的な実装クラスを示す。
+
+```mermaid
+classDiagram
+    class ConnectorInterface {
+        <<interface>>
+        +initialize(config) void
+        +execute(step, context) StepResult
+        +health_check() HealthStatus
+        +teardown() void
+    }
+
+    class OpenDSSConnector {
+        -dss_engine: DSSEngine
+        +execute(): 1タイムステップ実行
+    }
+
+    class HELICSConnector {
+        -federation: HELICSFederate
+        +execute(): co-simループ全体を実行
+    }
+
+    class Grid2OpConnector {
+        -env: Grid2OpEnv
+        +execute(): gym.step()でアクション送信
+    }
+
+    class MockConnector {
+        -responses: dict
+        +execute(): 事前定義の応答を返す
+    }
+
+    ConnectorInterface <|.. OpenDSSConnector : Orchestrator駆動型
+    ConnectorInterface <|.. HELICSConnector : フェデレーション駆動型
+    ConnectorInterface <|.. Grid2OpConnector : 環境駆動型
+    ConnectorInterface <|.. MockConnector : テスト用(AS-3)
+```
+
+### 3.2.3 ドメインモデル（Entities 層 = CDL）
+
+Entities 層は外部依存のない Pure Python データクラスで構成される。電力系研究者の語彙（AS-1: Ubiquitous Language）をそのままクラス名にする。
+
+```
+ScenarioPack ─── 実験定義の全体
+  ├── Topology ─── 系統構成（Bus, Line, Transformer, Switch）
+  ├── Asset ────── 設備（PV, BESS, Load, Generator）
+  ├── TimeSeries ─ 時系列データ（負荷プロファイル, PV出力等）
+  └── metadata ─── 拡張可能メタデータ（AC-3: 教育用途等）
+
+実行結果
+  ├── ExperimentMetadata ─ 実行条件（seed, 日時, Connector バージョン）
+  ├── Event ───────────── 実行中のイベント（操作, 障害, 状態変化）
+  ├── TimeSeries ──────── 出力時系列（電圧, 電流, SoC 等）
+  └── Metric ──────────── 評価指標値（VoltageViolation, ENS, CO2 等）
+```
+
+> **CIM (IEC 61970) との関係 (AC-7):** Topology と Asset は CIM のクラス構造（ConnectivityNode, ConductingEquipment 等）と対応関係を持つよう設計する。完全準拠ではなく、双方向マッピングが可能な粒度を目標とする。
+
+### 3.2.4 UX 層の構造
+
+CLI コマンド体系は UC-01〜UC-10 と 1:1 で対応する:
+
+| CLI コマンド | 対応 UC | Use Cases 層の呼出先 |
+|---|---|---|
+| `gridflow run` | UC-01 | Orchestrator.run() |
+| `gridflow scenario create/list/clone/validate/register` | UC-02 | ScenarioRegistry |
+| `gridflow benchmark run/export` | UC-03 | BenchmarkEngine |
+| `gridflow status` / `docker compose up/down` | UC-04 | Orchestrator.status() |
+| `gridflow logs/trace/metrics` | UC-05 | Observability |
+| `gridflow debug` | UC-06 | Orchestrator + CDL |
+| `gridflow install` / `docker compose up`（初回） | UC-07 | 初期設定 |
+| `gridflow update/uninstall` | UC-08 | バージョン管理 |
+| `gridflow results list/show/plot/export` | UC-09 | CDL + DataExport |
+| （LLM が上記を組合せ） | UC-10 | 全 Use Cases |
+
+NotebookBridge は同じ Use Cases 層を Python API として公開する。CLI と Notebook は同じ Use Cases のインターフェースの異なる窓口であり、ロジックの重複はない。
+
+---
+
+## 3.3 配置図（Docker コンテナ・ホスト環境の物理配置）
+
+> **注:** 配置図は Round 3 で作成する。Docker Compose 構成、コンテナ間通信、データボリュームの配置を、シーケンス図で明らかになるプロセス間通信を反映して記述する予定。
