@@ -514,7 +514,7 @@ Octave は Simulink を代替できず、pandapower が MATPOWER の機能を Py
 - benchmark format
 - canonical schema
 - connector SDK
-- 基本教材パック
+- サンプル Scenario Pack
 - Docker ベースの reproducible setup
 
 ここを閉じると教育導入が鈍る。
@@ -621,7 +621,7 @@ gridflow の成長を以下の複合指標で測定する。
 - CLI ツール
 - notebook bridge
 - Docker Compose 環境
-- 教材 3本
+- サンプル Scenario Pack 3本（教員パートナーが教材化可能な素材）
 
 目標:
 - `docker compose up` で起動
