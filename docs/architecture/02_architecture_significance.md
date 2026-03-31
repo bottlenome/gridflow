@@ -351,4 +351,37 @@ AS-1 (DDD)              AS-2 (Clean Architecture)     AS-3 (TDD)
 
 ## 2.4 アーキテクチャパターン・戦術（Tactics & Patterns）
 
-> **注:** 本セクションは Round 2（静的ビュー設計）で具体化する。AS-1〜AS-4 の戦略を実現するための具体的なパターン（Ports & Adapters、Repository パターン、Strategy パターン等）と戦術（品質属性ごとの実現手法）を記述する予定。
+AS-1〜AS-4 の戦略を実現するための具体的なパターンと戦術を以下に示す。
+
+### 2.4.1 構造パターン
+
+| パターン | 適用箇所 | 目的 | 駆動する AS/QA |
+|---|---|---|---|
+| **Ports & Adapters (Hexagonal)** | システム全体 | ドメインロジックと外部システムをポート（インターフェース）で分離。Connector、CLI、Data Export が「アダプタ」、Orchestrator・Benchmark がポートを定義する「内側」 | AS-2, QA-4 |
+| **Strategy** | ConnectorInterface, Scheduler, MetricCalculator | 同一インターフェースの複数実装を実行時に切替え。Connector 差替え（AS-4）、スケジューリング方式切替え、カスタム評価指標（FR-06 L2） | AS-2, AS-4, FR-06 |
+| **Repository** | CanonicalDataLayer, ScenarioRegistry | データ永続化の詳細を隠蔽。P0 はファイルシステム実装、将来は DB に差替え可能 | AS-2, AC-5 |
+| **Anti-Corruption Layer** | Connector 内部 | 外部システムのデータモデルを CDL のドメインモデルに変換。外部依存がドメインに漏れることを防ぐ | AS-1, AC-1 |
+| **Plugin** | PluginRegistry | L2 研究者がカスタムロジックを Use Cases 層に注入するための拡張点。Strategy パターンの特殊形 | FR-06, QA-4 |
+
+### 2.4.2 品質属性戦術
+
+| 品質属性 | 戦術 | 実現方法 |
+|---|---|---|
+| **再現性 (QA-3)** | Seed 管理 + 環境固定 | ScenarioPack に seed を含め、Docker で環境を固定。Connector 実装が乱数を seed から生成 |
+| **導入容易性 (QA-1)** | ワンコマンドセットアップ | Docker Compose で全スタック起動。初回起動時に自動セットアップ（UC-07） |
+| **拡張性 (QA-4)** | Interface Segregation + DI | 全サブシステム境界をインターフェースで定義。DI コンテナまたはファクトリで実装を注入 |
+| **可観測性 (QA-8)** | 構造化ログ + メトリクス収集 | StructuredLogger を ExecutionContext に注入。各ステップが自動的にログ・メトリクスを出力 |
+| **LLM 親和性 (QA-9)** | 構造化 I/O + Ubiquitous Language | CLI 出力を JSON 構造化。エラーメッセージに原因・対処を含める。クラス名・メソッド名をドメイン用語と一致させる |
+| **ポータビリティ (QA-7)** | コンテナ抽象化 | Docker マルチアーキビルド（AMD64 + ARM64）。ホスト OS 依存を排除 |
+| **ワークフロー効率 (QA-5)** | バッチ実行 + パイプライン | Orchestrator がステップ順序を自動解決し、batch 実行を管理 |
+| **データエクスポート容易性 (QA-6)** | 標準フォーマット出力 | CDL から CSV/JSON/Parquet へのエクスポートを 1 コマンドで実行可能 |
+
+### 2.4.3 テスト戦術
+
+| 層 | テスト種別 | 手法 |
+|---|---|---|
+| **Entities** | 単体テスト | Pure Python データクラスの振る舞いテスト。外部依存なし |
+| **Use Cases** | 単体テスト + モック | Connector・CDL のモックを DI で注入し、ビジネスロジックのみをテスト |
+| **Interface Adapters** | 統合テスト | 実 Connector × 実シミュレータのテスト。Docker で環境構築 |
+| **CLI** | E2E テスト | CLI コマンドを実行し、出力を検証。subprocess 経由 |
+| **再現性テスト** | リグレッションテスト | 同一 Scenario Pack を複数環境で実行し、結果一致を検証（QA-3） |
