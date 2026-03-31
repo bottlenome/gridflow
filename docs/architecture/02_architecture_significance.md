@@ -44,7 +44,7 @@
 | FR-04 | **Benchmark Harness**: 電圧逸脱率、thermal overload 時間、ENS、dispatch cost、CO2、curtailment、restoration time、runtime 等の評価指標で定量的に採点・比較できる | 3.1 D | BG-4 |
 | FR-05 | **CLI + Notebook Bridge**: CLI で全操作が完結し、notebook/script で深掘りできる。Web UI は補助的な可視化手段とする | 3.1 E | BG-1, BG-2 |
 | FR-06 | **段階的カスタムレイヤー**: L1（設定変更）〜L4（ソース改変）まで、研究者のスキルレベルに応じた拡張ができる。上位レベルが下位レベルの仕組みを壊さない | 3.1 F | BG-2, BG-4 |
-| FR-07 | **Connectors**: OpenDSS、GridLAB-D、HELICS、pandapower、Grid2Op に対するアダプタを提供する。Connector インターフェースはシミュレータ/実系統を区別しない（AS-4）。P0 ではシミュレータ向け実装のみ | 5, 6 | BG-1 |
+| FR-07 | **Connectors**: Connector インターフェースはシミュレータ/実系統を区別しない（AS-4）。P0: OpenDSS。P1(4-6か月): HELICS。P1(13-18か月): pandapower, Grid2Op。GridLAB-D は環境安定後に追加 | 5, 6, 11 | BG-1 |
 
 ### 2.2.2 品質属性要求（Quality Attribute Scenarios）
 
@@ -150,7 +150,7 @@
 | 成果物 | メトリクス、ログ、トレース |
 | 環境 | 通常運用時、障害時 |
 | 応答 | 計画書 10.1 の KPI（セットアップ時間、Time to First Simulation、CLI コマンド数、リテンション等）がシステム内部から計測可能。実行パイプラインの各ステップの状態・所要時間・エラーが追跡可能 |
-| 応答測定値 | **計画書 10.1 の全 KPI がシステム内在の計測機構で取得可能**、**実行中の各ステップの状態が構造化ログとして出力される**、**障害時にエラーの発生箇所と原因がログから 5 分以内に特定可能** |
+| 応答測定値 | **計画書 10.1 の全 KPI がシステム内在の計測機構で取得可能**（ただしリテンション率等のユーザー行動系 KPI は opt-in テレメトリで計測。AC-6 参照）、**実行中の各ステップの状態が構造化ログとして出力される**、**障害時にエラーの発生箇所と原因がログから 5 分以内に特定可能** |
 
 関連: 計画書 10.1「ユーザビリティ KPI」全体、AC-6（継続利用への配慮）。KPI を「後から計測する」のではなく、アーキテクチャに計測機構を内在させる
 
@@ -346,3 +346,9 @@ AS-1 (DDD)              AS-2 (Clean Architecture)     AS-3 (TDD)
 - Clean Architecture が「依存をどう制御するか」を決める
 - TDD が「設計が正しく分離されているか」を検証する
 - Simulation-Real Equivalence が「Connector の背後を限定しない」ことを保証する
+
+---
+
+## 2.4 アーキテクチャパターン・戦術（Tactics & Patterns）
+
+> **注:** 本セクションは Round 2（静的ビュー設計）で具体化する。AS-1〜AS-4 の戦略を実現するための具体的なパターン（Ports & Adapters、Repository パターン、Strategy パターン等）と戦術（品質属性ごとの実現手法）を記述する予定。
