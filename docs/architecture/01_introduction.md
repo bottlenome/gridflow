@@ -41,6 +41,7 @@
 | Scenario Pack | 実験1件をパッケージとして扱う単位。ネットワーク定義、時系列データ、シミュレータ設定、評価指標、seed、expected outputs、可視化テンプレートを含む |
 | Orchestrator | 各シミュレータ・解析ツールの統合実行を管理するランタイム。実行順序管理、コンテナ起動、時間同期、バッチ実行、結果収集を担う |
 | Connector | 外部シミュレータ（OpenDSS、GridLAB-D、HELICS 等）と gridflow を接続するアダプタ |
+| Scenario Registry | Scenario Pack を登録・検索・バージョン管理するストア。Orchestrator への入力元となる |
 | Canonical Data Layer (CDL) | ツールごとの独自フォーマットを吸収する共通データ表現。topology、asset、timeseries、event、metric、experiment metadata を含む |
 | Benchmark Harness | 実験結果を定量的に評価・比較する採点機構 |
 | カスタムレイヤー L1-L4 | 研究者のスキルレベルに応じた拡張段階。L1: 設定変更、L2: Plugin API、L3: モジュール拡張、L4: ソース改変 |
