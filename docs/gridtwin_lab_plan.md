@@ -7,10 +7,11 @@
 対象ループは以下の通り。
 
 1. 環境セットアップ
-2. シミュレーション実行
-3. 結果取得
-4. 分析
-5. 改善
+2. 実験定義
+3. 実験実行
+4. 結果取得
+5. 評価
+6. 改善
 
 主眼は、**研究室が毎回払っている実験運用コストを圧縮するワークフローエンジンを作ること**である。
 
@@ -362,7 +363,7 @@ Octave は Simulink を代替できず、pandapower が MATPOWER の機能を Py
 - validation
 
 ### Evaluation
-- benchmark engine
+- Benchmark Harness
 - metric library
 - regression checker
 - leaderboard backend
@@ -598,7 +599,7 @@ gridflow の成長を以下の複合指標で測定する。
 全機能無料の OSS として提供。
 - core engine
 - 全 connector
-- benchmark engine
+- Benchmark Harness
 - 教材・Scenario Pack
 
 #### Phase 2（収益化検討）
