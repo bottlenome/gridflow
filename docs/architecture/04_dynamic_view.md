@@ -166,7 +166,7 @@ graph TB
 | **事前条件** | 環境が起動済み（UC-04a） |
 | **トリガー** | `gridflow scenario <subcommand>` コマンドの実行 |
 | **関連 FR** | FR-01, FR-03, FR-05, FR-06 |
-| **関連 QA** | QA-3（再現性）, QA-4（拡張性） |
+| **関連 QA** | QA-3（再現性）, QA-4（拡張性）, QA-5（ワークフロー効率） |
 
 **基本フロー（新規作成）:**
 1. ユーザーが `gridflow scenario create <name>` を実行する
