@@ -691,3 +691,106 @@ sequenceDiagram
     CLI->>Orch: run_from_step(pack_id, step)
     Note over Orch: 失敗箇所から再実行（AC-5: cache/resume）
 ```
+
+### 4.3.7 インストール・セットアップフロー（UC-07）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Docker as Docker Compose
+    participant Core as gridflow コア
+    participant Orch as Orchestrator
+    participant Registry as Scenario Registry
+    participant Connector as Connector I/F
+    participant Net as ネットワーク
+
+    User->>Docker: docker compose up（初回）
+    Docker->>Net: Docker イメージ pull
+    Net-->>Docker: イメージ取得完了
+    Docker->>Core: コンテナ起動
+
+    Core->>Core: 初回起動を検知
+    Core->>Net: サンプル Scenario Pack ダウンロード
+    Net-->>Core: サンプルパック
+    Core->>Registry: register(sample_packs)
+
+    Core->>Connector: health_check()（各 Connector）
+    alt 全 Connector 正常
+        Core-->>User: セットアップ完了（所要時間, 次のステップ案内）
+    else 一部 Connector 失敗
+        Core-->>User: 部分完了（正常/失敗の Connector 一覧, 修正手順）
+    end
+
+    Note over User: gridflow run <sample> で初回実験（QA-2: TTFS < 1h）
+```
+
+### 4.3.8 結果参照・データエクスポートフロー（UC-09）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant CDL
+    participant Export as Data Export
+    participant FS as File System
+
+    User->>CLI: gridflow results list
+    CLI->>CDL: list_experiments()
+    CDL-->>CLI: ExperimentMetadata 一覧
+    CLI-->>User: 実験一覧表示
+
+    User->>CLI: gridflow results show <id>
+    CLI->>CDL: get_result(id)
+    CDL-->>CLI: CanonicalData
+    CLI-->>User: サマリ表示（メトリクス, 成否, 日時）
+
+    User->>CLI: gridflow results export <id> --format csv
+    CLI->>CDL: get_result(id)
+    CDL-->>CLI: CanonicalData
+    CLI->>Export: export(data, CSV)
+    Export->>FS: ファイル書き出し
+    Export-->>CLI: ファイルパス
+    CLI-->>User: エクスポート完了（QA-6: < 3ステップ）
+```
+
+### 4.3.9 LLM による実験指示フロー（UC-10）
+
+UC-10 は新しい機能を追加するのではなく、既存の UC を LLM Agent が組み合わせて呼び出すフローである。
+
+```mermaid
+sequenceDiagram
+    actor Researcher
+    participant LLM as LLM Agent
+    participant CLI
+    participant Orch as Orchestrator
+    participant Registry as Scenario Registry
+    participant CDL
+    participant Harness as Benchmark Harness
+
+    Researcher->>LLM: 「IEEE 13バスで PV 浸透率を変えて比較して」
+    LLM->>LLM: 意図解釈 → 実行計画生成
+
+    LLM->>Researcher: 実行計画を提示（安全弁）
+    Researcher-->>LLM: 承認
+
+    loop 各パラメータバリエーション
+        LLM->>CLI: gridflow scenario clone + パラメータ変更
+        CLI->>Registry: clone → modify → register
+        LLM->>CLI: gridflow run <variant>
+        CLI->>Orch: run(variant_id)
+        Orch-->>CLI: RunResult
+    end
+
+    LLM->>CLI: gridflow benchmark run <all-variant-ids>
+    CLI->>Harness: run(ids, metrics)
+    Harness->>CDL: get_result() × N
+    Harness-->>CLI: BenchmarkResult
+
+    LLM->>CLI: gridflow results export <ids>
+    CLI-->>LLM: エクスポートデータ
+
+    LLM->>LLM: 結果分析・考察生成
+    LLM->>Researcher: 結果サマリ + 考察を報告
+```
+
+> **設計上の重要事項:** LLM Agent は gridflow の CLI/API を呼び出すだけであり、gridflow 内部に LLM 固有のコードは存在しない。QA-9（LLM 親和性）による構造化 I/O と自己説明的エラーが、LLM の操作を可能にする。
