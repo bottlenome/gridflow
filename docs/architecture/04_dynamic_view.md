@@ -524,3 +524,75 @@ sequenceDiagram
 > - Orchestrator, Connector I/F, CDL は 3.2.1 のインターフェース境界 ①②
 > - `生データ → CDL 形式に変換` は Anti-Corruption Layer（2.4.1）
 > - Logger は Observability（QA-8）の具体化
+
+### 4.3.2 Scenario Pack 管理フロー（UC-02）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Registry as Scenario Registry
+    participant PackIO as Scenario Pack I/O
+    participant FS as File System
+
+    alt 新規作成
+        User->>CLI: gridflow scenario create <name>
+        CLI->>PackIO: create_template(name)
+        PackIO->>FS: テンプレートファイル生成
+        PackIO-->>CLI: スケルトンパス
+        CLI-->>User: 編集対象のファイルパスを表示
+        Note over User: ユーザーが YAML/JSON を編集（L1）<br>または Plugin コードを追加（L2+）
+    end
+
+    User->>CLI: gridflow scenario validate <name>
+    CLI->>Registry: validate(pack)
+    Registry->>Registry: スキーマ検証 + Connector 互換性チェック
+    Registry-->>CLI: 検証結果
+
+    User->>CLI: gridflow scenario register <name>
+    CLI->>Registry: register(pack)
+    Registry->>PackIO: save(pack)
+    PackIO->>FS: 永続化 + バージョン付与
+    Registry-->>CLI: 登録完了（ID, version）
+    CLI-->>User: 登録結果表示
+```
+
+### 4.3.3 ベンチマーク評価フロー（UC-03）
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Harness as Benchmark Harness
+    participant CDL
+    participant Calculator as MetricCalculator
+    participant Export as Data Export
+
+    User->>CLI: gridflow benchmark run <exp-ids>
+    CLI->>Harness: run(experiment_ids, metric_names)
+
+    loop 各 experiment_id
+        Harness->>CDL: get_result(experiment_id)
+        CDL-->>Harness: CanonicalData
+        loop 各 metric
+            Harness->>Calculator: calculate(data)
+            Note over Calculator: 組込み指標 or L2 カスタム指標<br>（Strategy パターン）
+            Calculator-->>Harness: Metric
+        end
+    end
+
+    Harness->>Harness: 比較表・ランキング生成
+    Harness-->>CLI: BenchmarkResult
+    CLI-->>User: 比較結果表示
+
+    opt データエクスポート
+        User->>CLI: gridflow benchmark export <format>
+        CLI->>Export: export(result, format)
+        Export-->>CLI: ファイルパス
+        CLI-->>User: エクスポート完了
+    end
+```
+
+> **静的ビューとの対応:**
+> - MetricCalculator は 3.2.1 のインターフェース境界 ③（Strategy パターン）
+> - CDL は 3.2.1 のインターフェース境界 ②（Repository パターン）
