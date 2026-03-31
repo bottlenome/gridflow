@@ -398,7 +398,7 @@ graph TB
 
 | 項目 | 内容 |
 |---|---|
-| **主アクター** | Researcher (L1〜L4)、LLM Agent |
+| **主アクター** | Researcher (L1〜L4)（LLM Agent は UC-10 経由で間接的に利用） |
 | **目的** | 実験結果を閲覧・可視化し、外部利用のためにエクスポートする |
 | **事前条件** | 実験結果が CDL に格納済み（UC-01 完了後） |
 | **トリガー** | `gridflow results <subcommand>` コマンドの実行 |
