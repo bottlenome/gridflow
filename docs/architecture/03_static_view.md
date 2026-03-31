@@ -666,3 +666,106 @@ Scheduler (並列)
 | L2 Plugin | 研究者が記述。アクセスしやすい言語が必要 | 研究者層の言語スキルに依存 |
 
 > **結論:** gridflow コアのボトルネックは外部ツール側にあり、コアの言語高速化の全体性能への寄与は限定的。言語選択は性能よりも**外部ツールのエコシステム適合性**と**L2 Plugin の記述容易性**で決まる可能性が高い。最終判断は ADR-001 で記録する。
+
+---
+
+## 3.5 拡張性戦略 — Plugin API とカスタムレイヤー（L1-L4）
+
+### 3.5.1 なぜユーザーが簡単に拡張できる必要があるか
+
+gridflow の価値は「研究の回し方を高速化する」（BG-1）ことだが、研究者が本当にやりたいのは**自分の新しいアイデア（制御法、最適化手法、評価指標）を既存手法と比較すること**である。
+
+もし gridflow の拡張にフレームワークの深い知識が必要だと、研究者は「gridflow を学ぶコスト」と「自前でスクリプトを書くコスト」を天秤にかけ、後者を選ぶ。**拡張の敷居が導入の敷居を決める。**
+
+目標: **L2 研究者（修士レベル）が、gridflow の内部構造を知らなくても、100 行以下のコードで独自アルゴリズムを統合できる**（QA-4）。
+
+### 3.5.2 カスタムレイヤーの設計 — 何を見せて何を隠すか
+
+| レベル | 研究者が見えるもの | 研究者から隠されるもの | 拡張ポイント |
+|---|---|---|---|
+| **L1: 設定変更** | Scenario Pack の YAML/JSON ファイル | コード全て | パラメータ値（負荷量、DER 容量、期間、seed 等） |
+| **L2: Plugin API** | 定義済みインターフェース（関数シグネチャ） | Orchestrator 内部、Connector 実装、CDL 永続化 | `MetricCalculator.calculate()`、カスタム制御関数、前処理/後処理フック |
+| **L3: モジュール拡張** | Connector インターフェース全体 | コアの実行制御ロジック | 新しい Connector 実装の追加 |
+| **L4: ソース改変** | 全ソースコード | なし | 任意 |
+
+> **設計判断:** L1 と L2 の間に最大の敷居差がある。L1（設定変更）は YAML 編集だけなので誰でもできる。L2（Plugin API）はコードを書く必要があるが、**書くべきコードの量と知るべき概念を最小化する**ことで敷居を下げる。
+
+### 3.5.3 L2 Plugin API の設計詳細
+
+L2 研究者が書くコードの例を示し、なぜ少ないコードで統合できるかを分析する。
+
+#### 例1: カスタム評価指標
+
+研究者が「PV 自家消費率」という独自指標を追加する場合:
+
+```
+# 研究者が書くコード（これだけ）
+class PVSelfConsumptionCalculator:
+    def calculate(self, data):
+        pv_generation = data.get_timeseries("pv", "active_power")
+        load = data.get_timeseries("load", "active_power")
+        self_consumed = min(pv_generation, load)  # 各時刻で
+        return Metric(
+            name="pv_self_consumption_ratio",
+            value=sum(self_consumed) / sum(pv_generation),
+            unit="%"
+        )
+```
+
+```
+# gridflow の Scenario Pack YAML に追加（これだけ）
+evaluation_metrics:
+  - voltage_violation      # 組込み指標
+  - ens                    # 組込み指標
+  - pv_self_consumption    # ← 研究者のカスタム指標
+```
+
+**なぜこれだけで動くか — アーキテクチャ上の理由:**
+
+1. **Strategy パターン（2.4.1）:** `MetricCalculator` インターフェースが 1 メソッド（`calculate`）しかない。研究者はこのシグネチャに合わせるだけ
+2. **DI（AS-2）:** BenchmarkHarness は `MetricCalculator` インターフェースに依存し、具体実装を知らない。Plugin Registry に登録するだけで BenchmarkHarness が自動的に呼び出す
+3. **CDL（Entities 層）:** `data.get_timeseries()` が CDL のドメインモデルへのアクセスを提供。研究者は CDL の内部構造（ファイル? DB?）を知る必要がない
+4. **Ubiquitous Language（AS-1）:** `Metric`, `TimeSeries`, `active_power` 等のクラス名・変数名が電力系研究者にとって自然な語彙
+
+#### 例2: カスタム制御アルゴリズム
+
+研究者が独自の BESS 充放電制御を Scenario に組み込む場合:
+
+```
+# 研究者が書くコード
+class MyBESSController:
+    def control(self, state, timestep):
+        soc = state.get("bess_soc")
+        price = state.get("electricity_price")
+        if price > threshold and soc > 0.2:
+            return {"bess_power": -max_discharge}  # 放電
+        else:
+            return {"bess_power": max_charge}       # 充電
+```
+
+```
+# Scenario Pack YAML
+plugins:
+  controllers:
+    - class: MyBESSController
+      target: bess_1
+```
+
+**なぜこれだけで動くか:**
+
+1. **Plugin Registry:** Orchestrator が `plugins.controllers` を読み取り、該当する ExecutionStep で自動的に `control()` を呼び出す
+2. **state/action の抽象化:** 研究者が受け取る `state` と返す `action` は CDL のドメイン語彙で表現される。Connector 固有のデータ形式は Orchestrator が変換する
+3. **Scenario Pack で宣言的に統合:** コードを書いたら YAML に 3 行追加するだけ。Orchestrator への手動配線は不要
+
+### 3.5.4 L2 の敷居を下げるための設計原則
+
+| 原則 | 実現方法 | 対応する AS/パターン |
+|---|---|---|
+| **最小インターフェース** | Plugin が実装するメソッドは 1〜2 個（`calculate`, `control`）。継承階層なし | Strategy パターン |
+| **宣言的統合** | Plugin のコードを書いたら、YAML に登録するだけで動く。配線コード不要 | DI（AS-2）+ Plugin Registry |
+| **ドメイン語彙でのアクセス** | `data.get_timeseries("pv", "active_power")` のようにドメイン用語でデータにアクセス | Ubiquitous Language（AS-1）|
+| **内部の隠蔽** | Plugin から見えるのは CDL のデータと Plugin インターフェースだけ。Orchestrator, Connector, ファイル I/O は見えない | Clean Architecture（AS-2）依存方向規則 |
+| **即座の検証** | `gridflow scenario validate` でPlugin の型チェック・エラー検出。実行前に問題を発見 | Fail-fast |
+| **サンプルからの複製** | `gridflow scenario clone` で既存の動くサンプルを複製し、Plugin 部分だけ差し替える | QA-5（ワークフロー効率）|
+
+> **設計判断:** L2 Plugin API の設計は、**研究者が知るべき概念の数**を最小化することに注力する。研究者が知るべきは (a) Plugin インターフェース（1-2 メソッド）、(b) CDL のドメインモデル（Topology, Asset, TimeSeries 等）、(c) Scenario Pack の YAML 構造の 3 つだけである。gridflow の内部アーキテクチャ（Orchestrator, Connector, Scheduler, Clean Architecture 等）は一切知る必要がない。
