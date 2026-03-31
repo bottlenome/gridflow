@@ -106,3 +106,89 @@ graph LR
 - **データフロー** — Connector → CDL → Benchmark → Export の結果系統
 
 この 2 つの流れが交差しないよう分離することが、Clean Architecture（AS-2）の核心である。
+
+---
+
+### 3.1.3 外部システム分析と Connector 設計判断
+
+3.1.2 の「3. 実行」で Connector が外部ツールとやりとりすると述べた。ここでは各ツールの特性を分析し、**なぜ単一の Connector インターフェースで統一できるのか**を示す。
+
+#### 外部ツールの特性分析
+
+| ツール | 役割 | 計算モデル | 入力 | 出力 | 時間の扱い |
+|---|---|---|---|---|---|
+| **OpenDSS** | 配電系統解析 | 1 系統の潮流計算・準定常時系列 | ネットワーク定義 + 負荷/DER プロファイル | 電圧・電流・潮流結果 | 離散タイムステップ（Orchestrator が制御） |
+| **pandapower** | 潮流計算（軽量） | Pure Python の定常計算 | ネットワーク + 負荷 | 電圧・潮流 | ステップなし（1 ショット） |
+| **HELICS** | co-simulation 連成 | 複数シミュレータの時間同期フェデレーション | フェデレーション設定 + 各シミュレータの入出力 | 連成結果 | HELICS 自身が時間管理 |
+| **Grid2Op** | 逐次運用 RL 環境 | gym-like step API | アクション（開閉器操作等） | 観測 + 報酬 | ステップ駆動（gym 的） |
+| **実機 SCADA** | 実系統制御（将来） | リアルタイム計測/制御 | 制御指令 | 計測データ | リアルタイム |
+
+#### 共通性の発見
+
+一見異なるが、全ツールに共通する操作パターンがある:
+
+```
+1. 初期化（接続確立・設定ロード）
+2. ステップ実行（入力を渡して結果を受け取る）
+3. 終了処理（接続切断・リソース解放）
+```
+
+相違点は **ステップ実行の粒度と時間管理の主体** である:
+
+| パターン | 時間管理の主体 | 該当ツール |
+|---|---|---|
+| **Orchestrator 駆動** | Orchestrator がタイムステップを制御し、Connector に 1 ステップ分の実行を指示 | OpenDSS, pandapower |
+| **フェデレーション駆動** | 外部の時間同期機構（HELICS）が複数 Connector を協調制御 | HELICS |
+| **環境駆動** | 外部環境（Grid2Op, 実機）がステップを刻み、Connector はアクションを送って観測を受け取る | Grid2Op, 実機 SCADA |
+
+#### 設計判断: Connector インターフェースの統一
+
+**判断:** 時間管理の違いは Connector 実装の内部で吸収し、Orchestrator から見た Connector インターフェースは統一する。
+
+**代替案と比較:**
+
+| 案 | 内容 | 長所 | 短所 |
+|---|---|---|---|
+| **A. ツールごとに個別 I/F** | OpenDSS 用、HELICS 用、Grid2Op 用に別々のインターフェース | ツール固有の最適化が可能 | Orchestrator が全 I/F を知る必要あり。ツール追加のたびに Orchestrator を変更 |
+| **B. 統一 I/F（採用）** | 全 Connector が `initialize → execute → teardown` の共通 I/F を実装 | Orchestrator は I/F だけ知ればよい。ツール追加が Connector 実装の追加だけで完結 | 個別最適化が制限される可能性 |
+| **C. 抽象レイヤー + 特殊化** | 共通 I/F + ツール固有の拡張メソッド | 両方のメリット | 複雑。CON-3（1人+AI 開発）に合わない |
+
+**B を選んだ理由:**
+1. AS-4（シミュレータと実系統の非区別）が自然に実現される
+2. AS-2（DI）によりテスト時のモック差替えが容易（AS-3: TDD）
+3. AC-1（Wrapper → Hybrid → Full）の段階移行で、Connector を入れ替えるだけで済む
+4. CON-3（1人+AI 開発）で複雑な抽象化を維持するコストが高い
+
+**時間管理の違いへの対処:**
+
+```mermaid
+graph TB
+    subgraph "Orchestrator"
+        O["実行ループ<br>for step in plan.steps"]
+    end
+
+    subgraph "Connector I/F (共通)"
+        IF["initialize() → execute(step) → teardown()"]
+    end
+
+    subgraph "Orchestrator 駆動型"
+        C1["OpenDSSConnector<br>execute() 内で<br>1タイムステップ実行"]
+        C2["pandapowerConnector<br>execute() 内で<br>1ショット計算"]
+    end
+
+    subgraph "フェデレーション駆動型"
+        C3["HELICSConnector<br>execute() 内で<br>HELICS co-sim ループを<br>フェデレーション完了まで実行"]
+    end
+
+    subgraph "環境駆動型"
+        C4["Grid2OpConnector<br>execute() 内で<br>gym.step() を呼び出し<br>観測を CDL に変換"]
+    end
+
+    O --> IF
+    IF --> C1
+    IF --> C2
+    IF --> C3
+    IF --> C4
+```
+
+> 時間管理の違いは `execute()` の**内部実装**で吸収される。Orchestrator は「ステップを渡して結果を受け取る」だけであり、その内側で何が起きているかを知る必要がない。
