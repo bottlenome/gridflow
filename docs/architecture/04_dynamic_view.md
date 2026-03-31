@@ -731,7 +731,89 @@ sequenceDiagram
     Note over User: gridflow run <sample> で初回実験（QA-2: TTFS < 1h）
 ```
 
-### 4.3.8 結果参照・データエクスポートフロー（UC-09）
+### 4.3.8 アップデート・アンインストールフロー（UC-08）
+
+UC-07（インストール）との違いを分析した上でフローを示す。
+
+**UC-07 との差異分析:**
+
+| 操作 | UC-07（インストール） | UC-08（アップデート） | UC-08（アンインストール） |
+|---|---|---|---|
+| データ状態 | なし（初回） | 既存データあり（Scenario Pack, 結果, ログ） | 既存データあり |
+| 破壊リスク | なし | **マイグレーション失敗でデータ破損の可能性** | **意図しないデータ削除の可能性** |
+| ロールバック | 不要 | **必要（旧バージョンに戻す手段）** | 不可逆（削除後は復元不可） |
+| Connector 状態 | 初期化のみ | **既存 Connector との互換性検証が必要** | 切断のみ |
+
+> **設計判断:** UC-08 は UC-07 の単純な逆操作ではない。既存データの保全とロールバック可能性が核心的な違いであり、独立したシーケンス図で扱う必要がある。
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI
+    participant Core as gridflow コア
+    participant Registry as Scenario Registry
+    participant CDL
+    participant Docker as Docker Compose
+    participant FS as File System
+    participant Net as ネットワーク
+
+    alt アップデート
+        User->>CLI: gridflow update
+        CLI->>Net: 最新バージョン確認
+        Net-->>CLI: 現在 v1.2 → 最新 v1.3
+        CLI-->>User: 変更内容サマリ表示
+
+        User->>CLI: 承認
+        CLI->>FS: 現バージョンのバックアップ作成
+        CLI->>Docker: 新イメージ pull
+        Docker->>Net: pull
+        Net-->>Docker: 新イメージ
+
+        CLI->>Core: migrate(from=v1.2, to=v1.3)
+        Core->>Registry: migrate_packs(schema_diff)
+        Core->>CDL: migrate_results(schema_diff)
+
+        alt マイグレーション成功
+            Core-->>CLI: 完了
+            CLI-->>User: アップデート完了（v1.3）
+        else マイグレーション失敗
+            Core->>FS: バックアップから復元
+            Core-->>CLI: ロールバック完了
+            CLI-->>User: エラー報告 + 旧バージョン復元済み
+        end
+    end
+
+    alt アンインストール
+        User->>CLI: gridflow uninstall
+        CLI-->>User: 削除対象の一覧表示
+
+        CLI-->>User: データ保全オプション提示
+        Note over User,CLI: (a) エクスポート→削除<br>(b) データ残し環境のみ削除<br>(c) 完全削除
+
+        User->>CLI: オプション選択
+
+        opt (a) エクスポート→削除
+            CLI->>CDL: export_all(format)
+            CDL->>FS: 全データエクスポート
+        end
+
+        CLI->>Docker: docker compose down --volumes
+        Docker->>Docker: コンテナ + ボリューム削除
+
+        opt (c) 完全削除
+            CLI->>FS: 設定ファイル・ログ削除
+        end
+
+        CLI-->>User: アンインストール完了
+    end
+```
+
+> **分析:**
+> - **アップデート**の最重要設計判断は「バックアップ → マイグレーション → 失敗時ロールバック」の 3 段階。CDL と Registry の双方にスキーマ変更が波及するため、部分的な成功は許容しない（all-or-nothing）
+> - **アンインストール**の最重要設計判断は「データ保全オプションの提示」。研究データの意図しない削除を防ぐため、デフォルトは (b) データ残しとする
+> - いずれも UC-07 にはない「既存状態への配慮」が核心であり、Bootstrap（3.2.1）にマイグレーション責務を追加する必要がある
+
+### 4.3.9 結果参照・データエクスポートフロー（UC-09）
 
 ```mermaid
 sequenceDiagram
