@@ -105,18 +105,18 @@ graph TB
 **基本フロー:**
 1. ユーザーが CLI で `gridflow run <scenario-pack>` を実行する
 2. Orchestrator が Scenario Registry から指定の Scenario Pack をロードする
-3. Orchestrator が Scenario Pack の設定を検証する（ネットワーク定義、シミュレータ設定、seed 等）
-4. Orchestrator が必要な Connector を初期化する（Docker コンテナの起動を含む）
+3. Orchestrator が Scenario Pack の設定を検証する（ネットワーク定義、実行対象設定、seed 等）
+4. Orchestrator が必要な Connector を初期化する（Docker コンテナの起動等、Connector 実装依存の初期化を含む）
 5. Orchestrator が実行計画（ステップ順序・時間同期方式）を生成する
 6. Orchestrator が各ステップを順次/並列に実行する
-   - 各 Connector がシミュレータを呼び出し、結果を CDL 形式に変換する
+   - 各 Connector が外部システム（シミュレータ/実機）を呼び出し、結果を CDL 形式に変換する
    - 各ステップの開始・終了・所要時間がログに記録される（QA-8）
 7. 全ステップ完了後、結果が CDL に格納される
 8. 実行サマリ（成功/失敗、所要時間、出力ファイルパス）が CLI に表示される
 
 **代替フロー:**
 - **3a.** 検証エラー: Scenario Pack の設定不備を報告し、実行を中断する。エラーメッセージに原因と対処を含める（QA-9）
-- **4a.** Connector 初期化失敗: 対象シミュレータの Docker イメージが見つからない等。エラーを報告し、セットアップ手順を案内する
+- **4a.** Connector 初期化失敗: Docker イメージ未取得、接続先未応答等。エラーを報告し、セットアップ手順を案内する
 - **6a.** ステップ実行エラー: UC-06（デバッグ・エラー対応）に分岐。エラー発生ステップと中間状態をログに記録する
 
 **事後条件:**
@@ -140,7 +140,7 @@ graph TB
 **基本フロー（新規作成）:**
 1. ユーザーが `gridflow scenario create <name>` を実行する
 2. テンプレートから Scenario Pack のスケルトンが生成される
-3. ユーザーがネットワーク定義・時系列データ・シミュレータ設定・評価指標を編集する
+3. ユーザーがネットワーク定義・時系列データ・実行対象設定・評価指標を編集する
    - L1: YAML/JSON のパラメータ変更のみ
    - L2+: Plugin API でカスタムロジックを追加
 4. ユーザーが `gridflow scenario validate <name>` で検証する
@@ -283,7 +283,7 @@ graph TB
 6. 原因を修正後、`gridflow run --from-step <step> <scenario-pack>` で失敗箇所から再実行する
 
 **代替フロー:**
-- **2a.** Connector 内部エラー: 外部シミュレータのエラーを gridflow 形式に変換し、元のエラーメッセージも保持する
+- **2a.** Connector 内部エラー: 外部システムのエラーを gridflow 形式に変換し、元のエラーメッセージも保持する
 - **5a.** LLM 支援: エラーログが構造化されており、LLM（Claude 等）にエラーログを渡して原因分析を依頼可能（QA-9）
 
 **事後条件:**

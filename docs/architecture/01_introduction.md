@@ -2,7 +2,9 @@
 
 ## 1.1 ドキュメントの目的
 
-本ドキュメントは、**gridflow**（Simulation Workflow Engine for Power System Research）のソフトウェアアーキテクチャを記述する。
+本ドキュメントは、**gridflow**（Power System Workflow Engine）のソフトウェアアーキテクチャを記述する。
+
+gridflow は電力系統の研究ワークフローエンジンとして出発するが、アーキテクチャレベルではシミュレータと実系統制御を区別しない。Connector インターフェースの背後にあるものがシミュレータか実機かは、実装の差異であってアーキテクチャの差異ではない。
 
 アーキテクチャ中心設計手法（Architecture Centric Design Method: ACDM）に基づき、以下を目的とする。
 
@@ -43,7 +45,7 @@
 |---|---|
 | Scenario Pack | 実験1件をパッケージとして扱う単位。ネットワーク定義、時系列データ、シミュレータ設定、評価指標、seed、expected outputs、可視化テンプレートを含む |
 | Orchestrator | 各シミュレータ・解析ツールの統合実行を管理するランタイム。実行順序管理、コンテナ起動、時間同期、バッチ実行、結果収集を担う |
-| Connector | 外部シミュレータ（OpenDSS、GridLAB-D、HELICS 等）と gridflow を接続するアダプタ |
+| Connector | 外部システム（シミュレータ、実機 SCADA、HIL テストベンチ等）と gridflow を接続するアダプタ。アーキテクチャ上、シミュレータと実系統を区別しない |
 | Scenario Registry | Scenario Pack を登録・検索・バージョン管理するストア。Orchestrator への入力元となる |
 | Canonical Data Layer (CDL) | ツールごとの独自フォーマットを吸収する共通データ表現。topology、asset、timeseries、event、metric、experiment metadata を含む |
 | Benchmark Harness | 実験結果を定量的に評価・比較する採点機構 |
