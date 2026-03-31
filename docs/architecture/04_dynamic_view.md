@@ -64,7 +64,7 @@ graph LR
 ```mermaid
 graph LR
     UC07("UC-07<br>インストール") -.->|precedes| UC04("UC-04<br>起動・終了")
-    UC01("UC-01<br>実験実行") -.->|include| UC04
+    UC04("UC-04<br>起動・終了") -.->|precedes| UC01
     UC01 -.->|include| UC05("UC-05<br>ログ")
     UC01 -.->|extend| UC06("UC-06<br>デバッグ")
     UC01 -.->|produces| UC09("UC-09<br>結果参照")
@@ -80,7 +80,7 @@ graph LR
 | 関係 | 意味 |
 |---|---|
 | UC-07 precedes UC-04 | インストール完了が環境起動の前提 |
-| UC-01 include UC-04 | 実験実行には環境の起動が前提 |
+| UC-04 precedes UC-01 | 環境起動が実験実行の前提条件（UC-01 が UC-04 をトリガーするわけではない） |
 | UC-01 include UC-05 | 実験実行中にログが自動出力される |
 | UC-01 extend UC-06 | 実験実行中にエラーが発生した場合にデバッグフローに分岐 |
 | UC-01 produces UC-09 | 実験実行の結果が結果参照の入力になる |
@@ -207,7 +207,7 @@ graph TB
 **基本フロー:**
 1. ユーザーが `gridflow benchmark run <experiment-ids>` を実行する
 2. Benchmark Harness が CDL から対象実験の結果を取得する
-3. Scenario Pack に定義された評価指標（電圧逸脱率、ENS、CO2 等）を算出する
+3. Scenario Pack に定義された評価指標（電圧逸脱率、ENS、CO2 等）を算出する。L2 研究者がカスタム指標を追加している場合、それも同時に算出される（FR-06: MetricCalculator の Strategy パターン）
 4. 複数実験間の比較表・ランキングを生成する
 5. 結果をレポート形式（表・図）で出力する
 6. ユーザーが `gridflow benchmark export <format>` でデータをエクスポートする（CSV/JSON/Parquet）
