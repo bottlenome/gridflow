@@ -192,3 +192,83 @@ graph TB
 ```
 
 > 時間管理の違いは `execute()` の**内部実装**で吸収される。Orchestrator は「ステップを渡して結果を受け取る」だけであり、その内側で何が起きているかを知る必要がない。
+
+---
+
+### 3.1.4 サブシステム分割 — Clean Architecture レイヤーへのマッピング
+
+3.1.2 で示した概念コンポーネントを、AS-2（Clean Architecture）の依存方向規則に従って 4 層に配置する。
+
+**設計判断:** なぜ Clean Architecture か?
+
+| 案 | 内容 | 判定 |
+|---|---|---|
+| レイヤードアーキテクチャ（従来型） | UI → Business → Data の 3 層 | Data 層への依存がドメインロジックに侵入する。Connector 差替えが困難 |
+| **Clean Architecture（採用）** | 依存方向を内側に統一。外側は交換可能 | Connector・DB・UI を自由に差替え可能。AS-4、AC-1 と整合 |
+| マイクロサービス | 各コンポーネントを独立サービス化 | CON-3（1人+AI 開発）に合わない。過剰な複雑さ |
+
+**4 層構造と 3.1.2 コンポーネントの対応:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Frameworks & Drivers（最外層）                                    │
+│  Docker, FileSystem, 外部シミュレータ/実機                         │
+│  ※ gridflow のコードではない。gridflow が利用する外部環境            │
+├─────────────────────────────────────────────────────────────────┤
+│  Interface Adapters（アダプタ層）                                  │
+│                                                                   │
+│  ┌──────────┐  ┌─────────────┐  ┌──────────────┐               │
+│  │ CLI      │  │ Notebook    │  │ Data Export   │  ← 入力/出力  │
+│  │          │  │ Bridge      │  │ (CSV/JSON/    │    の窓口     │
+│  │          │  │             │  │  Parquet)     │               │
+│  └──────────┘  └─────────────┘  └──────────────┘               │
+│  ┌──────────────────────────────────────────────┐               │
+│  │ Connector Implementations                     │  ← 外部ツール│
+│  │ OpenDSS | HELICS | pandapower | Mock | ...    │    との接続   │
+│  └──────────────────────────────────────────────┘               │
+├─────────────────────────────────────────────────────────────────┤
+│  Use Cases（ユースケース層）                                       │
+│                                                                   │
+│  ┌─────────────┐  ┌──────────┐  ┌──────────────┐               │
+│  │ Orchestrator │  │ Benchmark│  │ Scenario     │               │
+│  │ 実行制御     │  │ Engine   │  │ Registry     │               │
+│  │ 時間同期     │  │ 評価比較  │  │ 登録/検索    │               │
+│  └─────────────┘  └──────────┘  └──────────────┘               │
+│  ┌──────────────┐  ┌────────────────┐                          │
+│  │ Observability │  │ Plugin Registry │ ← L2 拡張点              │
+│  │ ログ/トレース │  │                 │                          │
+│  └──────────────┘  └────────────────┘                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Entities（ドメインモデル層 = CDL）                                 │
+│                                                                   │
+│  ┌───────────┐ ┌───────┐ ┌────────────┐ ┌───────┐             │
+│  │ Topology  │ │ Asset │ │ TimeSeries │ │ Event │             │
+│  │ 系統構成   │ │ 設備  │ │ 時系列     │ │ 操作  │             │
+│  └───────────┘ └───────┘ └────────────┘ └───────┘             │
+│  ┌────────────┐ ┌──────────────────┐ ┌──────────────┐         │
+│  │ Metric     │ │ ExperimentMetadata│ │ ScenarioPack │         │
+│  │ 評価指標   │ │ 実験メタデータ     │ │ 実験定義     │         │
+│  └────────────┘ └──────────────────┘ └──────────────┘         │
+│  ※ 外部依存なし。Pure Python。CIM (IEC 61970) と対応関係 (AC-7)   │
+└─────────────────────────────────────────────────────────────────┘
+
+依存方向: 外側 → 内側 のみ（逆方向の依存は禁止）
+```
+
+**依存規則:**
+- Entities は何にも依存しない（Pure Python データクラス）
+- Use Cases は Entities にのみ依存する。外部ツール・DB・UI を知らない
+- Interface Adapters は Use Cases と Entities に依存する。外部の詳細を変換する
+- Frameworks & Drivers は全層に依存できるが、gridflow が直接制御するコードではない
+
+**3.1.2 からの対応関係:**
+
+| 3.1.2 の概念コンポーネント | Clean Architecture 層 | 根拠 |
+|---|---|---|
+| Scenario Pack + Registry | Entities + Use Cases | Pack のデータ構造は Entities、管理ロジックは Use Cases |
+| Orchestrator | Use Cases | 実行制御のビジネスロジック。外部ツールは Connector I/F 越しに呼ぶ |
+| Connectors | Interface Adapters | 外部ツールの詳細を隠蔽し、CDL 形式に変換する |
+| Canonical Data Layer | Entities (データモデル) + Interface Adapters (永続化) | データ構造は Entities、ファイル I/O は Adapters |
+| Data Export | Interface Adapters | CDL → CSV/JSON/Parquet の変換 |
+| Benchmark Harness | Use Cases | 評価ロジック。Entities の Metric を入出力する |
+| CLI / Notebook | Interface Adapters | ユーザーの操作を Use Cases に変換する窓口 |
