@@ -128,7 +128,7 @@ ACDM では、アーキテクチャドライバー（ビジネス目標・品質
 
 | ADR | 計画書の情報源 |
 |---|---|
-| ADR-001 Python 統一 | セクション 5「言語方針」 |
+| ADR-001 実装言語選択 | セクション 5「言語方針」 |
 | ADR-002 Docker ベース | セクション 5.1「動作環境」 |
 | ADR-003 CLI ファースト | セクション 3.1 E「CLI + Notebook Bridge」 |
 | ADR-004 Scenario Pack | セクション 3.1 A「Scenario Pack」 |
