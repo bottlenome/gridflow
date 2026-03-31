@@ -24,35 +24,27 @@ graph LR
     LLMAgent(["🤖 LLM<br>Agent"])
 
     subgraph gridflow
-        subgraph "ライフサイクル管理"
-            UC07("UC-07<br>インストール<br>セットアップ")
-            UC08("UC-08<br>アップデート<br>アンインストール")
-            UC04("UC-04<br>起動・終了")
-        end
-        subgraph "実験ワークフロー"
-            UC02("UC-02<br>Scenario Pack<br>管理")
-            UC01("UC-01<br>実験実行")
-            UC09("UC-09<br>結果参照<br>データエクスポート")
-            UC03("UC-03<br>ベンチマーク<br>評価・比較")
-        end
-        subgraph "運用・診断"
-            UC05("UC-05<br>ログ<br>実行トレース")
-            UC06("UC-06<br>デバッグ<br>エラー対応")
-        end
-        subgraph "AI 連携"
-            UC10("UC-10<br>LLMによる<br>実験指示")
-        end
+        UC01("UC-01<br>実験実行")
+        UC02("UC-02<br>Scenario Pack<br>管理")
+        UC03("UC-03<br>ベンチマーク<br>評価・比較")
+        UC04("UC-04<br>起動・終了")
+        UC05("UC-05<br>ログ<br>実行トレース")
+        UC06("UC-06<br>デバッグ<br>エラー対応")
+        UC07("UC-07<br>インストール<br>セットアップ")
+        UC08("UC-08<br>アップデート<br>アンインストール")
+        UC09("UC-09<br>結果参照<br>データエクスポート")
+        UC10("UC-10<br>LLMによる<br>実験指示")
     end
 
-    Researcher --- UC07
-    Researcher --- UC08
-    Researcher --- UC04
-    Researcher --- UC02
     Researcher --- UC01
-    Researcher --- UC09
+    Researcher --- UC02
     Researcher --- UC03
+    Researcher --- UC04
     Researcher --- UC05
     Researcher --- UC06
+    Researcher --- UC07
+    Researcher --- UC08
+    Researcher --- UC09
     Researcher --- UC10
 
     CICD --- UC01
@@ -76,10 +68,12 @@ graph LR
     UC01 -.->|include| UC05("UC-05<br>ログ")
     UC01 -.->|extend| UC06("UC-06<br>デバッグ")
     UC01 -.->|produces| UC09("UC-09<br>結果参照")
-    UC03("UC-03<br>ベンチマーク") -.->|include| UC01
+    UC03("UC-03<br>ベンチマーク") -.->|depends-on| UC01
     UC10("UC-10<br>LLM実験指示") -.->|delegates| UC01
     UC10 -.->|delegates| UC02("UC-02<br>Scenario Pack")
     UC10 -.->|delegates| UC03
+    UC10 -.->|delegates| UC05("UC-05<br>ログ")
+    UC10 -.->|delegates| UC06("UC-06<br>デバッグ")
     UC10 -.->|delegates| UC09
 ```
 
@@ -90,8 +84,8 @@ graph LR
 | UC-01 include UC-05 | 実験実行中にログが自動出力される |
 | UC-01 extend UC-06 | 実験実行中にエラーが発生した場合にデバッグフローに分岐 |
 | UC-01 produces UC-09 | 実験実行の結果が結果参照の入力になる |
-| UC-03 include UC-01 | ベンチマーク評価には実験実行が必要 |
-| UC-10 delegates to UC-01,02,03,09 | LLM が既存ユースケースを組み合わせて実験を遂行する |
+| UC-03 depends-on UC-01 | ベンチマーク評価には実験実行結果が必要（事前に UC-01 が完了していること。UC-03 が UC-01 をトリガーするわけではない） |
+| UC-10 delegates to UC-01,02,03,05,06,09 | LLM が既存ユースケースを組み合わせて実験を遂行する（UC-05 でログ参照、UC-06 でエラー分析を含む） |
 
 > **関係図の分析:** UC-01（実験実行）が最も多くの関係を持つ中心 UC であり、アーキテクチャの設計はこのフローを軸に組み立てられている。UC-10 は 4 つの UC に委譲するが、新しい機能を追加しない — gridflow の LLM 対応コストが最小であることを示す構造上の判断。
 
@@ -247,14 +241,14 @@ graph TB
 
 **基本フロー（終了）:**
 1. ユーザーが `docker compose down` を実行する
-2. 実行中のシミュレーションがあれば、中断確認を表示する
+2. 実行中の実験があれば、中断確認を表示する
 3. Orchestrator がグレースフルシャットダウンを実行する（中間状態の保存）
 4. 全コンテナが停止する
 
 **基本フロー（状態確認）:**
 1. ユーザーが `gridflow status` を実行する
 2. 各コンポーネントの状態（Orchestrator、Connector、Registry）が表示される
-3. 実行中のシミュレーションがあれば進捗が表示される
+3. 実行中の実験があれば進捗が表示される
 
 **代替フロー:**
 - **2a.** Docker Desktop 未起動: エラーメッセージに Docker Desktop の起動手順を含める（QA-9）
@@ -425,7 +419,7 @@ graph TB
 
 **基本フロー（Notebook 連携）:**
 1. ユーザーが Notebook から gridflow のプログラミング API を使って結果にアクセスする
-2. CDL のデータを pandas DataFrame 等として取得し、自由に分析・可視化する
+2. CDL のデータをテーブル形式のデータ構造として取得し、自由に分析・可視化する
 
 **代替フロー:**
 - **1a.** 実験結果が存在しない: 実験実行（UC-01）を案内する
@@ -481,7 +475,7 @@ graph TB
 
 ## 4.3 シーケンス図
 
-シーケンス図は静的ビュー（セクション 3）のコンポーネントをライフラインとして使用する。UC-08（アップデート・アンインストール）は UC-07 の逆操作に近いためシーケンス図を省略する。
+シーケンス図は静的ビュー（セクション 3）のコンポーネントをライフラインとして使用する。各 UC に対応するシーケンス図を以下に示す。
 
 ### 4.3.1 実験実行フロー（UC-01）
 
@@ -864,7 +858,7 @@ sequenceDiagram
 > - CLI と Notebook が**同じ Use Cases 層**を呼び出す設計（3.2.4）により、CLI でできることは必ず Notebook からもできる。これは研究者が CLI で素早く確認 → Notebook で深掘りするワークフロー（QA-5）を支える
 > - エクスポート形式（CSV/JSON/Parquet）は Scenario Pack 内で指定可能にし、L1 研究者でも出力形式を変更できる
 
-### 4.3.9 LLM による実験指示フロー（UC-10）
+### 4.3.10 LLM による実験指示フロー（UC-10）
 
 UC-10 は新しい機能を追加するのではなく、既存の UC を LLM Agent が組み合わせて呼び出すフローである。
 
