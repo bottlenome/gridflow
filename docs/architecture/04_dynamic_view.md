@@ -7,7 +7,7 @@
 | アクター | 説明 | カスタムレイヤー |
 |---|---|---|
 | Researcher (L1) | 初心者・学部生。YAML/JSON のパラメータ変更で実験を行う | L1: 設定変更 |
-| Researcher (L2) | 修士・標準的な研究者。Plugin API に Python 関数/クラスを実装する | L2: Plugin API |
+| Researcher (L2) | 修士・標準的な研究者。Plugin API に関数/クラスを実装する | L2: Plugin API |
 | Researcher (L3) | 上級研究者。新しい Connector やモジュールを追加する | L3: モジュール拡張 |
 | Researcher (L4) | 開発者・共同研究者。OSS フォークして自由に改変する | L4: ソース改変 |
 | CI/CD System | GitHub Actions 等の自動化システム。テスト・ベンチマークを自動実行する | — |
@@ -417,7 +417,7 @@ graph TB
 3. 出力ファイルパスを表示する
 
 **基本フロー（Notebook 連携）:**
-1. ユーザーが Jupyter Notebook から gridflow の Python API を使って結果にアクセスする
+1. ユーザーが Notebook から gridflow のプログラミング API を使って結果にアクセスする
 2. CDL のデータを pandas DataFrame 等として取得し、自由に分析・可視化する
 
 **代替フロー:**
@@ -435,7 +435,7 @@ graph TB
 |---|---|
 | **主アクター** | Researcher (L1〜L4)、LLM Agent |
 | **目的** | 研究者が LLM に自然言語で実験を指示し、LLM が gridflow の操作を組み合わせて実験を遂行する |
-| **事前条件** | 環境が起動済み（UC-04a）。LLM Agent が gridflow の CLI / Python API にアクセス可能 |
+| **事前条件** | 環境が起動済み（UC-04a）。LLM Agent が gridflow の CLI / API にアクセス可能 |
 | **トリガー** | 研究者が LLM に実験を依頼する（チャット、スクリプト等） |
 | **関連 FR** | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06 |
 | **関連 QA** | QA-2（初回利用効率）, QA-3（再現性）, QA-5（ワークフロー効率）, QA-8（可観測性）, QA-9（LLM 親和性） |
@@ -449,7 +449,7 @@ graph TB
    - 評価指標の選択
 3. LLM が研究者に実行計画を確認する（安全弁）
 4. 研究者が承認する
-5. LLM が gridflow CLI / Python API を通じて実験を実行する
+5. LLM が gridflow CLI / API を通じて実験を実行する
    - `gridflow scenario clone` → パラメータ変更 → `gridflow run`（UC-01 を委譲）
    - 複数バリエーションの batch 実行
 6. LLM が結果を取得し、比較分析する（UC-09, UC-03 を委譲）

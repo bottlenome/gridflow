@@ -149,7 +149,7 @@ graph LR
 | ツール | 役割 | 計算モデル | 入力 | 出力 | 時間の扱い |
 |---|---|---|---|---|---|
 | **OpenDSS** | 配電系統解析 | 1 系統の潮流計算・準定常時系列 | ネットワーク定義 + 負荷/DER プロファイル | 電圧・電流・潮流結果 | 離散タイムステップ（Orchestrator が制御） |
-| **pandapower** | 潮流計算（軽量） | Pure Python の定常計算 | ネットワーク + 負荷 | 電圧・潮流 | ステップなし（1 ショット） |
+| **pandapower** | 潮流計算（軽量） | スクリプト言語ベースの定常計算 | ネットワーク + 負荷 | 電圧・潮流 | ステップなし（1 ショット） |
 | **HELICS** | co-simulation 連成 | 複数シミュレータの時間同期フェデレーション | フェデレーション設定 + 各シミュレータの入出力 | 連成結果 | HELICS 自身が時間管理 |
 | **Grid2Op** | 逐次運用 RL 環境 | gym-like step API | アクション（開閉器操作等） | 観測 + 報酬 | ステップ駆動（gym 的） |
 | **実機 SCADA** | 実系統制御（将来） | リアルタイム計測/制御 | 制御指令 | 計測データ | リアルタイム |
@@ -280,14 +280,14 @@ graph TB
 │  │ Metric     │ │ ExperimentMetadata│ │ ScenarioPack │         │
 │  │ 評価指標   │ │ 実験メタデータ     │ │ 実験定義     │         │
 │  └────────────┘ └──────────────────┘ └──────────────┘         │
-│  ※ 外部依存なし。Pure Python。CIM (IEC 61970) と対応関係 (AC-7)   │
+│  ※ 外部依存なし。CIM (IEC 61970) と対応関係 (AC-7)                │
 └─────────────────────────────────────────────────────────────────┘
 
 依存方向: 外側 → 内側 のみ（逆方向の依存は禁止）
 ```
 
 **依存規則:**
-- Entities は何にも依存しない（Pure Python データクラス）
+- Entities は何にも依存しない（外部依存のないデータクラス）
 - Use Cases は Entities にのみ依存する。外部ツール・DB・UI を知らない
 - Interface Adapters は Use Cases と Entities に依存する。外部の詳細を変換する
 - Frameworks & Drivers は全層に依存できるが、gridflow が直接制御するコードではない
@@ -411,7 +411,7 @@ classDiagram
 
 ### 3.2.3 ドメインモデル（Entities 層 = CDL）
 
-Entities 層は外部依存のない Pure Python データクラスで構成される。電力系研究者の語彙（AS-1: Ubiquitous Language）をそのままクラス名にする。
+Entities 層は外部依存のないデータクラスで構成される。電力系研究者の語彙（AS-1: Ubiquitous Language）をそのままクラス名にする。
 
 ```
 ScenarioPack ─── 実験定義の全体
@@ -446,7 +446,7 @@ CLI コマンド体系は UC-01〜UC-10 と 1:1 で対応する:
 | `gridflow results list/show/plot/export` | UC-09 | CDL + DataExport |
 | （LLM が上記を組合せ） | UC-10 | 全 Use Cases |
 
-NotebookBridge は同じ Use Cases 層を Python API として公開する。CLI と Notebook は同じ Use Cases のインターフェースの異なる窓口であり、ロジックの重複はない。
+NotebookBridge は同じ Use Cases 層をプログラミング API として公開する。CLI と Notebook は同じ Use Cases のインターフェースの異なる窓口であり、ロジックの重複はない。
 
 ---
 
