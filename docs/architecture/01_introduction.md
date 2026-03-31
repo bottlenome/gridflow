@@ -26,12 +26,15 @@
 **対象:**
 - gridflow のコアアーキテクチャ（Orchestrator、Connector、Canonical Data Layer、Benchmark Harness、CLI/Notebook）
 - 計画書で P0（最小必須機能）として定義された機能の設計
+- P1/P2 機能のうち、P0 のアーキテクチャ設計に影響するもの（設計時に考慮すべき拡張ポイントとして）
 - Docker ベースの実行環境とその配置構成
 
+**対象（設計考慮のみ・詳細設計は将来）:**
+- P1 機能: record/replay、experiment diff、cache/resume、profiling、sensitivity sweep 等 — アーキテクチャ上の拡張ポイントとインターフェースを定義する
+- P2 機能: HIL 連携、cyber co-simulation、標準プロトコル対応等 — 将来の統合を阻害しない設計制約として考慮する
+
 **対象外:**
-- P1/P2 機能（record/replay、cache/resume、HIL 連携等）の詳細設計 — 将来の改訂で追加。ただし P0 設計に影響する P1 機能（cache/resume 等）はアーキテクチャ関心事（AC-5）として言及する
 - 個別シミュレータ（OpenDSS、GridLAB-D 等）の内部設計
-- LLM 連携機能 — 計画書で初期スコープ外と明記
 - 収益化モデルの詳細
 
 ## 1.4 用語定義
@@ -45,6 +48,8 @@
 | Canonical Data Layer (CDL) | ツールごとの独自フォーマットを吸収する共通データ表現。topology、asset、timeseries、event、metric、experiment metadata を含む |
 | Benchmark Harness | 実験結果を定量的に評価・比較する採点機構 |
 | カスタムレイヤー L1-L4 | 研究者のスキルレベルに応じた拡張段階。L1: 設定変更、L2: Plugin API、L3: モジュール拡張、L4: ソース改変 |
+| Bounded Context | DDD の概念。明確な境界を持つドメインモデルの適用範囲。gridflow では Orchestrator / Connector / Evaluation / UX 等がそれぞれ Bounded Context を形成する |
+| Ubiquitous Language | DDD の概念。ドメインエキスパート（研究者）と開発者が共有する統一語彙。コード上のクラス名・変数名がドメイン用語と一致することを目指す |
 | co-simulation | 複数のシミュレータを連成して同時実行する手法 |
 | DER | Distributed Energy Resource（分散型エネルギーリソース）。PV、BESS、EV 等 |
 | BESS | Battery Energy Storage System（蓄電池システム） |
