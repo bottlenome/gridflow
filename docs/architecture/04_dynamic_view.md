@@ -18,65 +18,70 @@
 ### 4.1.1 全体ユースケース図
 
 ```mermaid
-graph TB
-    subgraph Actors
-        R[Researcher]
-        CI[CI/CD System]
-        LLM[LLM Agent]
+graph LR
+    Researcher(["👤 Researcher<br>(L1-L4)"])
+    CICD(["🔄 CI/CD<br>System"])
+    LLMAgent(["🤖 LLM<br>Agent"])
+
+    subgraph gridflow
+        subgraph "ライフサイクル管理"
+            UC07("UC-07<br>インストール<br>セットアップ")
+            UC08("UC-08<br>アップデート<br>アンインストール")
+            UC04("UC-04<br>起動・終了")
+        end
+        subgraph "実験ワークフロー"
+            UC02("UC-02<br>Scenario Pack<br>管理")
+            UC01("UC-01<br>実験実行")
+            UC09("UC-09<br>結果参照<br>データエクスポート")
+            UC03("UC-03<br>ベンチマーク<br>評価・比較")
+        end
+        subgraph "運用・診断"
+            UC05("UC-05<br>ログ<br>実行トレース")
+            UC06("UC-06<br>デバッグ<br>エラー対応")
+        end
+        subgraph "AI 連携"
+            UC10("UC-10<br>LLMによる<br>実験指示")
+        end
     end
 
-    subgraph "ライフサイクル管理"
-        UC07[UC-07: インストール・セットアップ]
-        UC08[UC-08: アップデート・アンインストール]
-        UC04[UC-04: 起動・終了]
-    end
+    Researcher --- UC07
+    Researcher --- UC08
+    Researcher --- UC04
+    Researcher --- UC02
+    Researcher --- UC01
+    Researcher --- UC09
+    Researcher --- UC03
+    Researcher --- UC05
+    Researcher --- UC06
+    Researcher --- UC10
 
-    subgraph "実験ワークフロー"
-        UC02[UC-02: Scenario Pack 管理]
-        UC01[UC-01: 実験実行]
-        UC09[UC-09: 結果参照・データエクスポート]
-        UC03[UC-03: ベンチマーク評価・比較]
-    end
+    CICD --- UC01
+    CICD --- UC03
+    CICD --- UC05
 
-    subgraph "運用・診断"
-        UC05[UC-05: ログ・実行トレース]
-        UC06[UC-06: デバッグ・エラー対応]
-    end
-
-    subgraph "AI 連携"
-        UC10[UC-10: LLM による実験指示]
-    end
-
-    R --> UC07
-    R --> UC08
-    R --> UC04
-    R --> UC02
-    R --> UC01
-    R --> UC09
-    R --> UC03
-    R --> UC05
-    R --> UC06
-    R --> UC10
-
-    CI --> UC01
-    CI --> UC03
-    CI --> UC05
-
-    LLM --> UC10
-    UC10 -.->|delegates to| UC01
-    UC10 -.->|delegates to| UC02
-    UC10 -.->|delegates to| UC03
-    UC10 -.->|delegates to| UC09
-
-    UC07 -.->|precedes| UC04
-    UC01 -.->|include| UC04
-    UC01 -.->|include| UC05
-    UC01 -.->|extend| UC06
-    UC01 -.->|produces| UC09
-    UC03 -.->|include| UC01
+    LLMAgent --- UC10
 ```
 
+> **ユースケース図の分析:**
+> - Researcher は全 10 UC にアクセスする唯一の完全アクター。これは gridflow が CLI ファーストのツールであり、全操作が研究者の手元で完結することを反映している
+> - CI/CD System は実験実行・評価・ログの 3 UC のみ。自動化に必要な最小限の操作に限定しており、セットアップや Scenario Pack 管理は人間が行う設計判断
+> - LLM Agent は UC-10 のみに接続。LLM は既存 UC を間接的に（UC-10 経由で）呼び出すため、gridflow 内部に LLM 固有コードは不要（QA-9）
+
 ### 4.1.2 ユースケース間の関係
+
+```mermaid
+graph LR
+    UC07("UC-07<br>インストール") -.->|precedes| UC04("UC-04<br>起動・終了")
+    UC01("UC-01<br>実験実行") -.->|include| UC04
+    UC01 -.->|include| UC05("UC-05<br>ログ")
+    UC01 -.->|extend| UC06("UC-06<br>デバッグ")
+    UC01 -.->|produces| UC09("UC-09<br>結果参照")
+    UC03("UC-03<br>ベンチマーク") -.->|include| UC01
+    UC10("UC-10<br>LLM実験指示") -.->|delegates| UC01
+    UC10 -.->|delegates| UC02("UC-02<br>Scenario Pack")
+    UC10 -.->|delegates| UC03
+    UC10 -.->|delegates| UC09
+```
 
 | 関係 | 意味 |
 |---|---|
@@ -87,6 +92,8 @@ graph TB
 | UC-01 produces UC-09 | 実験実行の結果が結果参照の入力になる |
 | UC-03 include UC-01 | ベンチマーク評価には実験実行が必要 |
 | UC-10 delegates to UC-01,02,03,09 | LLM が既存ユースケースを組み合わせて実験を遂行する |
+
+> **関係図の分析:** UC-01（実験実行）が最も多くの関係を持つ中心 UC であり、アーキテクチャの設計はこのフローを軸に組み立てられている。UC-10 は 4 つの UC に委譲するが、新しい機能を追加しない — gridflow の LLM 対応コストが最小であることを示す構造上の判断。
 
 ### 4.1.3 起動・終了
 
