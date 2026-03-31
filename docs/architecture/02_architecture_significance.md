@@ -38,7 +38,7 @@
 
 | ID | 機能要求 | 計画書参照 | 関連ビジネス目標 |
 |---|---|---|---|
-| FR-01 | **Scenario Pack**: 実験1件をネットワーク定義・時系列データ・シミュレータ設定・評価指標・seed・expected outputs・可視化テンプレートを含むパッケージとして管理できる | 3.1 A | BG-1, BG-2, BG-3, BG-4 |
+| FR-01 | **Scenario Pack + Registry**: 実験1件をネットワーク定義・時系列データ・シミュレータ設定・評価指標・seed・expected outputs・可視化テンプレートを含むパッケージとして管理できる。Scenario Registry により登録・検索・バージョン管理ができる | 3.1 A, 5 | BG-1, BG-2, BG-3, BG-4 |
 | FR-02 | **Orchestrator**: Docker ベースで各シミュレータ・解析系の統合実行（実行順序管理、コンテナ起動・管理、時間同期、バッチ実行、結果収集、エラー収集）ができる | 3.1 B | BG-1 |
 | FR-03 | **Canonical Data Layer**: ツールごとの独自フォーマットを共通表現（topology, asset, timeseries, event, metric, experiment metadata）に変換し、CSV/JSON/Parquet でエクスポートできる | 3.1 C | BG-1, BG-4 |
 | FR-04 | **Benchmark Harness**: 電圧逸脱率、thermal overload 時間、ENS、dispatch cost、CO2、curtailment、restoration time、runtime 等の評価指標で定量的に採点・比較できる | 3.1 D | BG-4 |
@@ -54,7 +54,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 刺激源 | 新規ユーザー（学生・研究者） |
+| 刺激源 | 新規ユーザー（研究者・研究室メンバー） |
 | 刺激 | gridflow を初めてセットアップする |
 | 成果物 | gridflow 実行環境 |
 | 環境 | Windows / macOS / Linux、Docker Desktop インストール済み |
@@ -83,11 +83,11 @@
 | 刺激源 | 研究者（自分自身または共同研究者） |
 | 刺激 | 過去の実験を再実行する |
 | 成果物 | シミュレーション結果 |
-| 環境 | 異なるマシン、異なる OS/アーキテクチャ、異なる時期 |
-| 応答 | 同一の Scenario Pack から同一の結果が得られる |
-| 応答測定値 | **AMD64 と ARM64 の 2 環境以上で結果が一致する**、**異なるマシンで 3 回以上再現可能** |
+| 環境 | 異なるマシン、異なる時期（OS/アーキテクチャの動作保証は QA-7 が担う） |
+| 応答 | 同一の Scenario Pack・同一の seed から同一の結果が得られる |
+| 応答測定値 | **QA-7 を満たす任意の環境で、異なるマシン 2 台以上で結果が一致する** |
 
-関連: 計画書 3.1 A「Scenario Pack」、11「0-3 か月目標」
+関連: 計画書 3.1 A「Scenario Pack」、11「0-3 か月目標」。QA-7（ポータビリティ）が前提条件
 
 #### QA-4: 拡張性（Extensibility）
 
@@ -151,7 +151,7 @@
 | CON-2 | **Docker ベースのデプロイ環境** | ユーザーへの配布は Docker Compose を標準とし、`docker compose up` で全スタックが起動する設計とする。ホスト OS に直接依存する機能を持たない。ただし開発時は `pip install -e .` によるローカル Python 環境での開発・テストを許容する | 5.1「動作環境」 |
 | CON-3 | **1 人 + AI 開発体制** | 1人開発 + Claude を前提とする。初期 6〜10 万 LOC。この制約がアーキテクチャの複雑さの上限を決定する | 1.3「開発体制」 |
 | CON-4 | **AMD64 + ARM64 マルチアーキテクチャ対応** | Apple Silicon 対応必須。各ツールのアーキテクチャ対応状況に応じた環境戦略が必要 | 5.1「コンテナ内ランタイム」 |
-| CON-5 | **OSS として公開** | Scenario Pack format、benchmark format、canonical schema、connector SDK を公開する。教育導入を優先するため初期は全機能無料 | 9.2, 10.3 |
+| CON-5 | **OSS として公開** | Scenario Pack format、benchmark format、canonical schema、connector SDK を公開する。研究コミュニティへの普及を優先するため初期は全機能無料 | 9.2, 10.3 |
 | CON-6 | **英語を標準言語とする** | ドキュメント・CLI メッセージ・エラーメッセージは英語を標準とする。海外展開を初期から視野に入れるため | 10.2 |
 
 ### 2.2.4 アーキテクチャ関心事（Architectural Concerns）
@@ -168,7 +168,7 @@
 - 将来的に solver 本体を自前実装に置き換えても、上位層（Orchestrator、Benchmark、CLI）に影響しないこと
 
 判断基準（計画書 8.4）:
-1. 既存 OSS の導入性が教育展開の障害になっている
+1. 既存 OSS の導入性が研究室への展開の障害になっている
 2. 研究室ごとに同じ前処理・変換・採点コードを量産している
 3. 既存 OSS を跨ぐことで結果の再現性が崩れる
 4. 共通ベンチマークのための抽象化が既存 OSS では難しい

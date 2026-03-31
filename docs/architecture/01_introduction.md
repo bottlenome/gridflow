@@ -29,7 +29,7 @@
 - Docker ベースの実行環境とその配置構成
 
 **対象外:**
-- P1/P2 機能（record/replay、HIL 連携等）の詳細設計 — 将来の改訂で追加
+- P1/P2 機能（record/replay、cache/resume、HIL 連携等）の詳細設計 — 将来の改訂で追加。ただし P0 設計に影響する P1 機能（cache/resume 等）はアーキテクチャ関心事（AC-5）として言及する
 - 個別シミュレータ（OpenDSS、GridLAB-D 等）の内部設計
 - LLM 連携機能 — 計画書で初期スコープ外と明記
 - 収益化モデルの詳細
