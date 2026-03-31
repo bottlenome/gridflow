@@ -165,7 +165,7 @@ graph TB
 | **目的** | Scenario Pack を作成・登録・検索・バージョン管理する |
 | **事前条件** | 環境が起動済み（UC-04a） |
 | **トリガー** | `gridflow scenario <subcommand>` コマンドの実行 |
-| **関連 FR** | FR-01, FR-03, FR-05, FR-06, FR-07 |
+| **関連 FR** | FR-01, FR-03, FR-05, FR-06, FR-07（validate 時に Connector 互換性をチェックするため） |
 | **関連 QA** | QA-3（再現性）, QA-4（拡張性）, QA-5（ワークフロー効率） |
 
 **基本フロー（新規作成）:**
@@ -402,7 +402,7 @@ graph TB
 | **目的** | 実験結果を閲覧・可視化し、外部利用のためにエクスポートする |
 | **事前条件** | 実験結果が CDL に格納済み（UC-01 完了後） |
 | **トリガー** | `gridflow results <subcommand>` コマンドの実行 |
-| **関連 FR** | FR-01, FR-03, FR-04, FR-05 |
+| **関連 FR** | FR-01, FR-03, FR-05（FR-04 のベンチマーク結果も CDL 経由で参照対象に含まれるが、UC-09 自体は評価を行わない） |
 | **関連 QA** | QA-6（データエクスポート容易性）, QA-9（LLM 親和性） |
 
 **基本フロー（結果参照）:**
@@ -511,7 +511,7 @@ sequenceDiagram
         ExtSys-->>Connector: 生データ
         Connector->>Connector: 生データ → CDL 形式に変換
         Connector-->>Orchestrator: StepResult(CanonicalData)
-        Orchestrator->>CDL: store_result(data)
+        Orchestrator->>CDL: store_result(experiment_id, data)
         Orchestrator->>Logger: step_end(step_name, duration)
     end
 
@@ -752,6 +752,8 @@ sequenceDiagram
     Export-->>CLI: ファイルパス
     CLI-->>User: エクスポート完了（QA-6: < 3ステップ）
 ```
+
+> **Notebook パス:** 上記は CLI 経由のフローを示す。Notebook からは NotebookBridge 経由で同じ CDL/Export を呼び出す（3.3 配置図: HTTP API 経由）。フローは CLI と同一のため図は省略。
 
 ### 4.3.9 LLM による実験指示フロー（UC-10）
 

@@ -336,6 +336,8 @@ classDiagram
         +get_result(experiment_id: str) CanonicalData
         +list_experiments() list~ExperimentMetadata~
         +export(experiment_id: str, format: ExportFormat) Path
+        +store_intermediate(experiment_id: str, step: str, data: CanonicalData) void
+        +get_intermediate(experiment_id: str) CanonicalData
     }
 
     class MetricCalculator {
@@ -348,6 +350,20 @@ classDiagram
         +run_from_step(scenario_pack_id: str, step: str) RunResult
     }
 
+    class ScenarioRegistry {
+        +load(scenario_pack_id: str) ScenarioPack
+        +register(pack: ScenarioPack) str
+        +validate(pack: ScenarioPack) ValidationResult
+        +list() list~ScenarioPackMeta~
+        +clone(source_id: str, new_name: str) ScenarioPack
+    }
+
+    class Bootstrap {
+        +detect_first_run() bool
+        +setup() void
+        +download_samples() void
+    }
+
     class BenchmarkHarness {
         +run(experiment_ids: list, metrics: list) BenchmarkResult
         +compare(experiment_ids: list) ComparisonTable
@@ -355,12 +371,16 @@ classDiagram
 
     Orchestrator ..> ConnectorInterface : uses ①
     Orchestrator ..> CanonicalDataLayer : stores results ②
+    Orchestrator ..> ScenarioRegistry : loads pack
     BenchmarkHarness ..> CanonicalDataLayer : reads results ②
     BenchmarkHarness ..> MetricCalculator : evaluates ③
+    Bootstrap ..> ScenarioRegistry : registers samples
+    Bootstrap ..> ConnectorInterface : health check
 
     note for ConnectorInterface "AS-4: シミュレータも実機も\n同一インターフェース\n\n3.1.3 の設計判断で統一を決定"
-    note for CanonicalDataLayer "P0: ファイルシステム実装\n将来: DB 実装に差替え可能\n(Repository パターン)"
+    note for CanonicalDataLayer "P0: ファイルシステム実装\n将来: DB 実装に差替え可能\n(Repository パターン)\n\nstore/get_intermediate は\nAC-5 (cache/resume) の拡張点"
     note for MetricCalculator "FR-06 L2: 研究者が\nカスタム指標を追加可能\n(Strategy パターン)"
+    note for ScenarioRegistry "validate() で Connector\n互換性もチェック"
 ```
 
 > **① ConnectorInterface** が最も重要な設計判断。3.1.3 で分析した通り、時間管理の違いを `execute()` 内部に封じ込める。
