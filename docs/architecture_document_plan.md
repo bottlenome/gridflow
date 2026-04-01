@@ -85,7 +85,7 @@ ACDM では、アーキテクチャドライバー（ビジネス目標・品質
    7.3 ADR-003: CLI ファースト、Web UI は補助
    7.4 ADR-004: Scenario Pack を実験の基本単位とする
    7.5 ADR-005: Canonical Data Layer によるツール間データ統一
-   7.6 ADR-006: Connector アーキテクチャ（Wrapper → Hybrid → Full）
+   7.6 ADR-006: Connector アーキテクチャ — 統一インターフェース
    7.7 ADR-007: 段階的カスタムレイヤー（L1-L4）
 
 付録

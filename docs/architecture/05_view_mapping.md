@@ -49,7 +49,7 @@
 | UC-04 起動・終了 | ● | ● | | ● | ● | ● | ● | | | |
 | UC-05 ログ・トレース | | | | ● | | | ● | | | |
 | UC-06 デバッグ | ● | | | ● | | | ● | ● | | |
-| UC-07 インストール | | ● | | | ● | ● | ● | | | |
+| UC-07 インストール | ○ | ● | | | ● | ● | ● | | | |
 | UC-08 アップデート | | ● | | | ● | | ● | ● | | |
 | UC-09 結果参照 | | | | | | | ● | ● | ● | |
 | UC-10 LLM 実験指示 | ○ | ○ | ○ | ○ | | ○ | ● | ○ | ○ | |
@@ -69,8 +69,8 @@
 | FR | 実現するコンポーネント | 関与する UC |
 |---|---|---|
 | FR-01 Scenario Pack + Registry | ScenarioPack (Entities), ScenarioRegistry (Use Cases) | UC-01, UC-02, UC-03, UC-07, UC-08 |
-| FR-02 Orchestrator | Orchestrator (Use Cases), Scheduler | UC-01, UC-04, UC-06 |
-| FR-03 CDL | CanonicalDataLayer (Entities + Adapters), DataExport | UC-01, UC-02, UC-03, UC-05, UC-06, UC-09 |
+| FR-02 Orchestrator | Orchestrator (Use Cases), Scheduler | UC-01, UC-04, UC-06, UC-07 |
+| FR-03 CDL | CanonicalDataLayer (Entities + Adapters), DataExport | UC-01, UC-03, UC-06, UC-08, UC-09 |
 | FR-04 Benchmark Harness | BenchmarkHarness, MetricCalculator | UC-03 |
 | FR-05 CLI + Notebook | CLIApp, NotebookBridge | UC-01〜UC-10 |
 | FR-06 カスタムレイヤー | PluginRegistry, MetricCalculator | UC-01, UC-02, UC-03 |
