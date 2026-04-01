@@ -319,7 +319,7 @@ Windows / macOS / Linux いずれも Docker Desktop 経由でサポート。
 
 #### 言語方針: Python 統一、MATLAB/Simulink/Octave 非依存
 
-gridflow は **Python を唯一のアプリケーション言語** とする。MATLAB / Simulink / GNU Octave には依存しない。
+gridflow は **Python を主要なアプリケーション言語の候補** とする。MATLAB / Simulink / GNU Octave には依存しない。最終的な言語選択（Python / Rust / ハイブリッド）はアーキテクチャ分析後に ADR-001 として決定する（アーキテクチャドキュメント CON-1 参照）。
 
 | 従来 MATLAB が担っていた領域 | gridflow での代替 |
 |---|---|
