@@ -95,6 +95,7 @@
 | QA-8 可観測性 | 構造化ログ + メトリクス | M-1（ログ: StructuredLogger）, M-2（エラー設計） | UC-05 で KPI 取得確認 |
 | QA-9 LLM 親和性 | 構造化 I/O + Ubiquitous Language | M-1（ログ: JSON）, M-2（エラー: resolution 必須）, M-12（i18n） | UC-10 で LLM が操作可能か検証 |
 | QA-10 性能効率 | ストリーミング + 非同期 I/O | 3.4（プロセスビュー: CDL I/O スレッド, Logger スレッド） | 性能テスト（M-5） |
+| QA-11 論文生産性 | 標準ベースライン Pack + 論文用エクスポート | AS-5、PaperExporter（3.2.1）、Scenario Pack baseline/citation（3.2.3） | 論文発表数の追跡 |
 
 ### AS → 静的ビューでの具体化
 
@@ -104,3 +105,4 @@
 | AS-2 Clean Architecture | 3.1.4 の 4 層構造、3.2.1 のインターフェース境界 ①②③ |
 | AS-3 TDD | 3.2.2 MockConnector、M-5 テスト構成、M-10 DI（テスト容易性） |
 | AS-4 Simulation-Real Equivalence | 3.1.3 外部システム分析、3.2.2 Connector 実装分類（同一 I/F） |
+| AS-5 Publication Productivity | 3.2.3 ScenarioPack（baseline, citation フィールド）、3.2.1 PaperExporter（DataExporter の Strategy 実装） |

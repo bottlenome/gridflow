@@ -401,6 +401,21 @@ classDiagram
         +export(experiment_id: str, format: ExportFormat) Path
     }
 
+    class CsvExporter {
+        +export(experiment_id: str, format: ExportFormat) Path
+    }
+
+    class PaperExporter {
+        +export(experiment_id: str, format: ExportFormat) Path
+        +export_latex_table(experiment_ids: list) str
+        +export_plot_data(experiment_id: str, metric: str) Path
+    }
+
+    DataExporter <|.. CsvExporter
+    DataExporter <|.. PaperExporter
+
+    note for PaperExporter "AS-5: 論文用エクスポート\nLaTeX表・matplotlib用データ\nBenchmark比較結果→論文表"
+
     class MetricCalculator {
         <<Protocol>>
         +calculate(data: CanonicalData) Metric
@@ -541,6 +556,8 @@ ScenarioPack ─── 実験定義の全体
   ├── Topology ─── 系統構成（Bus, Line, Transformer, Switch）
   ├── Asset ────── 設備（PV, BESS, Load, Generator）
   ├── TimeSeries ─ 時系列データ（負荷プロファイル, PV出力等）
+  ├── baseline ─── ベースライン Pack かどうかのフラグ（AS-5）
+  ├── citation ─── この Pack を引用する際の情報（AS-5）
   └── metadata ─── 拡張可能メタデータ（AC-3: 教育用途等）
 
 実行結果
