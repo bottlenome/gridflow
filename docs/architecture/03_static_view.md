@@ -374,34 +374,61 @@ gridflow のアーキテクチャを特徴づけるインターフェースは 3
 ```mermaid
 classDiagram
     class ConnectorInterface {
-        <<interface>>
-        +initialize(config: dict) void
+        <<Protocol>>
+        +initialize(config: dict) None
         +execute(step: ExecutionStep, context: ExecutionContext) StepResult
         +health_check() HealthStatus
-        +teardown() void
+        +teardown() None
+    }
+
+    class DataTranslator {
+        <<Protocol>>
+        +to_canonical(raw_data: Any) CanonicalData
+        +from_canonical(data: CanonicalData) Any
     }
 
     class CanonicalDataLayer {
-        <<interface>>
-        +store_result(experiment_id: str, data: CanonicalData) void
+        <<Protocol>>
+        +store_result(experiment_id: str, data: CanonicalData) None
         +get_result(experiment_id: str) CanonicalData
         +list_experiments() list~ExperimentMetadata~
-        +export(experiment_id: str, format: ExportFormat) Path
-        +store_intermediate(experiment_id: str, step: str, data: CanonicalData) void
+        +store_intermediate(experiment_id: str, step: str, data: CanonicalData) None
         +get_intermediate(experiment_id: str) CanonicalData
     }
 
+    class DataExporter {
+        <<Protocol>>
+        +export(experiment_id: str, format: ExportFormat) Path
+    }
+
     class MetricCalculator {
-        <<interface>>
+        <<Protocol>>
         +calculate(data: CanonicalData) Metric
     }
 
     class Orchestrator {
         +run(scenario_pack_id: str, options: RunOptions) RunResult
         +run_from_step(scenario_pack_id: str, step: str) RunResult
+        +status() OrchestratorStatus
+    }
+
+    class ExecutionPlanBuilder {
+        +build(pack: ScenarioPack) ExecutionPlan
+        +validate(pack: ScenarioPack) ValidationResult
+    }
+
+    class ConnectorLifecycleManager {
+        +initialize_all(plan: ExecutionPlan) None
+        +health_check_all() dict~str, HealthStatus~
+        +teardown_all() None
+    }
+
+    class StepExecutor {
+        +execute_plan(plan: ExecutionPlan, context: ExecutionContext) list~StepResult~
     }
 
     class ScenarioRegistry {
+        <<Protocol>>
         +load(scenario_pack_id: str) ScenarioPack
         +register(pack: ScenarioPack) str
         +validate(pack: ScenarioPack) ValidationResult
@@ -409,13 +436,16 @@ classDiagram
         +clone(source_id: str, new_name: str) ScenarioPack
     }
 
-    class Bootstrap {
+    class Installer {
         +detect_first_run() bool
-        +setup() void
-        +download_samples() void
-        +migrate(from_version: str, to_version: str) MigrationResult
+        +setup() None
+        +download_samples() None
+    }
+
+    class Migrator {
+        +migrate(from_ver: str, to_ver: str) MigrationResult
         +backup() BackupHandle
-        +rollback(handle: BackupHandle) void
+        +rollback(handle: BackupHandle) None
     }
 
     class BenchmarkHarness {
@@ -423,25 +453,44 @@ classDiagram
         +compare(experiment_ids: list) ComparisonTable
     }
 
-    Orchestrator ..> ConnectorInterface : uses ①
-    Orchestrator ..> CanonicalDataLayer : stores results ②
+    Orchestrator --> ExecutionPlanBuilder : plan生成を委譲
+    Orchestrator --> ConnectorLifecycleManager : Connector管理を委譲
+    Orchestrator --> StepExecutor : ステップ実行を委譲
     Orchestrator ..> ScenarioRegistry : loads pack
+    StepExecutor ..> ConnectorInterface : uses ①
+    StepExecutor ..> CanonicalDataLayer : stores results ②
+    ConnectorInterface ..> DataTranslator : uses ④
     BenchmarkHarness ..> CanonicalDataLayer : reads results ②
     BenchmarkHarness ..> MetricCalculator : evaluates ③
-    Bootstrap ..> ScenarioRegistry : registers samples
-    Bootstrap ..> ConnectorInterface : health check
-
-    note for ConnectorInterface "AS-4: シミュレータも実機も\n同一インターフェース\n\n3.1.3 の設計判断で統一を決定"
-    note for CanonicalDataLayer "P0: ファイルシステム実装\n将来: DB 実装に差替え可能\n(Repository パターン)\n\nstore/get_intermediate は\nAC-5 (cache/resume) の拡張点"
-    note for MetricCalculator "FR-06 L2: 研究者が\nカスタム指標を追加可能\n(Strategy パターン)"
-    note for ScenarioRegistry "validate() で Connector\n互換性もチェック"
+    Installer ..> ScenarioRegistry : registers samples
+    ConnectorLifecycleManager ..> ConnectorInterface : manages
 ```
 
-> **① ConnectorInterface** が最も重要な設計判断。3.1.3 で分析した通り、時間管理の違いを `execute()` 内部に封じ込める。
+> **4つのインターフェース境界:**
 >
-> **② CanonicalDataLayer** は Repository パターン。永続化の詳細（ファイル/DB）を隠蔽し、P0 → 将来の差替えを保証する。
+> **① ConnectorInterface** — 最も重要な設計判断（3.1.3）。AS-4 の要。
 >
-> **③ MetricCalculator** は Strategy パターン。組込み指標（VoltageViolation, ENS 等）とカスタム指標を同じ I/F で扱い、L2 研究者が `calculate()` を実装するだけで独自評価指標を追加できる。
+> **② CanonicalDataLayer** — 純粋な Repository（store/get のみ）。`export` は ④ DataExporter に分離。
+>
+> **③ MetricCalculator** — Strategy パターン。L2 Plugin の拡張点。
+>
+> **④ DataTranslator** — Anti-Corruption Layer を明示化。各 Connector が外部データ → CDL 変換を DataTranslator に委譲。変換ロジックが Connector のプロトコル通信ロジックと分離され、個別にテスト可能。
+
+**Orchestrator の分解（設計レビュー #4 対応）:**
+
+| 元の責務 | 分離先 | 根拠 |
+|---|---|---|
+| Scenario Pack の検証・実行計画生成 | **ExecutionPlanBuilder** | 入力の解析と出力のフォーマッティングは実行制御と独立してテスト可能 |
+| Connector の初期化・終了・ヘルスチェック | **ConnectorLifecycleManager** | ライフサイクル管理は実行ロジックと直交する責務 |
+| ステップの順次/並列実行・結果格納 | **StepExecutor** | 実行ループは将来の並列 Scheduler 化（AC-5）の変更点。分離することで Scheduler 差替えが容易 |
+| 全体の調整 | **Orchestrator** | 上記 3 つのコラボレーターを調整するだけ。公開 I/F は `run()` と `run_from_step()` のまま |
+
+**Bootstrap の分割（設計レビュー #5 対応）:**
+
+| 元の責務 | 分離先 | 根拠 |
+|---|---|---|
+| 初回起動検知・セットアップ・サンプルDL | **Installer** | UC-07 のフロー。失敗してもデータ損失リスクなし |
+| マイグレーション・バックアップ・ロールバック | **Migrator** | UC-08 のフロー。all-or-nothing のトランザクション要件あり。リスクプロファイルが根本的に異なる |
 
 ### 3.2.2 Connector 実装の分類
 
