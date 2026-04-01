@@ -305,28 +305,28 @@ AS-2（Clean Architecture）で DI を方針としたが、具体的にどう注
 
 | 案 | 内容 | 判定 |
 |---|---|---|
-| DI フレームワーク | 言語固有の DI コンテナ（例: Python の inject/dependency-injector） | 言語未確定（CON-1）。フレームワーク依存は AS-2 に反する |
+| DI フレームワーク | 言語固有の DI コンテナ | 言語未確定（CON-1）。フレームワーク依存は AS-2 に反する |
 | **コンストラクタ注入 + ファクトリ（採用）** | 各クラスが依存をコンストラクタ引数で受け取る。生成はファクトリ関数/クラスで一箇所に集約 | 最もシンプル。フレームワーク不要。テスト時にモックを渡すだけ。言語非依存 |
 | Service Locator | グローバルなレジストリから依存を取得 | テストが困難（隠れた依存）。AS-3（TDD）に反する |
 
-### 具体的な実現イメージ
+### 具体的な実現イメージ（言語非依存の擬似コード）
 
 ```
-# ファクトリ（アプリケーション起動時に1回だけ構築）
-def create_orchestrator(config):
-    cdl = FileSystemCDL(config.data_dir)          # Repository パターン
-    logger = StructuredLogger(config.log_dir)       # M-1
-    connector = OpenDSSConnector(config.opendss)    # Strategy パターン
-    registry = FileSystemRegistry(config.pack_dir)  # Repository パターン
+// ファクトリ（アプリケーション起動時に1回だけ構築）
+function create_orchestrator(config):
+    cdl = FileSystemCDL(config.data_dir)          // Repository パターン
+    logger = StructuredLogger(config.log_dir)       // M-1
+    connector = OpenDSSConnector(config.opendss)    // Strategy パターン
+    registry = FileSystemRegistry(config.pack_dir)  // Repository パターン
     return Orchestrator(cdl, logger, connector, registry)
 
-# テスト時
-def test_orchestrator():
+// テスト時
+function test_orchestrator():
     cdl = MockCDL()
     logger = MockLogger()
     connector = MockConnector(responses={...})
     registry = MockRegistry(packs={...})
-    orch = Orchestrator(cdl, logger, connector, registry)  # 同じコンストラクタ
+    orch = Orchestrator(cdl, logger, connector, registry)  // 同じコンストラクタ
     result = orch.run("test-pack")
     assert result.status == SUCCESS
 ```
