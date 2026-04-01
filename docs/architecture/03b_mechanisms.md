@@ -239,3 +239,99 @@ UC-08 のシーケンス図（4.3.8）で示した通り:
 ```
 
 Bootstrap クラス（3.2.1）の `migrate()`, `backup()`, `rollback()` がこれを担う。
+
+---
+
+## M-8: 設定管理（Configuration）
+
+### 解決すべき問題
+
+gridflow には 3 層の設定がある:
+- **gridflow 本体の設定** — ログレベル、データ保存先、HTTP ポート等
+- **Connector 設定** — 各外部ツールの接続先、パラメータ
+- **Scenario Pack の設定** — 実験固有の定義（FR-01）
+
+L1 研究者が最初に触る部分であり、設定の混乱が導入の障壁になる（QA-1）。
+
+### 設計判断
+
+**設定の優先順位（低→高）:**
+```
+1. デフォルト値（コード内に定義）
+2. 設定ファイル（gridflow.yaml）
+3. 環境変数（GRIDFLOW_* プレフィックス）
+4. CLI 引数（--option=value）
+```
+
+| 判断 | 内容 | 理由 |
+|---|---|---|
+| **設定形式は YAML** | JSON は冗長でコメント不可。TOML は電力系研究者に馴染みが薄い | L1 研究者にとって最も読み書きしやすい。Scenario Pack と同じ形式（一貫性） |
+| **環境変数で上書き可能** | Docker 環境で設定を注入する標準的な手法 | CON-2（Docker ベース）との親和性。CI/CD での設定切替えも容易 |
+| **Scenario Pack の設定は独立** | 本体設定と Scenario Pack 設定を混在させない | QA-3（再現性）。Scenario Pack は実験の再現に必要な全情報を自己完結で持つ |
+| **設定のバリデーションを起動時に実行** | 設定ファイルのスキーマ検証を gridflow 起動時（UC-04）に行う | Fail-fast。実行時に設定エラーが発覚するのを防ぐ |
+
+---
+
+## M-9: シリアライゼーション / データフォーマット
+
+### 解決すべき問題
+
+CDL（Entities 層）のデータをどのような形式で永続化・エクスポートするか。性能・可読性・互換性のトレードオフがある。
+
+### 設計判断
+
+| 用途 | 形式 | 理由 |
+|---|---|---|
+| **Scenario Pack** | YAML | 人間が読み書きする（L1）。コメント可能。バージョン管理（diff）に適する |
+| **CDL 永続化（内部）** | JSON | 構造化済み。LLM が読める（QA-9）。スキーマ検証が容易。性能要件がない場所（QA-10: ボトルネックは外部ツール） |
+| **CDL エクスポート（外部向け）** | CSV / JSON / Parquet（ユーザー選択） | CSV: 表計算ソフト。JSON: プログラム処理。Parquet: 大規模データ・高速読込み |
+| **ログ** | JSON Lines（1行1レコード） | 追記が高速。行単位でパース可能。構造化済み（M-1） |
+| **プロセス間通信（M-13）** | JSON | デバッグ容易性を優先。バイナリプロトコルは CON-3 に合わない |
+
+| 判断 | 内容 | 理由 |
+|---|---|---|
+| **内部永続化にバイナリ形式を使わない** | MessagePack, Protocol Buffers 等は不使用 | CON-3（1人+AI 開発）。デバッグ困難。QA-9（LLM が読めない）。QA-10 分析で I/O はボトルネックではない |
+| **Parquet はエクスポート専用** | CDL 内部は JSON で保持し、エクスポート時のみ Parquet 変換 | Parquet は追記が困難（ステップ毎の flush と相性が悪い）。読込み性能が必要なのはエクスポート後の分析段階 |
+
+---
+
+## M-10: 依存性注入（DI）の実現方式
+
+### 解決すべき問題
+
+AS-2（Clean Architecture）で DI を方針としたが、具体的にどう注入するか。
+
+### 設計判断
+
+| 案 | 内容 | 判定 |
+|---|---|---|
+| DI フレームワーク | 言語固有の DI コンテナ（例: Python の inject/dependency-injector） | 言語未確定（CON-1）。フレームワーク依存は AS-2 に反する |
+| **コンストラクタ注入 + ファクトリ（採用）** | 各クラスが依存をコンストラクタ引数で受け取る。生成はファクトリ関数/クラスで一箇所に集約 | 最もシンプル。フレームワーク不要。テスト時にモックを渡すだけ。言語非依存 |
+| Service Locator | グローバルなレジストリから依存を取得 | テストが困難（隠れた依存）。AS-3（TDD）に反する |
+
+### 具体的な実現イメージ
+
+```
+# ファクトリ（アプリケーション起動時に1回だけ構築）
+def create_orchestrator(config):
+    cdl = FileSystemCDL(config.data_dir)          # Repository パターン
+    logger = StructuredLogger(config.log_dir)       # M-1
+    connector = OpenDSSConnector(config.opendss)    # Strategy パターン
+    registry = FileSystemRegistry(config.pack_dir)  # Repository パターン
+    return Orchestrator(cdl, logger, connector, registry)
+
+# テスト時
+def test_orchestrator():
+    cdl = MockCDL()
+    logger = MockLogger()
+    connector = MockConnector(responses={...})
+    registry = MockRegistry(packs={...})
+    orch = Orchestrator(cdl, logger, connector, registry)  # 同じコンストラクタ
+    result = orch.run("test-pack")
+    assert result.status == SUCCESS
+```
+
+**ポイント:**
+- **コンストラクタの引数がインターフェースのリスト** = そのクラスの依存関係が明示的
+- テスト時にモックを渡すだけ。DI フレームワーク不要
+- 「テストが書きにくい＝依存が多すぎるシグナル」（AS-3）がコンストラクタ引数の数で即座にわかる
