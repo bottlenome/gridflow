@@ -765,6 +765,7 @@ sequenceDiagram
     participant Mig as Migrator
     participant Registry as Scenario Registry
     participant CDL
+    participant Export as DataExporter
     participant Docker as Docker Compose
     participant FS as File System
     participant Net as ネットワーク
@@ -807,8 +808,8 @@ sequenceDiagram
         User->>CLI: オプション選択
 
         opt (a) エクスポート→削除
-            CLI->>CDL: export_all(format)
-            CDL->>FS: 全データエクスポート
+            CLI->>Export: export_all(format)
+            Export->>FS: 全データエクスポート
         end
 
         CLI->>Docker: docker compose down --volumes

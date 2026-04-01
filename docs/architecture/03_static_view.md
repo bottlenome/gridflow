@@ -321,22 +321,22 @@ graph TB
                        │ 依存
         ┌──────────────┼──────────────┬──────────────┐
         ↓              ↓              ↓              ↓
-┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
-│ Orchestration ││  Evaluation  ││  Scenario    ││ Observability│
-│              ││              ││  Management  ││              │
-│ 実行制御      ││ 評価・比較    ││ Pack管理     ││ ログ・トレース│
-│              ││              ││              ││              │
-│ Customer     ││ Customer     ││ Customer     ││ Customer     │
-└──────┬───────┘└──────────────┘└──────────────┘└──────────────┘
+┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐┌──────────────┐
+│ Orchestration ││  Evaluation  ││  Scenario    ││ Observability││  Lifecycle   │
+│              ││              ││  Management  ││              ││  Management  │
+│ 実行制御      ││ 評価・比較    ││ Pack管理     ││ ログ・トレース││ Installer    │
+│              ││              ││              ││              ││ Migrator     │
+│ Supplier     ││ Consumer     ││ Consumer     ││ Consumer     ││ Consumer     │
+└──────┬───────┘└──────────────┘└──────────────┘└──────────────┘└──────────────┘
        │ Supplier (I/F 定義側)
        ↓
 ┌──────────────┐┌──────────────┐┌──────────────┐
-│  Connectors  ││     UX       ││ Data Export   │
+│  Connectors  ││     UX       ││ DataExporter  │
 │              ││              ││              │
 │ 外部システム  ││ CLI/Notebook ││ CSV/JSON/    │
 │ 接続         ││              ││ Parquet      │
 │              ││              ││              │
-│ Conformist   ││ Conformist   ││ Conformist   │
+│ Consumer     ││ Consumer     ││ Consumer     │
 └──────┬───────┘└──────────────┘└──────────────┘
        │ Anti-Corruption Layer (DataTranslator)
        ↓
@@ -351,7 +351,7 @@ graph TB
 | 上流コンテキスト | 下流コンテキスト | 関係パターン | 説明 |
 |---|---|---|---|
 | Experiment Domain | Orchestration, Evaluation, Scenario Management, Observability | **Shared Kernel** | 全コンテキストが Entities 層のドメインモデルを共有する。ドメインモデルの変更は全コンテキストに波及するため、慎重に管理（感度点: 6.2） |
-| Orchestration | Connectors | **Customer-Supplier** | Orchestration が ConnectorInterface を定義し（Customer）、各 Connector がそれを実装する（Supplier） |
+| Orchestration | Connectors | **Supplier-Consumer** | Orchestration が ConnectorInterface を定義する（Supplier/上流）。各 Connector がそれに準拠して実装する（Consumer/下流） |
 | Connectors | External Systems | **Anti-Corruption Layer** | 外部システムのデータモデルを CDL に変換する DataTranslator を Connector 内部に持つ |
 | Orchestration | UX, Data Export | **Conformist** | UX と Data Export は Orchestration/CDL のインターフェースにそのまま準拠する |
 
