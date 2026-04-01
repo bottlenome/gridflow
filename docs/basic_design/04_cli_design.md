@@ -1,6 +1,6 @@
-# 第4章 CLI インターフェース設計
+# 第4章 CLI インターフェース設計（画面設計）
 
-本章では、gridflow の主要ユーザーインターフェースである CLI のコマンド体系、入出力仕様、および Notebook Bridge のプログラマティックインターフェースを定義する。IPA の画面設計に相当する章であり、CLI ベースのツールに読み替えて構成する。
+本章では、gridflow CLI の全コマンド体系、入出力仕様、Notebook Bridge インターフェース、およびエラーメッセージ設計を定義する。CLI は gridflow のプライマリインターフェースであり、全操作が CLI で完結することを設計原則とする（`REQ-F-005`）。
 
 ## 更新履歴
 
@@ -12,264 +12,839 @@
 
 ## 4.1 コマンド体系一覧
 
-**関連要求:** REQ-F-005（CLI + Notebook Bridge）、REQ-Q-002（初回利用効率）
+### トップレベルコマンド
 
-| コマンド | サブコマンド | 説明 | 関連 UC | 関連 REQ |
-|---|---|---|---|---|
-| `gridflow run` | — | Scenario Pack を実行する | UC-01 | REQ-F-001, REQ-F-002 |
-| `gridflow scenario` | `create` | テンプレートから新規 Scenario Pack を作成 | UC-02 | REQ-F-001 |
-| | `list` | Registry 内の Scenario Pack を一覧表示 | UC-02 | REQ-F-001 |
-| | `clone` | 既存 Pack を複製 | UC-02 | REQ-F-001 |
-| | `validate` | Scenario Pack の設定を検証 | UC-02 | REQ-F-001 |
-| | `register` | Registry に登録 | UC-02 | REQ-F-001 |
-| `gridflow benchmark` | `run` | 実験結果を評価指標で採点 | UC-03 | REQ-F-004 |
-| | `compare` | 複数実験の比較表を生成 | UC-03 | REQ-F-004 |
-| | `export` | 評価結果をエクスポート | UC-03 | REQ-F-004, REQ-Q-006 |
-| `gridflow status` | — | 環境・コンポーネントの状態確認 | UC-04 | REQ-F-002 |
-| `gridflow logs` | — | 実行ログの確認 | UC-05 | REQ-Q-008 |
-| `gridflow trace` | — | 実行パイプラインのトレース表示 | UC-05 | REQ-Q-008 |
-| `gridflow metrics` | — | KPI メトリクスの確認 | UC-05 | REQ-Q-008 |
-| `gridflow debug` | — | エラー原因の特定・中間データ検査 | UC-06 | REQ-Q-008 |
-| `gridflow results` | `show` | 実験結果の表示 | UC-09 | REQ-F-003 |
-| | `export` | 結果データのエクスポート | UC-09 | REQ-F-003, REQ-Q-006 |
-| `gridflow update` | — | gridflow のアップデート | UC-08 | — |
+| コマンド | 説明 | 関連 UC | 関連要求 |
+|---|---|---|---|
+| `gridflow run` | 実験を実行する | UC-01 | REQ-F-002 |
+| `gridflow scenario` | Scenario Pack を管理する | UC-02 | REQ-F-001 |
+| `gridflow benchmark` | ベンチマーク評価を実行する | UC-03 | REQ-F-004 |
+| `gridflow status` | 実行状態を確認する | UC-04 | REQ-F-002 |
+| `gridflow logs` | ログを表示する | UC-05 | REQ-Q-008 |
+| `gridflow trace` | トレース情報を表示する | UC-05 | REQ-Q-008 |
+| `gridflow metrics` | メトリクスを表示する | UC-05 | REQ-Q-008 |
+| `gridflow debug` | デバッグ情報を表示する | UC-06 | REQ-F-005 |
+| `gridflow results` | 実験結果を表示・エクスポートする | UC-09 | REQ-F-003, REQ-Q-006 |
+| `gridflow update` | gridflow を更新する | UC-08 | REQ-Q-001 |
+
+### サブコマンド階層
+
+```
+gridflow
+  ├── run                          # 実験実行
+  ├── scenario
+  │   ├── create                   # Scenario Pack 作成
+  │   ├── list                     # 一覧表示
+  │   ├── clone                    # 複製
+  │   ├── validate                 # 検証
+  │   └── register                 # Registry 登録
+  ├── benchmark
+  │   ├── run                      # ベンチマーク実行
+  │   └── export                   # レポートエクスポート
+  ├── status                       # 実行状態確認
+  ├── logs                         # ログ表示
+  ├── trace                        # トレース表示
+  ├── metrics                      # メトリクス表示
+  ├── debug                        # デバッグ情報
+  ├── results
+  │   ├── show                     # 結果表示
+  │   └── export                   # 結果エクスポート
+  └── update                       # 自己更新
+```
 
 ---
 
-## 4.2 コマンド別 入出力仕様
+## 4.2 コマンド別 入力/出力仕様
+
+### 共通オプション
+
+全コマンドで利用可能なグローバルオプション:
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--format` | `-f` | `json\|table\|plain` | `table` | 出力フォーマット（`REQ-Q-009`） |
+| `--verbose` | `-v` | flag | `false` | 詳細出力を有効化 |
+| `--quiet` | `-q` | flag | `false` | 最小出力（エラーのみ） |
+| `--config` | | path | `~/.gridflow/config.yaml` | 設定ファイルパス |
+
+### 共通終了コード
+
+| 終了コード | 意味 |
+|---|---|
+| 0 | 正常終了 |
+| 1 | 一般エラー |
+| 2 | 引数・オプション不正 |
+| 3 | 設定エラー（CONF） |
+| 4 | 接続エラー（CONN） |
+| 5 | 実行エラー（EXEC） |
+| 6 | データエラー（DATA） |
+| 7 | システムエラー（SYS） |
+
+---
 
 ### 4.2.1 `gridflow run`
 
-```
-gridflow run <scenario-pack> [OPTIONS]
-```
+**説明**: Scenario Pack を実行し、実験結果を取得する。
 
-| 引数/オプション | 型 | 説明 | デフォルト |
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow run <pack-id> [OPTIONS]` |
+| **関連 UC** | UC-01 |
+| **関連要求** | REQ-F-002 |
+
+**引数:**
+
+| 引数 | 必須 | 型 | 説明 |
 |---|---|---|---|
-| `<scenario-pack>` | str | Scenario Pack の ID または名前 | （必須） |
-| `--seed` | int | 乱数 seed の上書き | Pack 内定義値 |
-| `--from-step` | str | 指定ステップから再開（UC-06 連携） | なし |
-| `--batch` | str | バッチパラメータファイル | なし |
-| `--output` | path | 結果出力先ディレクトリ | `./results/` |
-| `--format` | choice | 出力形式: `json` / `text` | `text` |
+| `pack-id` | Yes | string | 実行する Scenario Pack の ID またはパス |
 
-**標準出力（text モード）:**
+**オプション:**
 
-```
-[gridflow] Loading scenario pack: microgrid-baseline-v1
-[gridflow] Validating configuration... OK
-[gridflow] Initializing connectors: OpenDSS... OK
-[gridflow] Executing step 1/3: power_flow_run (00:00:12)
-[gridflow] Executing step 2/3: metrics_calc (00:00:02)
-[gridflow] Executing step 3/3: store_results (00:00:01)
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--dry-run` | | flag | `false` | 実行計画のみ表示し、実行しない |
+| `--seed` | `-s` | int | pack.yaml の値 | 乱数シード上書き |
+| `--param` | `-p` | key=value | | パラメータ上書き（複数指定可） |
+| `--timeout` | `-t` | int | 3600 | タイムアウト秒数 |
+| `--tag` | | string | | 実験タグ（複数指定可） |
 
-✓ Experiment completed successfully
-  Experiment ID: exp-20260401-001
-  Duration: 00:00:15
-  Results: ./results/exp-20260401-001/
-```
-
-**標準出力（json モード）:**
+**stdout（JSON フォーマット時）:**
 
 ```json
 {
-  "status": "success",
   "experiment_id": "exp-20260401-001",
-  "duration_ms": 15234,
-  "results_path": "./results/exp-20260401-001/",
-  "steps": [
-    {"name": "power_flow_run", "status": "success", "duration_ms": 12100},
-    {"name": "metrics_calc", "status": "success", "duration_ms": 2034},
-    {"name": "store_results", "status": "success", "duration_ms": 1100}
+  "pack_id": "ieee13-baseline",
+  "status": "completed",
+  "duration_seconds": 45.2,
+  "steps_completed": 24,
+  "steps_total": 24,
+  "metrics": {
+    "voltage_deviation": {"value": 2.3, "unit": "%"},
+    "thermal_overload_hours": {"value": 0.0, "unit": "h"}
+  },
+  "results_path": "~/.gridflow/experiments/exp-20260401-001"
+}
+```
+
+**stdout（table フォーマット時）:**
+
+```
+Experiment  exp-20260401-001
+Pack        ieee13-baseline
+Status      completed
+Duration    45.2s
+Steps       24/24
+
+Metrics:
+  voltage_deviation        2.3 %
+  thermal_overload_hours   0.0 h
+```
+
+---
+
+### 4.2.2 `gridflow scenario create`
+
+**説明**: テンプレートから新規 Scenario Pack を作成する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow scenario create <name> [OPTIONS]` |
+| **関連 UC** | UC-02 |
+| **関連要求** | REQ-F-001 |
+
+**引数:**
+
+| 引数 | 必須 | 型 | 説明 |
+|---|---|---|---|
+| `name` | Yes | string | 新規パック名 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--template` | `-t` | string | `default` | テンプレート名 |
+| `--connector` | `-c` | string | `opendss` | 対象 Connector |
+| `--output-dir` | `-o` | path | `.` | 出力先ディレクトリ |
+
+**stdout（JSON）:**
+
+```json
+{
+  "name": "my-experiment",
+  "path": "./my-experiment",
+  "template": "default",
+  "connector": "opendss",
+  "status": "created"
+}
+```
+
+---
+
+### 4.2.3 `gridflow scenario list`
+
+**説明**: Registry に登録された Scenario Pack を一覧表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow scenario list [OPTIONS]` |
+| **関連 UC** | UC-02 |
+| **関連要求** | REQ-F-001 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--tag` | | string | | タグフィルタ（複数指定可） |
+| `--connector` | `-c` | string | | Connector フィルタ |
+| `--query` | `-q` | string | | フリーテキスト検索 |
+
+**stdout（JSON）:**
+
+```json
+[
+  {
+    "pack_id": "ieee13-baseline",
+    "version": "1.0.0",
+    "connector": "opendss",
+    "tags": ["ieee13", "baseline"],
+    "registered_at": "2026-03-15T10:30:00Z"
+  }
+]
+```
+
+---
+
+### 4.2.4 `gridflow scenario clone`
+
+**説明**: 既存 Scenario Pack を複製し、パラメータを変更する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow scenario clone <source> <new-name> [OPTIONS]` |
+| **関連 UC** | UC-02 |
+| **関連要求** | REQ-F-001 |
+
+**引数:**
+
+| 引数 | 必須 | 型 | 説明 |
+|---|---|---|---|
+| `source` | Yes | string | 複製元パック ID |
+| `new-name` | Yes | string | 新規パック名 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--param` | `-p` | key=value | | パラメータ上書き（複数指定可） |
+| `--output-dir` | `-o` | path | `.` | 出力先ディレクトリ |
+
+---
+
+### 4.2.5 `gridflow scenario validate`
+
+**説明**: Scenario Pack のスキーマ準拠・ファイル整合性を検証する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow scenario validate <pack-path>` |
+| **関連 UC** | UC-02 |
+| **関連要求** | REQ-F-001 |
+
+**stdout（JSON）:**
+
+```json
+{
+  "pack_path": "./ieee13-baseline",
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {"field": "expected/", "message": "Expected outputs directory is empty"}
   ]
 }
 ```
 
-**終了コード:**
+---
 
-| コード | 意味 |
+### 4.2.6 `gridflow scenario register`
+
+**説明**: Scenario Pack を Registry に登録する。
+
+| 項目 | 内容 |
 |---|---|
-| 0 | 正常完了 |
-| 1 | 実行エラー（EXEC / CONN / DATA） |
-| 2 | 設定エラー（CONF） |
-| 3 | システムエラー（SYS） |
+| **構文** | `gridflow scenario register <pack-path>` |
+| **関連 UC** | UC-02 |
+| **関連要求** | REQ-F-001 |
 
-### 4.2.2 `gridflow scenario`
+**stdout（JSON）:**
 
+```json
+{
+  "pack_id": "ieee13-baseline",
+  "version": "1.0.0",
+  "status": "registered",
+  "registered_at": "2026-04-01T09:00:00Z"
+}
 ```
-gridflow scenario create <name> [--template <template>]
-gridflow scenario list [--filter <keyword>] [--format json|text]
-gridflow scenario clone <source> <new-name>
-gridflow scenario validate <name>
-gridflow scenario register <name> [--version <version>]
-```
 
-| サブコマンド | 主な出力 |
+---
+
+### 4.2.7 `gridflow benchmark run`
+
+**説明**: 指定実験に対してベンチマーク評価を実行する。
+
+| 項目 | 内容 |
 |---|---|
-| `create` | テンプレートからのスケルトン生成。作成先ディレクトリパスを表示 |
-| `list` | Pack 名、バージョン、登録日時、説明の一覧表 |
-| `clone` | 複製先の Pack パスを表示 |
-| `validate` | 検証結果（OK / エラー一覧）を表示 |
-| `register` | 登録完了メッセージ（Pack ID、バージョン）を表示 |
+| **構文** | `gridflow benchmark run <experiment-ids>... [OPTIONS]` |
+| **関連 UC** | UC-03 |
+| **関連要求** | REQ-F-004 |
 
-### 4.2.3 `gridflow benchmark`
+**引数:**
 
+| 引数 | 必須 | 型 | 説明 |
+|---|---|---|---|
+| `experiment-ids` | Yes | string... | 対象実験 ID（複数指定可） |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--metric` | `-m` | string | 全指標 | 評価指標（複数指定可） |
+| `--compare` | | flag | `false` | 実験間比較モード |
+| `--baseline` | `-b` | string | | ベースライン実験 ID |
+
+**stdout（JSON）:**
+
+```json
+{
+  "report_id": "bench-20260401-001",
+  "experiments": ["exp-001", "exp-002"],
+  "metrics": {
+    "voltage_deviation": {
+      "exp-001": {"value": 2.3, "unit": "%"},
+      "exp-002": {"value": 1.8, "unit": "%"}
+    },
+    "thermal_overload_hours": {
+      "exp-001": {"value": 0.0, "unit": "h"},
+      "exp-002": {"value": 0.5, "unit": "h"}
+    }
+  }
+}
 ```
-gridflow benchmark run <experiment-ids...> [--metrics <metrics>]
-gridflow benchmark compare <experiment-ids...> [--format json|text|latex]
-gridflow benchmark export <experiment-ids...> --format <csv|json|parquet|latex>
-```
 
-| サブコマンド | 主な出力 |
+---
+
+### 4.2.8 `gridflow benchmark export`
+
+**説明**: ベンチマークレポートをエクスポートする。
+
+| 項目 | 内容 |
 |---|---|
-| `run` | 各実験の評価指標値を表形式で表示 |
-| `compare` | 複数実験の比較表。`--format latex` で LaTeX テーブル出力（REQ-Q-011） |
-| `export` | エクスポート先ファイルパスを表示 |
+| **構文** | `gridflow benchmark export <report-id> [OPTIONS]` |
+| **関連 UC** | UC-03 |
+| **関連要求** | REQ-F-004, REQ-Q-006 |
 
-### 4.2.4 `gridflow status`
+**オプション:**
 
-```
-gridflow status [--format json|text]
-```
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--format` | `-f` | `csv\|json\|markdown\|latex` | `json` | エクスポートフォーマット |
+| `--output` | `-o` | path | stdout | 出力先ファイルパス |
 
-**出力例:**
+---
 
-```
-gridflow v0.1.0
+### 4.2.9 `gridflow status`
 
-Components:
-  Orchestrator    ● running
-  Registry        ● running  (3 packs registered)
-  OpenDSS         ● healthy
-  HELICS          ○ not configured
+**説明**: 実行中の実験・Connector の状態を表示する。
 
-Experiments:
-  Running: 0
-  Completed: 5
-```
-
-### 4.2.5 `gridflow logs` / `gridflow trace` / `gridflow metrics`
-
-```
-gridflow logs [--experiment <id>] [--level info|warn|error|debug] [--tail <n>]
-gridflow trace <experiment-id>
-gridflow metrics [--format json|text]
-```
-
-| コマンド | 出力内容 |
+| 項目 | 内容 |
 |---|---|
-| `logs` | 構造化ログ（タイムスタンプ、コンポーネント、レベル、メッセージ） |
-| `trace` | 実行パイプラインの各ステップの時系列表示（名前、時間、状態） |
-| `metrics` | KPI 計測値（セットアップ時間、コマンド数、実験成功率等） |
+| **構文** | `gridflow status [OPTIONS]` |
+| **関連 UC** | UC-04 |
+| **関連要求** | REQ-F-002 |
 
-### 4.2.6 `gridflow results`
+**stdout（JSON）:**
 
+```json
+{
+  "running_experiments": [
+    {
+      "experiment_id": "exp-20260401-002",
+      "pack_id": "ieee13-highpv",
+      "status": "running",
+      "progress": "18/24 steps",
+      "elapsed_seconds": 32.1
+    }
+  ],
+  "connectors": [
+    {
+      "name": "opendss",
+      "status": "healthy",
+      "container_id": "abc123def"
+    }
+  ]
+}
 ```
-gridflow results show <experiment-id> [--format json|text]
-gridflow results export <experiment-id> --format <csv|json|parquet> [--output <path>]
-gridflow results export <experiment-id> --format paper [--output <path>]
+
+---
+
+### 4.2.10 `gridflow logs`
+
+**説明**: 構造化ログを表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow logs [experiment-id] [OPTIONS]` |
+| **関連 UC** | UC-05 |
+| **関連要求** | REQ-Q-008 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--level` | `-l` | `debug\|info\|warn\|error` | `info` | 最小ログレベル |
+| `--follow` | `-f` | flag | `false` | リアルタイム追従 |
+| `--tail` | `-n` | int | 100 | 表示行数 |
+| `--since` | | string | | 開始時刻フィルタ |
+
+---
+
+### 4.2.11 `gridflow trace`
+
+**説明**: 実験実行のトレース情報を表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow trace <experiment-id> [OPTIONS]` |
+| **関連 UC** | UC-05 |
+| **関連要求** | REQ-Q-008 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--step` | `-s` | string | 全ステップ | 特定ステップのトレース |
+| `--depth` | `-d` | int | 3 | トレース深度 |
+
+---
+
+### 4.2.12 `gridflow metrics`
+
+**説明**: システムメトリクスを表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow metrics [OPTIONS]` |
+| **関連 UC** | UC-05 |
+| **関連要求** | REQ-Q-008 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--experiment` | `-e` | string | | 特定実験のメトリクス |
+| `--name` | `-n` | string | 全メトリクス | 特定メトリクスのフィルタ |
+
+---
+
+### 4.2.13 `gridflow debug`
+
+**説明**: デバッグ情報（環境・設定・Connector 状態）を表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow debug [OPTIONS]` |
+| **関連 UC** | UC-06 |
+| **関連要求** | REQ-F-005 |
+
+**stdout（JSON）:**
+
+```json
+{
+  "gridflow_version": "0.1.0",
+  "python_version": "3.11.9",
+  "docker_version": "24.0.7",
+  "config_path": "~/.gridflow/config.yaml",
+  "registry_path": "~/.gridflow/registry",
+  "experiments_path": "~/.gridflow/experiments",
+  "connectors": {
+    "opendss": {
+      "image": "gridflow/opendss:latest",
+      "status": "available"
+    }
+  },
+  "platform": {
+    "os": "linux",
+    "arch": "amd64"
+  }
+}
 ```
 
-`--format paper` は PaperExporter を使用し、LaTeX 表形式 + matplotlib 用データを出力する（REQ-Q-006、REQ-Q-011）。
+---
+
+### 4.2.14 `gridflow results show`
+
+**説明**: 実験結果を表示する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow results show <experiment-id> [OPTIONS]` |
+| **関連 UC** | UC-09 |
+| **関連要求** | REQ-F-003 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--step` | `-s` | string | 全ステップ | 特定ステップの結果 |
+| `--metric` | `-m` | string | 全指標 | 特定指標のフィルタ |
+
+---
+
+### 4.2.15 `gridflow results export`
+
+**説明**: 実験結果をファイルにエクスポートする。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow results export <experiment-id> [OPTIONS]` |
+| **関連 UC** | UC-09 |
+| **関連要求** | REQ-F-003, REQ-Q-006 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--format` | `-f` | `csv\|json\|parquet` | `csv` | エクスポートフォーマット |
+| `--output` | `-o` | path | `./{experiment-id}/` | 出力先 |
+| `--include` | | `metrics\|timeseries\|topology\|all` | `all` | エクスポート対象 |
+
+---
+
+### 4.2.16 `gridflow update`
+
+**説明**: gridflow を最新版に更新する。
+
+| 項目 | 内容 |
+|---|---|
+| **構文** | `gridflow update [OPTIONS]` |
+| **関連 UC** | UC-08 |
+| **関連要求** | REQ-Q-001 |
+
+**オプション:**
+
+| オプション | 短縮形 | 型 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `--check` | | flag | `false` | 更新確認のみ（更新しない） |
+| `--version` | | string | latest | 指定バージョンに更新 |
+
+**stdout（JSON）:**
+
+```json
+{
+  "current_version": "0.1.0",
+  "latest_version": "0.2.0",
+  "status": "updated",
+  "changelog_url": "https://github.com/gridflow/gridflow/releases/tag/v0.2.0"
+}
+```
 
 ---
 
 ## 4.3 Notebook Bridge インターフェース仕様
 
-**関連要求:** REQ-F-005
+**関連要求**: `REQ-F-005`, `REQ-Q-002`
 
-Notebook Bridge は軽量 HTTP API 経由で gridflow コアと通信し、Jupyter Notebook / Python スクリプトからプログラマティックにアクセスする。
+### 4.3.1 概要
 
-### Python API
+Notebook Bridge は Jupyter Notebook / Python スクリプトから gridflow の全機能にプログラマティックにアクセスするためのインターフェースである。内部的には軽量 HTTP API を介して gridflow コアと通信する。
+
+### 4.3.2 接続・初期化
 
 ```python
 import gridflow
 
-# 接続
-gf = gridflow.connect()  # localhost:8080 に接続
+# デフォルト接続（localhost:9470）
+gf = gridflow.connect()
 
-# Scenario Pack 管理
-packs = gf.scenario.list()
-pack = gf.scenario.clone("baseline-v1", "my-experiment")
-
-# 実験実行
-result = gf.run("my-experiment", seed=42)
-print(result.status)          # "success"
-print(result.experiment_id)   # "exp-20260401-002"
-print(result.duration_ms)     # 15234
-
-# 結果取得
-df = result.to_dataframe()    # pandas DataFrame
-timeseries = result.timeseries("voltage_bus_1")
-
-# ベンチマーク
-comparison = gf.benchmark.compare([
-    "exp-20260401-001",
-    "exp-20260401-002",
-])
-comparison.to_latex()          # LaTeX 表形式文字列
-comparison.to_dataframe()      # pandas DataFrame
-
-# エクスポート
-result.export("csv", output="./export/")
-result.export("paper", output="./paper_data/")
+# カスタム接続
+gf = gridflow.connect(host="localhost", port=9470)
 ```
 
-### 設計方針
+### 4.3.3 実験実行 API
 
-- Notebook Bridge は CLI と同等の操作を提供する（REQ-F-005）
-- 戻り値は構造化オブジェクトとし、`.to_dataframe()` / `.to_dict()` で変換可能
-- 内部通信は REST API（JSON）で、LLM からも利用可能（REQ-Q-009）
+```python
+# 基本実行
+result = gf.run("ieee13-baseline")
+
+# パラメータ上書き付き実行
+result = gf.run(
+    "ieee13-baseline",
+    params={"pv_penetration": 0.8, "load_multiplier": 1.2},
+    seed=123,
+    tags=["sensitivity-analysis"],
+)
+
+# Dry-run
+plan = gf.run("ieee13-baseline", dry_run=True)
+print(plan.steps)  # 実行計画の確認
+```
+
+### 4.3.4 結果操作 API
+
+```python
+# 結果取得
+result = gf.results.get("exp-20260401-001")
+
+# pandas DataFrame 変換
+df = result.to_dataframe()                    # 全データ
+ts_df = result.timeseries.to_dataframe()      # 時系列のみ
+metrics_df = result.metrics.to_dataframe()    # 指標のみ
+
+# エクスポート
+result.export("csv", output_path="./output/")
+result.export("parquet", output_path="./output/")
+
+# 実験一覧
+experiments = gf.results.list(query="ieee13")
+```
+
+### 4.3.5 シナリオ操作 API
+
+```python
+# 一覧
+packs = gf.scenario.list(tags=["ieee13"])
+
+# 複製
+gf.scenario.clone(
+    "ieee13-baseline",
+    "ieee13-highpv",
+    overrides={"pv_penetration": 0.8},
+)
+
+# 検証
+validation = gf.scenario.validate("./my-pack")
+print(validation.valid)    # True / False
+print(validation.errors)   # list[str]
+
+# 登録
+gf.scenario.register("./my-pack")
+```
+
+### 4.3.6 ベンチマーク API
+
+```python
+# ベンチマーク実行
+report = gf.benchmark.run(
+    experiment_ids=["exp-001", "exp-002"],
+    metrics=["voltage_deviation", "thermal_overload_hours"],
+)
+
+# DataFrame 変換
+report_df = report.to_dataframe()
+
+# 実験比較
+comparison = gf.benchmark.compare("exp-001", "exp-002")
+
+# エクスポート
+report.export("markdown", output_path="./report.md")
+```
+
+### 4.3.7 アーキテクチャ図
+
+```mermaid
+sequenceDiagram
+    participant NB as Notebook / Script
+    participant Client as gridflow.connect()
+    participant Bridge as Notebook Bridge Server
+    participant Core as gridflow Core
+
+    NB->>Client: gf = gridflow.connect()
+    Client->>Bridge: HTTP POST /connect
+    Bridge-->>Client: session_id
+
+    NB->>Client: gf.run("pack-id")
+    Client->>Bridge: HTTP POST /run {"pack_id": "pack-id"}
+    Bridge->>Core: Orchestrator.run()
+    Core-->>Bridge: ExperimentResult
+    Bridge-->>Client: JSON response
+    Client-->>NB: Result object
+
+    NB->>Client: result.to_dataframe()
+    Note over Client: ローカル変換（HTTP 不要）
+    Client-->>NB: pandas.DataFrame
+```
 
 ---
 
 ## 4.4 エラーメッセージ設計
 
-**関連要求:** REQ-Q-009（LLM 親和性）
+**関連要求**: `REQ-Q-009`（LLM 親和性）
 
-### エラー出力形式
+### 4.4.1 エラーフォーマット
 
-**text モード:**
-
-```
-[ERROR CONN-001] OpenDSS connector failed to initialize
-  Cause: DSS engine not found in container
-  Resolution: Run 'gridflow status' to check connector health,
-              then 'docker compose up' to restart
-  Context: connector=OpenDSS, experiment_id=exp-001
-```
-
-**json モード:**
+全エラーは以下の構造化フォーマットで出力する（M-2 エラー設計準拠）:
 
 ```json
 {
   "error": {
     "category": "CONN",
     "code": "CONN-001",
-    "message": "OpenDSS connector failed to initialize",
-    "cause": "DSS engine not found in container",
-    "resolution": "Run 'gridflow status' to check connector health, then 'docker compose up' to restart",
-    "context": {
-      "connector": "OpenDSS",
-      "experiment_id": "exp-001"
-    }
+    "message": "Failed to start OpenDSS connector",
+    "cause": "Docker container 'gridflow-opendss' exited with code 137 (OOM killed)",
+    "resolution": "Increase Docker memory limit: docker update --memory=4g gridflow-opendss"
   }
 }
 ```
 
-### エラーカテゴリ
+**table フォーマット時:**
 
-| カテゴリ | コード接頭辞 | 発生箇所 | 終了コード | 例 |
-|---|---|---|---|---|
-| ConfigError | `CONF-xxx` | Scenario Pack 検証 | 2 | CONF-001: 必須フィールド欠落 |
-| ConnectorError | `CONN-xxx` | Connector 初期化・通信 | 1 | CONN-001: 外部ツール未起動 |
-| ExecutionError | `EXEC-xxx` | ステップ実行中 | 1 | EXEC-001: シミュレーション収束失敗 |
-| DataError | `DATA-xxx` | CDL 読み書き | 1 | DATA-001: スキーマ不一致 |
-| SystemError | `SYS-xxx` | gridflow 内部 | 3 | SYS-001: メモリ不足 |
+```
+ERROR [CONN-001] Failed to start OpenDSS connector
+  Cause:      Docker container 'gridflow-opendss' exited with code 137 (OOM killed)
+  Resolution: Increase Docker memory limit: docker update --memory=4g gridflow-opendss
+```
 
-### 設計原則
+### 4.4.2 エラーカテゴリ一覧
 
-1. **resolution フィールドの必須化**: エラーを出す側が対処案を考えることを強制する
-2. **raw_error の保持**: 外部ツールのエラーメッセージは握りつぶさず `context` に保持する
-3. **エラーコードで検索可能**: `CONN-001` のような一意コードでドキュメント・Issue を検索できる
-4. **LLM 解析可能**: `--format json` で構造化出力し、LLM Agent が原因分析に利用可能（REQ-Q-009）
+| カテゴリ | コード接頭辞 | 説明 | 終了コード |
+|---|---|---|---|
+| CONF | `CONF-xxx` | 設定・構成エラー | 3 |
+| CONN | `CONN-xxx` | Connector 接続・起動エラー | 4 |
+| EXEC | `EXEC-xxx` | 実行時エラー | 5 |
+| DATA | `DATA-xxx` | データ形式・整合性エラー | 6 |
+| SYS | `SYS-xxx` | システム・環境エラー | 7 |
+
+### 4.4.3 エラーコード一覧
+
+#### CONF: 設定エラー
+
+| コード | メッセージ | 原因例 | 解決策例 |
+|---|---|---|---|
+| CONF-001 | Configuration file not found | config.yaml が存在しない | `gridflow init` で初期設定を実行 |
+| CONF-002 | Invalid configuration value | 設定値が不正 | config.yaml の該当フィールドを修正 |
+| CONF-003 | Missing required configuration | 必須設定が未定義 | ドキュメント参照し設定を追加 |
+
+#### CONN: Connector エラー
+
+| コード | メッセージ | 原因例 | 解決策例 |
+|---|---|---|---|
+| CONN-001 | Failed to start connector | Docker コンテナ起動失敗 | Docker デーモン稼働確認、メモリ制限確認 |
+| CONN-002 | Connector execution error | シミュレーション実行中エラー | 入力データの整合性を確認 |
+| CONN-003 | Connector timeout | 応答タイムアウト | `--timeout` 値の増加、ネットワーク規模の確認 |
+| CONN-004 | Connector health check failed | ヘルスチェック失敗 | コンテナログ確認: `gridflow logs --connector opendss` |
+
+#### EXEC: 実行エラー
+
+| コード | メッセージ | 原因例 | 解決策例 |
+|---|---|---|---|
+| EXEC-001 | Experiment execution failed | ステップ実行中の予期せぬエラー | `gridflow logs <exp-id> --level debug` で詳細確認 |
+| EXEC-002 | Step validation failed | ステップ結果の検証失敗 | expected/ ディレクトリの期待値を確認 |
+| EXEC-003 | Execution plan build failed | 実行計画構築エラー | pack.yaml の steps 定義を確認 |
+
+#### DATA: データエラー
+
+| コード | メッセージ | 原因例 | 解決策例 |
+|---|---|---|---|
+| DATA-001 | Scenario Pack validation failed | pack.yaml スキーマ不正 | `gridflow scenario validate <path>` で詳細確認 |
+| DATA-002 | CDL conversion error | データ変換失敗 | 入力データのフォーマットを確認 |
+| DATA-003 | Export format not supported | 未対応エクスポート形式 | サポート形式: csv, json, parquet |
+| DATA-004 | Experiment not found | 指定実験 ID が存在しない | `gridflow results show` で実験一覧を確認 |
+
+#### SYS: システムエラー
+
+| コード | メッセージ | 原因例 | 解決策例 |
+|---|---|---|---|
+| SYS-001 | Docker not available | Docker デーモン未起動 | Docker Desktop を起動、または `systemctl start docker` |
+| SYS-002 | Insufficient disk space | ディスク容量不足 | 不要な実験結果を削除 |
+| SYS-003 | Permission denied | ファイル権限エラー | `~/.gridflow/` のパーミッションを確認 |
+
+### 4.4.4 エラー構造体の実装
+
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass(frozen=True)
+class GridflowError:
+    """構造化エラー情報。M-2 エラー設計準拠。"""
+
+    category: str       # CONF | CONN | EXEC | DATA | SYS
+    code: str           # e.g., "CONN-001"
+    message: str        # 人間可読なエラーメッセージ
+    cause: str          # 根本原因の説明
+    resolution: str     # 解決策の提案
+
+    def to_dict(self) -> dict:
+        return {
+            "error": {
+                "category": self.category,
+                "code": self.code,
+                "message": self.message,
+                "cause": self.cause,
+                "resolution": self.resolution,
+            }
+        }
+
+    def to_table(self) -> str:
+        lines = [
+            f"ERROR [{self.code}] {self.message}",
+            f"  Cause:      {self.cause}",
+            f"  Resolution: {self.resolution}",
+        ]
+        return "\n".join(lines)
+
+    @property
+    def exit_code(self) -> int:
+        category_exit_codes = {
+            "CONF": 3,
+            "CONN": 4,
+            "EXEC": 5,
+            "DATA": 6,
+            "SYS": 7,
+        }
+        return category_exit_codes.get(self.category, 1)
+```
+
+### 4.4.5 エラー出力例
+
+**JSON フォーマット（`--format json`）:**
+
+```json
+{
+  "error": {
+    "category": "DATA",
+    "code": "DATA-001",
+    "message": "Scenario Pack validation failed",
+    "cause": "pack.yaml: field 'connector' is required but missing",
+    "resolution": "Add 'connector' field to pack.yaml. Example: connector: opendss"
+  }
+}
+```
+
+**table フォーマット（デフォルト）:**
+
+```
+ERROR [DATA-001] Scenario Pack validation failed
+  Cause:      pack.yaml: field 'connector' is required but missing
+  Resolution: Add 'connector' field to pack.yaml. Example: connector: opendss
+```
+
+エラーメッセージは英語を標準とする（`REQ-C-006`）。構造化フォーマットにより、LLM がエラーを解析し、修正提案を生成することを容易にする（`REQ-Q-009`）。
+
+---
+
+## 参照要求
+
+| 要求 ID | 関連セクション |
+|---|---|
+| REQ-F-001 | 4.1, 4.2.2〜4.2.6 |
+| REQ-F-002 | 4.1, 4.2.1, 4.2.9 |
+| REQ-F-003 | 4.1, 4.2.14, 4.2.15 |
+| REQ-F-004 | 4.1, 4.2.7, 4.2.8 |
+| REQ-F-005 | 4.1, 4.2.13, 4.3 |
+| REQ-Q-001 | 4.2.16 |
+| REQ-Q-002 | 4.3 |
+| REQ-Q-006 | 4.2.8, 4.2.15 |
+| REQ-Q-008 | 4.2.10〜4.2.12 |
+| REQ-Q-009 | 4.2（共通オプション）, 4.4 |
+| REQ-C-006 | 4.4.5 |
