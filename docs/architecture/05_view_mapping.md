@@ -14,11 +14,16 @@
 | **ScenarioRegistry** | Use Cases | UC-01, UC-02, UC-07, UC-08 | Registry / Scenario Registry |
 | **BenchmarkHarness** | Use Cases | UC-03 | Harness / Benchmark Harness |
 | **Observability** | Use Cases | UC-01, UC-05, UC-06 | Logger / Observability |
-| **Bootstrap** | Use Cases | UC-04, UC-07, UC-08 | Core / gridflow コア |
+| **Installer** | Use Cases | UC-07 | Installer |
+| **Migrator** | Use Cases | UC-08 | Migrator |
+| **ExecutionPlanBuilder** | Use Cases | UC-01 | PB / ExecutionPlanBuilder |
+| **ConnectorLifecycleManager** | Use Cases | UC-01, UC-04, UC-07 | LCM |
+| **StepExecutor** | Use Cases | UC-01, UC-06 | SE / StepExecutor |
+| **DataTranslator** | Interface Adapters（Connector 内） | UC-01 | （Connector 内部で使用） |
 | **ConnectorInterface** | Interface Adapters | UC-01, UC-02(validate), UC-04, UC-07 | Connector / Connector I/F |
 | **CLIApp** | Interface Adapters | UC-01〜UC-10 | CLI |
 | **NotebookBridge** | Interface Adapters | UC-09 | （4.3.9 注記で言及） |
-| **DataExport** | Interface Adapters | UC-03, UC-09 | Export / Data Export |
+| **DataExporter** | Interface Adapters | UC-03, UC-09 | Export / DataExporter |
 | **CanonicalDataLayer** | Entities (I/F) + Adapters (実装) | UC-01, UC-03, UC-06, UC-08, UC-09 | CDL |
 | **ScenarioPack** | Entities | UC-01, UC-02, UC-03 | （データとして流通） |
 | **MetricCalculator** | Use Cases (I/F) | UC-03 | Calculator / MetricCalculator |

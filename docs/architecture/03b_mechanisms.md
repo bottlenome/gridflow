@@ -257,12 +257,12 @@ def mock_connector():
     return MockConnector(responses={"power_flow": sample_result()})
 
 @pytest.fixture
-def orchestrator(mock_cdl, mock_connector, mock_logger, mock_registry):
+def orchestrator(mock_registry):
     return Orchestrator(
-        cdl=mock_cdl,
-        logger=mock_logger,
-        connector=mock_connector,
         registry=mock_registry,
+        plan_builder=ExecutionPlanBuilder(),
+        lifecycle_manager=MockLifecycleManager(),
+        step_executor=MockStepExecutor(),
     )
 
 # テスト
@@ -351,7 +351,7 @@ UC-08 のシーケンス図（4.3.8）で示した通り:
 5. 失敗時はバックアップからロールバック（all-or-nothing）
 ```
 
-Bootstrap クラス（3.2.1）の `migrate()`, `backup()`, `rollback()` がこれを担う。
+Migrator クラス（3.2.1）の `migrate()`, `backup()`, `rollback()` がこれを担う。
 
 ---
 
@@ -440,15 +440,23 @@ def create_orchestrator(config: GridflowConfig) -> Orchestrator:
     logger = JsonStructuredLogger(config.log_dir)
     connector = OpenDSSConnector(config.opendss)
     registry = FileSystemRegistry(config.pack_dir)
-    return Orchestrator(cdl=cdl, logger=logger, connector=connector, registry=registry)
+    plan_builder = ExecutionPlanBuilder()
+    lcm = ConnectorLifecycleManager(connectors=[connector])
+    step_executor = StepExecutor(cdl=cdl, logger=logger)
+    return Orchestrator(
+        registry=registry,
+        plan_builder=plan_builder,
+        lifecycle_manager=lcm,
+        step_executor=step_executor,
+    )
 
 # テスト時（pytest fixture 経由 — M-5 参照）
 def test_orchestrator():
     orch = Orchestrator(
-        cdl=MockCDL(),
-        logger=MockLogger(),
-        connector=MockConnector(responses={...}),
         registry=MockRegistry(packs={...}),
+        plan_builder=ExecutionPlanBuilder(),
+        lifecycle_manager=MockLifecycleManager(),
+        step_executor=MockStepExecutor(),
     )
     result = orch.run("test-pack")
     assert result.status == RunStatus.SUCCESS
