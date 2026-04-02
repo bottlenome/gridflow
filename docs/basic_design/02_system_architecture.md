@@ -114,7 +114,7 @@ graph LR
 | ベースイメージ | Ubuntu | 22.04 LTS |
 | コンテナランタイム | Docker Engine | 24+ |
 | オーケストレーション | Docker Compose | V2 |
-| パッケージ管理 | pip / pyproject.toml | PEP 621 準拠 |
+| パッケージ管理 | uv + pyproject.toml | PEP 621 準拠、高速依存解決 |
 | 設定フォーマット | YAML | JSON Schema によるバリデーション |
 | データフォーマット | CSV, JSON, Parquet | CDL エクスポート形式 (`REQ-F-003`) |
 
@@ -189,7 +189,7 @@ graph TB
 | リンター | ruff | コードスタイル・静的解析 |
 | 型チェック | mypy (strict mode) | 静的型検査 |
 | フォーマッター | ruff format | コードフォーマット |
-| パッケージ管理 | pip + pyproject.toml | 依存関係管理 |
+| パッケージ管理 | uv + pyproject.toml | 依存関係管理・仮想環境管理 |
 | エディタ | 任意 (VS Code 推奨) | devcontainer 設定を提供 |
 
 ### 実行環境

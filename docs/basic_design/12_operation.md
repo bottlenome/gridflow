@@ -105,8 +105,8 @@ gridflow metrics --export csv       # CSV エクスポート
 |---|---|
 | 依存更新ツール | Dependabot（GitHub 標準機能） |
 | 更新頻度 | セキュリティパッチ: 即時、メジャー更新: 月次レビュー |
-| ロックファイル | `uv.lock` または `poetry.lock` でバージョン固定 |
-| 脆弱性スキャン | GitHub Security Advisories + `pip-audit` |
+| ロックファイル | `uv.lock` でバージョン固定 |
+| 脆弱性スキャン | GitHub Security Advisories + `uv pip audit` |
 
 ### リリースサイクル
 

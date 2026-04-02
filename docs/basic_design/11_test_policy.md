@@ -46,7 +46,7 @@
 | REQ-Q-005 | 可視化即時性 | E2E | シミュレーション完了からグラフ出力までの所要時間を計測 | < 30 秒 |
 | REQ-Q-006 | ドキュメント充実度 | Manual Review | 全公開 API のドキュメントカバレッジを確認 | 公開 API の 100% にドキュメント存在 |
 | REQ-Q-007 | 後方互換性 | Integration | 旧バージョンの Scenario Pack / CDL を新バージョンで読み込み・実行 | Migrator 経由で 100% 移行成功 |
-| REQ-Q-008 | 依存関係最小化 | Unit | `pip install gridflow` の依存パッケージ数を計測 | コア依存 < 15 パッケージ |
+| REQ-Q-008 | 依存関係最小化 | Unit | `uv pip install gridflow` の依存パッケージ数を計測 | コア依存 < 15 パッケージ |
 | REQ-Q-009 | エラーメッセージ品質 | Unit | 全エラーパスで構造化エラー（エラーコード + 原因 + 対処法）が出力されることを検証 | 全エラーに対処法が含まれる |
 | REQ-Q-010 | オーバーヘッド | Performance | gridflow 経由の実行時間 vs ツール直接実行時間を比較 | オーバーヘッド < 10% |
 | REQ-Q-011 | オフライン動作 | E2E | ネットワーク遮断状態でキャッシュ済み Pack の実行を検証 | オフラインで正常実行完了 |
@@ -93,13 +93,13 @@ Merge to main
 Tag v*.*.* Created
   ├─ 全テストスイート実行
   ├─ Performance Test: pytest-benchmark によるベースライン比較
-  ├─ Package Build: wheel + sdist
-  ├─ PyPI Publish: twine upload
+  ├─ Package Build: uv build (wheel + sdist)
+  ├─ PyPI Publish: uv publish
   └─ Docker Image Publish: ghcr.io/gridflow/gridflow:<tag>
 ```
 
 - **実行時間目標:** < 30 分
-- **成果物:** PyPI パッケージ + Docker イメージ（マルチアーキテクチャ）
+- **成果物:** PyPI パッケージ（uv publish）+ Docker イメージ（マルチアーキテクチャ）
 
 ### テスト環境マトリクス
 

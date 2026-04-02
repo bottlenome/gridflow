@@ -312,7 +312,7 @@ merge to main
 リリースタグ
   ├── pytest（性能テスト、QA-10 オーバーヘッド計測）
   ├── リリースノート生成
-  └── Docker イメージのバージョンタグ付け + PyPI publish
+  └── Docker イメージのバージョンタグ付け + uv publish (PyPI)
 ```
 
 ---
