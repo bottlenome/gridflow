@@ -2,6 +2,16 @@
 
 **gridflow** — Power System Workflow Engine のアーキテクチャを ACDM（Architecture Centric Design Method）に基づいて記述する。
 
+## 更新履歴
+
+| 版数 | 日付 | 変更内容 | 変更者 |
+|---|---|---|---|
+| 0.1 | 2026-03-31 | 初版作成（Round 0〜3: 導入、重要事項、静的ビュー、動的ビュー） | bottlenome + Claude |
+| 0.2 | 2026-04-01 | 実装メカニズム（03b）追加、不整合修正 | bottlenome + Claude |
+| 0.3 | 2026-04-01 | Round 4 完了（ビュー間対応、評価、ADR、付録、README） | bottlenome + Claude |
+| 0.4 | 2026-04-01 | デザインレビュー反映（Bounded Context Map、開発ルール、ADR-001 確定） | bottlenome + Claude |
+| 0.5 | 2026-04-01 | AS-5（論文生産性戦略）追加、QA-11 追加、全ビュー反映 | bottlenome + Claude |
+
 ## ドキュメント構成
 
 | ファイル | 内容 |
