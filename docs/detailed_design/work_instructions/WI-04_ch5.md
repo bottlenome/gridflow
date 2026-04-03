@@ -14,6 +14,18 @@
 
 各コンポーネントに **Mermaid stateDiagram-v2** と **状態遷移表（状態×イベント マトリクス）** をセットで記述する。
 
+### 状態遷移表のフォーマット例
+
+```markdown
+| 現在の状態＼イベント | event_a | event_b | event_c |
+|---|---|---|---|
+| State1 | → State2 | — | → State3 |
+| State2 | — | → State3 | — |
+| State3 | — | — | → State1 |
+```
+
+「—」は遷移なし（そのイベントは当該状態で発生しない）を意味する。
+
 ---
 
 ## 5.1 Orchestrator 状態遷移（REQ-F-002）
