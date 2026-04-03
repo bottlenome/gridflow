@@ -187,28 +187,28 @@ def resolve_config(key: str, cli_args: dict, env: dict, project_cfg: dict, user_
 
 | # | 設定キー | 型制約 | 範囲・値制約 | 依存制約 | エラーコード |
 |---|---|---|---|---|---|
-| 1 | `log.level` | `str` | `{DEBUG, INFO, WARNING, ERROR}` | — | `E-CFG-001` |
-| 2 | `log.format` | `str` | `{json, console}` | — | `E-CFG-002` |
-| 3 | `log.file` | `Optional[str]` | 有効なファイルパス（親ディレクトリが存在） | — | `E-CFG-003` |
-| 4 | `paths.data_dir` | `str` | 有効なディレクトリパス | 書き込み権限あり | `E-CFG-004` |
-| 5 | `paths.pack_dir` | `str` | 有効なディレクトリパス | 読み取り権限あり | `E-CFG-005` |
-| 6 | `paths.output_dir` | `str` | 有効なディレクトリパス | 書き込み権限あり | `E-CFG-006` |
-| 7 | `docker.network` | `str` | 正規表現 `^[a-zA-Z0-9][a-zA-Z0-9_.-]+$` | — | `E-CFG-007` |
-| 8 | `docker.compose_project` | `str` | 正規表現 `^[a-z][a-z0-9_-]+$` | — | `E-CFG-008` |
-| 9 | `docker.container_timeout` | `int` | `10 <= x <= 3600` | — | `E-CFG-009` |
-| 10 | `docker.max_parallel` | `int` | `1 <= x <= 16` | — | `E-CFG-010` |
-| 11 | `docker.shared_volume` | `str` | 正規表現 `^[a-zA-Z0-9][a-zA-Z0-9_.-]+$` | — | `E-CFG-011` |
-| 12 | `output.format` | `str` | `{table, json, csv, yaml}` | — | `E-CFG-012` |
-| 13 | `output.color` | `bool` | `{true, false}` | — | `E-CFG-013` |
-| 14 | `benchmark.tolerance` | `float` | `0.0 < x <= 1.0` | — | `E-CFG-014` |
-| 15 | `benchmark.report_format` | `str` | `{html, json, csv}` | — | `E-CFG-015` |
-| 16 | `connectors.*.image` | `str` | 有効な Docker イメージ参照 | Docker デーモンがアクセス可能 | `E-CFG-016` |
-| 17 | `connectors.health_check_interval` | `int` | `1 <= x <= 300` | — | `E-CFG-017` |
-| 18 | `connectors.retry_count` | `int` | `0 <= x <= 10` | — | `E-CFG-018` |
-| 19 | `connectors.retry_delay` | `float` | `0.1 <= x <= 60.0` | — | `E-CFG-019` |
-| 20 | `cdl.schema_version` | `str` | Semantic Versioning 形式 | サポート範囲内 | `E-CFG-020` |
-| 21 | `cdl.export_format` | `str` | `{csv, json, parquet}` | — | `E-CFG-021` |
-| 22 | `paths.plugin_dir` | `str` | 有効なディレクトリパス | 読み取り権限あり | `E-CFG-022` |
+| 1 | `log.level` | `str` | `{DEBUG, INFO, WARNING, ERROR}` | — | `E-40001` |
+| 2 | `log.format` | `str` | `{json, console}` | — | `E-40002` |
+| 3 | `log.file` | `Optional[str]` | 有効なファイルパス（親ディレクトリが存在） | — | `E-40003` |
+| 4 | `paths.data_dir` | `str` | 有効なディレクトリパス | 書き込み権限あり | `E-40004` |
+| 5 | `paths.pack_dir` | `str` | 有効なディレクトリパス | 読み取り権限あり | `E-40005` |
+| 6 | `paths.output_dir` | `str` | 有効なディレクトリパス | 書き込み権限あり | `E-40006` |
+| 7 | `docker.network` | `str` | 正規表現 `^[a-zA-Z0-9][a-zA-Z0-9_.-]+$` | — | `E-40007` |
+| 8 | `docker.compose_project` | `str` | 正規表現 `^[a-z][a-z0-9_-]+$` | — | `E-40008` |
+| 9 | `docker.container_timeout` | `int` | `10 <= x <= 3600` | — | `E-40009` |
+| 10 | `docker.max_parallel` | `int` | `1 <= x <= 16` | — | `E-40010` |
+| 11 | `docker.shared_volume` | `str` | 正規表現 `^[a-zA-Z0-9][a-zA-Z0-9_.-]+$` | — | `E-40011` |
+| 12 | `output.format` | `str` | `{table, json, csv, yaml}` | — | `E-40012` |
+| 13 | `output.color` | `bool` | `{true, false}` | — | `E-40013` |
+| 14 | `benchmark.tolerance` | `float` | `0.0 < x <= 1.0` | — | `E-40014` |
+| 15 | `benchmark.report_format` | `str` | `{html, json, csv}` | — | `E-40015` |
+| 16 | `connectors.*.image` | `str` | 有効な Docker イメージ参照 | Docker デーモンがアクセス可能 | `E-40016` |
+| 17 | `connectors.health_check_interval` | `int` | `1 <= x <= 300` | — | `E-40017` |
+| 18 | `connectors.retry_count` | `int` | `0 <= x <= 10` | — | `E-40018` |
+| 19 | `connectors.retry_delay` | `float` | `0.1 <= x <= 60.0` | — | `E-40019` |
+| 20 | `cdl.schema_version` | `str` | Semantic Versioning 形式 | サポート範囲内 | `E-40020` |
+| 21 | `cdl.export_format` | `str` | `{csv, json, parquet}` | — | `E-40021` |
+| 22 | `paths.plugin_dir` | `str` | 有効なディレクトリパス | 読み取り権限あり | `E-40022` |
 
 ### バリデーション実行タイミング
 
@@ -216,7 +216,7 @@ def resolve_config(key: str, cli_args: dict, env: dict, project_cfg: dict, user_
 1. 設定ロード時（起動直後）
    └─ 全項目の型チェック + 範囲チェック
       ├─ 成功 → 次ステップへ
-      └─ 失敗 → E-CFG-xxx エラー出力、起動中止
+      └─ 失敗 → E-40xxx エラー出力、起動中止
 
 2. 依存チェック（Docker 接続確認後）
    └─ Docker 関連設定の実行時バリデーション
@@ -233,7 +233,7 @@ def resolve_config(key: str, cli_args: dict, env: dict, project_cfg: dict, user_
 バリデーション失敗時は構造化エラーメッセージを出力する（`REQ-Q-009`）。
 
 ```
-Error [E-CFG-010]: Invalid configuration value
+Error [E-40010]: Invalid configuration value
   Key:      docker.max_parallel
   Value:    32
   Expected: integer in range [1, 16]

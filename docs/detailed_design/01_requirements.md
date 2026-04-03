@@ -34,7 +34,8 @@ REQ-B-001 (BG-1)
   → REQ-F-001 (FR-01)                    ← 基本設計書 要求一覧
     → FN-001 (Scenario Pack 管理)         ← 基本設計書 第3章 機能設計
       → DD-CLS-001 (ScenarioPack)         ← 詳細設計書 第3章 クラス設計
-      → DD-CLS-002 (ScenarioRegistry)     ← 詳細設計書 第3章 クラス設計
+      → DD-CLS-002 (PackMetadata)          ← 詳細設計書 第3章 クラス設計
+      → DD-CLS-003 (ScenarioRegistry)     ← 詳細設計書 第3章 クラス設計
       → DD-SEQ-001 (Pack 作成フロー)       ← 詳細設計書 第4章 処理フロー設計
       → DD-DAT-001 (pack.yaml スキーマ)   ← 詳細設計書 第6章 データ詳細設計
       → DD-TST-001 (Pack 作成テスト)       ← 詳細設計書 第10章 テスト設計
