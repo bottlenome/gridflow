@@ -1,353 +1,532 @@
 # 第4章 処理フロー設計（シーケンス図・アクティビティ図）
-
 ## 更新履歴
-
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
-| 0.1 | 2026-04-03 | 初版作成（4.1〜4.5） |
+| 0.1 | 2026-04-03 | 初版作成（4.6〜4.15） |
 
 ---
 
-## 4.1 処理フロー一覧
+## 4.6 ログ・実行トレースフロー
 
-**関連要件**: REQ-001〜REQ-010
+**関連要件**: REQ-UC-05
 
-| フローID | 対応UC | フロー名 | 図の種類 |
-|---|---|---|---|
-| DD-SEQ-001 | UC-01 | シナリオ実行 | シーケンス図+アクティビティ図 |
-| DD-SEQ-002 | UC-02 | Scenario Pack作成・登録 | シーケンス図 |
-| DD-SEQ-003 | UC-03 | ベンチマーク実行 | シーケンス図 |
-| DD-SEQ-004 | UC-04 | バッチ実行 | シーケンス図+アクティビティ図+バッチ処理設計 |
-| DD-SEQ-005 | UC-05 | 結果エクスポート | シーケンス図 |
-| DD-SEQ-006 | UC-06 | コネクタ管理 | シーケンス図 |
-| DD-SEQ-007 | UC-07 | メトリクス定義管理 | シーケンス図 |
-| DD-SEQ-008 | UC-08 | 実験比較 | シーケンス図 |
-| DD-SEQ-009 | UC-09 | 設定管理 | シーケンス図 |
-| DD-SEQ-010 | UC-10 | ログ・監視 | シーケンス図 |
-| DD-SEQ-012 | — | エラーハンドリング共通フロー | アクティビティ図 |
-| DD-SEQ-013 | — | コンテナライフサイクル管理 | シーケンス図+状態遷移図 |
-| DD-SEQ-014 | — | CDLデータ変換パイプライン | アクティビティ図 |
-| DD-SEQ-015 | — | プラグイン読み込みフロー | シーケンス図 |
+### 概要
 
----
+`gridflow logs` / `gridflow trace` / `gridflow metrics` の各サブコマンドによるログ参照・実行トレース・KPI メトリクス取得の処理フローを定義する。
 
-## 4.2 シナリオ実行フロー（UC-01）
-
-**関連要件**: REQ-001
-
-### 登場オブジェクト
-
-- **Researcher** — 研究者（アクター）
-- **CLIApp** — CLIエントリポイント
-- **Orchestrator** — 実行オーケストレータ
-- **ExecutionPlan** — 実行計画
-- **ContainerManager** — コネクタコンテナ管理
-- **OpenDSSConnector** — OpenDSS用コネクタ
-- **DataTranslator** — CDL変換
-- **CDLRepository** — CDLデータ永続化
-- **BenchmarkHarness** — ベンチマーク評価
-
-### IPO
+### 4.6.1 gridflow logs
 
 | 項目 | 内容 |
 |---|---|
-| **Input** | `gridflow run <pack>` コマンド引数（pack: `str` — Scenario Packパスまたはpack_id） |
-| **Process** | Pack読み込み → ExecutionPlan生成 → コンテナ起動 → ステップ順次実行 → CDL変換・保存 → ベンチマーク評価 |
-| **Output** | `ExperimentResult`（実験結果オブジェクト） / 例外: `PackNotFoundError`, `ContainerStartupError`, `StepExecutionError` |
+| **Input** | `--level` (str, optional, default="INFO"), `--follow` (bool, optional, default=False) |
+| **Process** | StructuredLogger からログファイルを読み込み、レベルでフィルタリング。`--follow` 時は tail -f 相当のストリーミング出力 |
+| **Output** | フィルタ済みログ行の CLI 出力（stdout）。ログファイル不在時は `GridFlowFileNotFoundError` |
+
+### 4.6.2 gridflow trace
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id` (str, required) |
+| **Process** | CDLRepository から該当実験 ID の実行トレースを取得し、タイムライン形式に整形 |
+| **Output** | タイムライン表示（stdout）。該当 ID 不在時は `ExperimentNotFoundError` |
+
+### 4.6.3 gridflow metrics
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし（オプションで `--format json` 指定可） |
+| **Process** | KPI メトリクスを集計し、テーブルまたは JSON 形式で出力 |
+| **Output** | テーブル表示 or JSON（stdout） |
 
 ### シーケンス図
 
 ```mermaid
 sequenceDiagram
-    actor R as Researcher
+    actor User
     participant CLI as CLIApp
-    participant ORC as Orchestrator
-    participant EP as ExecutionPlan
+    participant SL as StructuredLogger
+    participant CDL as CDLRepository
+    participant KPI as KPIAggregator
+    participant FS as FileSystem
+
+    Note over User,FS: gridflow logs [--level ERROR] [--follow]
+    User->>CLI: gridflow logs --level ERROR
+    CLI->>SL: get_logs(level="ERROR")
+    SL->>FS: read log file
+    FS-->>SL: raw log lines
+    SL->>SL: filter by level
+    SL-->>CLI: filtered log entries
+    CLI-->>User: formatted log output
+
+    Note over User,FS: gridflow trace <exp_id>
+    User->>CLI: gridflow trace exp-001
+    CLI->>CDL: get_execution_trace("exp-001")
+    CDL-->>CLI: TraceData
+    CLI->>CLI: format as timeline
+    CLI-->>User: timeline display
+
+    Note over User,FS: gridflow metrics
+    User->>CLI: gridflow metrics
+    CLI->>KPI: aggregate()
+    KPI->>CDL: get_all_results()
+    CDL-->>KPI: result set
+    KPI-->>CLI: MetricsSummary
+    CLI-->>User: table / JSON output
+```
+
+---
+
+## 4.7 デバッグ・エラー対応フロー
+
+**関連要件**: REQ-UC-06
+
+### 概要
+
+`gridflow debug` コマンドにより、Docker 状態確認・Connector ヘルスチェック・設定検証を一括で実施し、診断レポートを出力する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし（オプションで `--verbose` 指定可） |
+| **Process** | 1. Docker デーモン状態確認 → 2. 各 Connector のヘルスチェック → 3. 設定ファイル（config.yaml）の検証 → 4. 結果を診断レポートに集約 |
+| **Output** | 診断レポート（stdout）。各項目の PASS/FAIL ステータスを含む。Docker 未起動時は `DockerNotRunningError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as CLIApp
+    participant DM as DebugManager
+    participant Docker as ContainerManager
+    participant Conn as ConnectorInterface
+    participant Cfg as ConfigValidator
+
+    User->>CLI: gridflow debug
+    CLI->>DM: run_diagnostics()
+
+    DM->>Docker: check_status()
+    Docker-->>DM: DockerStatus(running=true, containers=[...])
+
+    DM->>Conn: health_check()
+    Conn-->>DM: HealthResult(status=OK, latency_ms=12)
+
+    DM->>Cfg: validate_config()
+    Cfg-->>DM: ValidationResult(valid=true, warnings=[])
+
+    DM->>DM: compile DiagnosticReport
+    DM-->>CLI: DiagnosticReport
+    CLI-->>User: formatted diagnostic report
+```
+
+---
+
+## 4.8 インストール・セットアップフロー
+
+**関連要件**: REQ-UC-07, REQ-QA-1（セットアップ 30 分以内）
+
+### 概要
+
+`pip install gridflow` に続き `gridflow init` で設定ファイル生成・Docker イメージ取得・ヘルスチェックまでを一括で行う。目標完了時間は 30 分以内。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし（`gridflow init` はインタラクティブにプロジェクト名等を問い合わせる） |
+| **Process** | 1. `pip install gridflow` → 2. `gridflow init` → 設定ファイル生成（`~/.gridflow/config.yaml`） → 3. `docker compose pull` → 4. ヘルスチェック → 5. 完了メッセージ |
+| **Output** | セットアップ完了メッセージ（stdout）。Docker 未インストール時は `DockerNotInstalledError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant PIP as pip
+    participant CLI as CLIApp
+    participant Init as InitHandler
+    participant FS as FileSystem
+    participant Docker as ContainerManager
+    participant HC as HealthChecker
+
+    User->>PIP: pip install gridflow
+    PIP-->>User: installation complete
+
+    User->>CLI: gridflow init
+    CLI->>Init: initialize()
+
+    Init->>FS: create ~/.gridflow/config.yaml
+    FS-->>Init: config file created
+
+    Init->>Docker: docker compose pull
+    Docker-->>Init: images pulled
+
+    Init->>HC: run_health_check()
+    HC->>Docker: ping containers
+    Docker-->>HC: all healthy
+    HC-->>Init: HealthCheckResult(ok=true)
+
+    Init-->>CLI: SetupResult(success=true, duration_s=...)
+    CLI-->>User: "Setup complete (X min). Ready to use."
+```
+
+---
+
+## 4.9 アップデート・アンインストールフロー
+
+**関連要件**: REQ-UC-08
+
+### 概要
+
+`gridflow update` コマンドにより、CLI 本体・Docker イメージの更新およびマイグレーションを実行する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし（オプションで `--check` で更新有無のみ確認） |
+| **Process** | 1. 最新バージョン確認（PyPI） → 2. `pip install --upgrade gridflow` → 3. Docker イメージ更新 → 4. マイグレーション実行 → 5. 完了 |
+| **Output** | 更新結果メッセージ（stdout）。ネットワーク不通時は `NetworkError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as CLIApp
+    participant Upd as UpdateHandler
+    participant PyPI as PyPIRegistry
+    participant PIP as pip
+    participant Docker as ContainerManager
+    participant Mig as MigrationRunner
+
+    User->>CLI: gridflow update
+    CLI->>Upd: check_and_update()
+
+    Upd->>PyPI: get_latest_version("gridflow")
+    PyPI-->>Upd: "2.1.0"
+    Upd->>Upd: compare with current version
+
+    alt update available
+        Upd->>PIP: pip install --upgrade gridflow
+        PIP-->>Upd: upgraded
+
+        Upd->>Docker: pull_latest_images()
+        Docker-->>Upd: images updated
+
+        Upd->>Mig: run_pending()
+        Mig-->>Upd: MigrationResult(applied=2)
+
+        Upd-->>CLI: UpdateResult(success=true, from="2.0.0", to="2.1.0")
+        CLI-->>User: "Updated 2.0.0 → 2.1.0"
+    else already latest
+        Upd-->>CLI: UpdateResult(success=true, already_latest=true)
+        CLI-->>User: "Already up to date."
+    end
+```
+
+---
+
+## 4.10 結果参照・データエクスポートフロー
+
+**関連要件**: REQ-UC-09
+
+### 概要
+
+`gridflow results show` で実験結果をテーブル表示し、`gridflow results export` でファイルとして書き出す。
+
+### 4.10.1 gridflow results show
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id` (str, required) |
+| **Process** | CDLRepository.get_result(exp_id) → テーブル形式に整形 |
+| **Output** | 結果テーブル（stdout）。該当 ID 不在時は `ExperimentNotFoundError` |
+
+### 4.10.2 gridflow results export
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id` (str, required), `--format` (str, default="csv", choices=["csv","parquet","json"]), `-o` (str, default="./") |
+| **Process** | CDLRepository.export(exp_id, format, output_dir) → 指定形式でファイル書き出し |
+| **Output** | 出力ファイルパス（stdout）。書き込み権限不足時は `PermissionError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as CLIApp
+    participant CDL as CDLRepository
+    participant Fmt as Formatter
+    participant FS as FileSystem
+
+    Note over User,FS: gridflow results show <exp_id>
+    User->>CLI: gridflow results show exp-001
+    CLI->>CDL: get_result("exp-001")
+    CDL-->>CLI: ExperimentResult
+    CLI->>Fmt: to_table(result)
+    Fmt-->>CLI: formatted table string
+    CLI-->>User: table output
+
+    Note over User,FS: gridflow results export <exp_id>
+    User->>CLI: gridflow results export exp-001 --format parquet -o ./out/
+    CLI->>CDL: export("exp-001", format="parquet", output_dir="./out/")
+    CDL->>CDL: serialize to parquet
+    CDL->>FS: write ./out/exp-001.parquet
+    FS-->>CDL: write ok
+    CDL-->>CLI: ExportResult(path="./out/exp-001.parquet")
+    CLI-->>User: "Exported to ./out/exp-001.parquet"
+```
+
+---
+
+## 4.11 LLM による実験指示フロー
+
+**関連要件**: REQ-UC-10
+
+### 概要
+
+LLM が構造化 JSON/YAML コマンドを発行し、CLIApp がそれを解析して通常のコマンドフローに委譲する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | 構造化 JSON（例: `{"command": "run", "pack": "microgrid-01", "options": {"seed": 42}}`） |
+| **Process** | 1. JSON/YAML パース → 2. コマンド・引数のバリデーション → 3. 該当する UseCase ハンドラに委譲 → 4. 結果を構造化 JSON で返却 |
+| **Output** | 構造化 JSON（例: `{"status": "success", "experiment_id": "exp-001", "metrics": {...}}`）。不正コマンド時は `{"status": "error", "message": "..."}` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    participant LLM as LLM Agent
+    participant GW as LLMGateway
+    participant CLI as CLIApp
+    participant UC as RunExperimentUseCase
+    participant Orch as Orchestrator
+
+    LLM->>GW: {"command":"run","pack":"microgrid-01","options":{"seed":42}}
+    GW->>GW: parse & validate JSON schema
+    GW->>CLI: dispatch("run", pack="microgrid-01", seed=42)
+    CLI->>UC: execute(pack="microgrid-01", seed=42)
+    UC->>Orch: run(pack, options)
+    Orch-->>UC: ExperimentResult(id="exp-001", metrics={...})
+    UC-->>CLI: result
+    CLI-->>GW: CommandResult(success=true, data={...})
+    GW-->>LLM: {"status":"success","experiment_id":"exp-001","metrics":{...}}
+```
+
+---
+
+## 4.12 Connector 初期化・実行フロー
+
+**関連要件**: REQ-UC-05, REQ-UC-10
+
+### 概要
+
+Connector の起動からステップ実行ループ、終了までのライフサイクルを定義する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `config` (ConnectorConfig): 接続先・認証情報・タイムアウト設定 |
+| **Process** | 1. ContainerManager.start() → 2. ConnectorInterface.initialize(config) → 3. ヘルスチェック待ち → 4. ステップループ（execute(step, context) → StepResult）→ 5. teardown() |
+| **Output** | 各ステップの `StepResult`（成功/失敗・出力データ）。タイムアウト時は `ConnectorTimeoutError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    participant Orch as Orchestrator
     participant CM as ContainerManager
-    participant CON as OpenDSSConnector
+    participant Conn as ConnectorInterface
+    participant HC as HealthChecker
+
+    Orch->>CM: start(connector_image)
+    CM-->>Orch: container started
+
+    Orch->>Conn: initialize(config)
+    Conn-->>Orch: initialized
+
+    Orch->>HC: wait_until_healthy(Conn, timeout=30s)
+    loop health check polling
+        HC->>Conn: ping()
+        Conn-->>HC: pong
+    end
+    HC-->>Orch: healthy
+
+    loop for each step in simulation
+        Orch->>Conn: execute(step, context)
+        Conn->>Conn: run simulation step
+        Conn-->>Orch: StepResult(data={...}, status=OK)
+    end
+
+    Orch->>Conn: teardown()
+    Conn-->>Orch: teardown complete
+    Orch->>CM: stop(container)
+    CM-->>Orch: container stopped
+```
+
+---
+
+## 4.13 CDL 変換フロー
+
+**関連要件**: REQ-UC-09, REQ-UC-10
+
+### 概要
+
+外部ツール出力を Canonical Data Layer (CDL) に変換して格納するフロー、および CDL からツールネイティブ形式に逆変換するフローを定義する。
+
+### 4.13.1 外部ツール出力 → CDL 格納
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `raw` (dict): 外部ツールの生出力 |
+| **Process** | DataTranslator.to_canonical(raw) → CanonicalData 生成 → CDLRepository.store() |
+| **Output** | 格納された CanonicalData の ID。スキーマ不一致時は `DataTranslationError` |
+
+### 4.13.2 CDL → ツールネイティブ形式
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `data_id` (str): CDL 上のデータ ID, `target_format` (str): 変換先形式 |
+| **Process** | CDLRepository.get(data_id) → CanonicalData → DataTranslator.from_canonical(data, target_format) |
+| **Output** | ツールネイティブ形式のデータ（dict）。未対応形式時は `UnsupportedFormatError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    participant Ext as ExternalTool
     participant DT as DataTranslator
-    participant CDL as CDLRepository
-    participant BH as BenchmarkHarness
+    participant CD as CanonicalData
+    participant Repo as CDLRepository
 
-    R->>CLI: gridflow run <pack>
-    CLI->>CLI: load_scenario_pack(pack)
-    CLI->>ORC: execute(scenario_pack)
-    ORC->>EP: create(scenario_pack)
-    EP-->>ORC: execution_plan
+    Note over Ext,Repo: 外部ツール出力 → CDL 格納
+    Ext->>DT: raw output
+    DT->>DT: to_canonical(raw)
+    DT->>CD: create CanonicalData
+    CD->>Repo: store(canonical_data)
+    Repo-->>CD: data_id
 
-    ORC->>CM: start_container(connector_type)
-    CM->>CON: コンテナ起動
-    CON-->>CM: ready
-    CM-->>ORC: container_handle
-
-    loop 各ステップ (step in execution_plan.steps)
-        ORC->>CON: execute(step)
-        CON-->>ORC: StepResult
-        ORC->>DT: to_canonical(step_result)
-        DT-->>ORC: CDLData
-        ORC->>CDL: store(cdl_data)
-        CDL-->>ORC: ok
-    end
-
-    ORC->>BH: run(experiment_id)
-    BH->>CDL: load_results(experiment_id)
-    CDL-->>BH: cdl_data_list
-    BH-->>ORC: BenchmarkReport
-
-    ORC->>CM: stop_container(container_handle)
-    CM->>CON: コンテナ停止
-    CON-->>CM: stopped
-
-    ORC-->>CLI: ExperimentResult
-    CLI-->>R: 結果表示
+    Note over Ext,Repo: CDL → ツールネイティブ形式
+    Ext->>Repo: get(data_id)
+    Repo-->>DT: CanonicalData
+    DT->>DT: from_canonical(data, target_format)
+    DT-->>Ext: native format data
 ```
 
-### アクティビティ図（ステップループの分岐・エラー時フロー）
+---
+
+## 4.14 Plugin ロード・実行フロー
+
+**関連要件**: REQ-UC-10
+
+### 概要
+
+起動時に Plugin を自動検出・登録し、実行時に名前指定で取得・実行するフローを定義する。
+
+### 4.14.1 起動時: Plugin ディスカバリ・登録
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `plugin_dir` (Path): プラグインディレクトリパス |
+| **Process** | PluginDiscovery.discover(plugin_dir) → PluginInfo 一覧 → PluginRegistry.register() → 各 Plugin.initialize() |
+| **Output** | 登録された Plugin 数。不正プラグイン検出時は `PluginLoadError`（スキップして続行） |
+
+### 4.14.2 実行時: Plugin 取得・実行
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `name` (str): プラグイン名, `params` (dict): 実行パラメータ |
+| **Process** | PluginRegistry.get(name) → Plugin.execute(params) |
+| **Output** | Plugin 実行結果（PluginResult）。未登録名指定時は `PluginNotFoundError` |
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant PD as PluginDiscovery
+    participant PR as PluginRegistry
+    participant P as Plugin
+
+    Note over App,P: 起動時: ディスカバリ・登録
+    App->>PD: discover(plugin_dir)
+    PD->>PD: scan directory for plugin manifests
+    PD-->>App: List[PluginInfo]
+
+    loop for each PluginInfo
+        App->>PR: register(plugin_info)
+        PR->>P: load & initialize()
+        P-->>PR: initialized
+        PR-->>App: registered
+    end
+
+    Note over App,P: 実行時: 取得・実行
+    App->>PR: get("my-plugin")
+    PR-->>App: Plugin instance
+    App->>P: execute(params)
+    P-->>App: PluginResult
+```
+
+---
+
+## 4.15 エラーハンドリングフロー
+
+**関連要件**: REQ-UC-06
+
+### 概要
+
+Domain 層で発生した例外が UseCase 層・Adapter 層を経て CLI 出力に至るまでの伝播フローを定義する。各層で文脈情報の付加・ユーザー向けメッセージへの変換を行う。
+
+### 例外伝播の IPO（各層）
+
+| 層 | Input | Process | Output |
+|---|---|---|---|
+| **Domain** | ビジネスルール違反等 | ドメイン固有例外を raise | `DomainException`（例: `InvalidPackError`, `SimulationError`） |
+| **UseCase** | `DomainException` | 実行文脈情報（experiment_id 等）を付加 | `UseCaseException`（cause に元例外を保持） |
+| **Adapter** | `UseCaseException` | ユーザー向けメッセージに変換、exit code を決定 | CLI 出力（stderr） + exit code |
+
+### フローチャート
 
 ```mermaid
 flowchart TD
-    A([開始: gridflow run pack]) --> B[Scenario Pack読み込み]
-    B --> C{Pack有効?}
-    C -- No --> ERR1[PackNotFoundError発生]
-    ERR1 --> Z([終了: エラー])
-    C -- Yes --> D[ExecutionPlan生成]
-    D --> E[コンテナ起動]
-    E --> F{起動成功?}
-    F -- No --> ERR2[ContainerStartupError発生]
-    ERR2 --> Z
-    F -- Yes --> G[次のステップ取得]
-    G --> H{ステップ残あり?}
-    H -- No --> L[BenchmarkHarness.run]
-    H -- Yes --> I[Connector.execute step]
-    I --> J{実行成功?}
-    J -- No --> K[StepExecutionError記録]
-    K --> M{リトライ可能?}
-    M -- Yes --> I
-    M -- No --> N[コンテナ停止]
-    N --> Z
-    J -- Yes --> O[DataTranslator.to_canonical]
-    O --> P[CDLRepository.store]
-    P --> G
-    L --> Q[結果集約・表示]
-    Q --> R[コンテナ停止]
-    R --> S([終了: 正常完了])
+    A[Domain層: 例外発生] --> B{例外種別判定}
+    B -->|InvalidPackError| C[UseCase層: キャッチ]
+    B -->|SimulationError| C
+    B -->|ConnectorTimeoutError| C
+    B -->|DataTranslationError| C
+    B -->|予期しない例外| D[UseCase層: 汎用キャッチ]
+
+    C --> E[文脈情報を付加<br/>experiment_id, timestamp, operation]
+    D --> E
+
+    E --> F[Adapter層: キャッチ]
+    F --> G[ユーザー向けメッセージ変換]
+    G --> H{リトライ可能?}
+
+    H -->|Yes| I[リトライ提案メッセージ付加]
+    H -->|No| J[最終エラーメッセージ生成]
+
+    I --> K[CLI出力: stderr + exit code 1]
+    J --> K
+
+    K --> L[StructuredLogger: エラーログ記録]
 ```
 
----
+### Exit Code 一覧
 
-## 4.3 Scenario Pack 作成・登録フロー（UC-02）
-
-**関連要件**: REQ-002
-
-### 登場オブジェクト
-
-- **Researcher** — 研究者（アクター）
-- **CLIApp** — CLIエントリポイント
-- **ScenarioRegistry** — シナリオ管理レジストリ
-- **PackMetadata** — Packメタデータ
-
-### IPO
-
-| 項目 | 内容 |
-|---|---|
-| **Input** | `gridflow scenario create <name> --template <tmpl>` / `gridflow scenario validate <path>` / `gridflow scenario register <path>` （name: `str`, tmpl: `str`, path: `Path`） |
-| **Process** | テンプレートからディレクトリ生成 → スキーマ検証 → Registry登録 → pack_id発行 |
-| **Output** | `pack_id: str`（登録時） / `ValidationResult`（検証時） / 例外: `TemplateNotFoundError`, `SchemaValidationError`, `RegistrationError` |
-
-### シーケンス図
-
-```mermaid
-sequenceDiagram
-    actor R as Researcher
-    participant CLI as CLIApp
-    participant SR as ScenarioRegistry
-    participant PM as PackMetadata
-
-    Note over R,PM: フェーズ1: Scenario Pack作成
-    R->>CLI: gridflow scenario create <name> --template <tmpl>
-    CLI->>SR: create_from_template(name, tmpl)
-    SR->>SR: テンプレート検索・読み込み
-    SR->>SR: ディレクトリ構造生成
-    SR-->>CLI: 作成パス
-    CLI-->>R: Pack作成完了
-
-    Note over R,PM: フェーズ2: バリデーション
-    R->>CLI: gridflow scenario validate <path>
-    CLI->>PM: load(path)
-    PM-->>CLI: pack_metadata
-    CLI->>SR: validate(pack_metadata)
-    SR->>SR: スキーマ検証
-    SR-->>CLI: ValidationResult
-    CLI-->>R: 検証結果表示
-
-    Note over R,PM: フェーズ3: 登録
-    R->>CLI: gridflow scenario register <path>
-    CLI->>PM: load(path)
-    PM-->>CLI: pack_metadata
-    CLI->>SR: register(pack_metadata)
-    SR->>SR: 重複チェック
-    SR->>SR: pack_id発行
-    SR-->>CLI: pack_id
-    CLI-->>R: 登録完了（pack_id表示）
-```
-
----
-
-## 4.4 ベンチマーク実行フロー（UC-03）
-
-**関連要件**: REQ-003
-
-### 登場オブジェクト
-
-- **Researcher** — 研究者（アクター）
-- **CLIApp** — CLIエントリポイント
-- **BenchmarkHarness** — ベンチマーク実行管理
-- **CDLRepository** — CDLデータ永続化
-- **MetricCalculator** — メトリクス計算（Strategyパターン）
-- **BenchmarkReport** — ベンチマーク結果レポート
-- **ReportGenerator** — レポート出力
-
-### IPO
-
-| 項目 | 内容 |
-|---|---|
-| **Input** | `gridflow benchmark run <exp_id> [--metrics voltage_deviation,thermal_overload]`（exp_id: `str`, metrics: `list[str]`（省略時は全メトリクス）） |
-| **Process** | CDLから実験結果取得 → Strategyパターンでメトリクス計算 → レポート生成 → 出力 |
-| **Output** | `BenchmarkReport` / ファイルエクスポート（CSV, JSON等） / 例外: `ExperimentNotFoundError`, `MetricCalculationError` |
-
-### シーケンス図
-
-```mermaid
-sequenceDiagram
-    actor R as Researcher
-    participant CLI as CLIApp
-    participant BH as BenchmarkHarness
-    participant CDL as CDLRepository
-    participant MC as MetricCalculator
-    participant BR as BenchmarkReport
-    participant RG as ReportGenerator
-
-    R->>CLI: gridflow benchmark run <exp_id> --metrics m1,m2
-    CLI->>BH: run(experiment_ids, metric_names)
-    BH->>CDL: load_results(experiment_ids)
-    CDL-->>BH: cdl_data_list
-
-    loop 各メトリクス (metric in metric_names)
-        BH->>MC: calculate(metric, cdl_data_list)
-        Note right of MC: Strategyパターンで<br/>メトリクス種別ごとの<br/>計算ロジックを選択
-        MC-->>BH: MetricResult
-    end
-
-    BH->>BR: create(metric_results)
-    BR-->>BH: benchmark_report
-
-    BH->>RG: generate(benchmark_report, format)
-    RG-->>BH: formatted_output
-
-    BH-->>CLI: BenchmarkReport
-    CLI-->>R: 結果表示 or ファイルエクスポート
-```
-
----
-
-## 4.5 バッチ実行フロー（UC-04）
-
-**関連要件**: REQ-004
-
-### 登場オブジェクト
-
-- **Researcher** — 研究者（アクター）
-- **CLIApp** — CLIエントリポイント
-- **Orchestrator** — 実行オーケストレータ
-- **ExecutionPlan** — 実行計画（複数生成）
-- **ContainerManager** — コネクタコンテナ管理（並列度制御）
-- **OpenDSSConnector** — OpenDSS用コネクタ（複数インスタンス）
-- **CDLRepository** — CDLデータ永続化
-
-### IPO
-
-| 項目 | 内容 |
-|---|---|
-| **Input** | `gridflow run <pack> --batch --sweep param=v1,v2,v3`（pack: `str`, sweep: `dict[str, list[Any]]`） |
-| **Process** | パラメータ組合せ展開 → ExecutionPlan群生成 → 並列度制御付きコンテナ起動 → 並列ステップ実行 → 結果集約 |
-| **Output** | `BatchResult`（全実験結果 + サマリ） / 例外: `ParameterExpansionError`, `BatchExecutionError` |
-
-### シーケンス図
-
-```mermaid
-sequenceDiagram
-    actor R as Researcher
-    participant CLI as CLIApp
-    participant ORC as Orchestrator
-    participant EP as ExecutionPlan
-    participant CM as ContainerManager
-    participant CON as OpenDSSConnector
-    participant CDL as CDLRepository
-
-    R->>CLI: gridflow run <pack> --batch --sweep param=v1,v2,v3
-    CLI->>ORC: execute_batch(scenario_pack, sweep_params)
-
-    ORC->>ORC: パラメータ組合せ展開
-    ORC->>EP: create_multiple(scenario_pack, param_combinations)
-    EP-->>ORC: execution_plans[]
-
-    loop 各実験 (plan in execution_plans, 並列度上限: max_parallel)
-        ORC->>CM: start_container(connector_type)
-        CM->>CON: コンテナ起動
-        CON-->>CM: ready
-        CM-->>ORC: container_handle
-
-        loop 各ステップ (step in plan.steps)
-            ORC->>CON: execute(step)
-            CON-->>ORC: StepResult
-            ORC->>CDL: store(cdl_data)
-            CDL-->>ORC: ok
-        end
-
-        ORC->>CM: stop_container(container_handle)
-        CM-->>ORC: stopped
-    end
-
-    ORC->>ORC: 結果集約・サマリ生成
-    ORC-->>CLI: BatchResult
-    CLI-->>R: バッチ結果表示
-```
-
-### アクティビティ図（並列実行・分岐・エラー時フロー）
-
-```mermaid
-flowchart TD
-    A([開始: gridflow run pack --batch]) --> B[パラメータスイープ定義解析]
-    B --> C[パラメータ組合せ展開]
-    C --> D[ExecutionPlan群生成]
-    D --> E{未実行プランあり?}
-    E -- No --> M[結果集約]
-    E -- Yes --> F{並列度上限未満?}
-    F -- No --> G[実行中の実験完了を待機]
-    G --> F
-    F -- Yes --> H[コンテナ起動・実験開始]
-    H --> I[ステップ順次実行]
-    I --> J{ステップ成功?}
-    J -- Yes --> K{全ステップ完了?}
-    K -- No --> I
-    K -- Yes --> L[実験結果をCDLに保存]
-    L --> E
-    J -- No --> N[失敗記録・コンテナ停止]
-    N --> O[失敗実験をスキップ]
-    O --> E
-    M --> P[サマリレポート生成]
-    P --> Q{失敗実験あり?}
-    Q -- Yes --> R[失敗一覧をレポートに付加]
-    R --> S([終了: バッチ完了])
-    Q -- No --> S
-```
-
-### バッチ処理設計表
-
-| 項目 | 内容 |
-|---|---|
-| 入力データ | Scenario Pack + パラメータスイープ定義 |
-| 加工処理 | パラメータ展開 → 実験計画生成 → 並列実行 → 結果収集 |
-| 出力データ | 実験結果群（CDL形式）+ サマリレポート |
-| スケジュール | 即時実行（CLIトリガー） |
-| 異常時処理 | 失敗実験をスキップし残りを継続、失敗一覧をレポート |
+| Exit Code | 意味 | 対応例外 |
+|---|---|---|
+| 0 | 正常終了 | — |
+| 1 | 一般エラー | `UseCaseException` |
+| 2 | 入力バリデーションエラー | `ValidationError` |
+| 3 | Connector エラー | `ConnectorTimeoutError`, `ConnectorError` |
+| 4 | データ変換エラー | `DataTranslationError` |
+| 10 | Docker 未起動 | `DockerNotRunningError` |
+| 127 | 不明なコマンド | — |
