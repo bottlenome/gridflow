@@ -29,9 +29,10 @@ stateDiagram-v2
     Initializing --> Ready : containers_ready
     Initializing --> Failed : error_occurred
     Ready --> Running : step_started
-    Running --> Running : step_completed [次ステップあり]
+    Running --> Running : step_completed
     Running --> Collecting : all_steps_done
     Running --> Failed : error_occurred
+    Running --> Failed : cancel
     Collecting --> Completed : collection_done
     Failed --> Idle : reset
     Completed --> Idle : reset
@@ -44,7 +45,7 @@ stateDiagram-v2
 | Idle | → Initializing | — | — | — | — | — | — | — | — |
 | Initializing | — | → Ready | — | — | — | — | → Failed | — | — |
 | Ready | — | — | → Running | — | — | — | — | — | — |
-| Running | — | — | — | → Running | → Collecting | — | → Failed | — | — |
+| Running | — | — | — | → Running | → Collecting | — | → Failed | — | → Failed |
 | Collecting | — | — | — | — | — | → Completed | — | — | — |
 | Completed | — | — | — | — | — | — | — | → Idle | — |
 | Failed | — | — | — | — | — | — | — | → Idle | — |
@@ -115,11 +116,11 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> Draft
     Draft --> Validated : validate_success
-    Draft --> Draft : validate_fail [エラー修正後再検証]
+    Draft --> Draft : validate_fail
     Validated --> Registered : register
     Registered --> Running : run_start
     Running --> Completed : run_complete
-    Running --> Registered : run_fail [再実行可能]
+    Running --> Registered : run_fail
     Completed --> Archived : archive
     Archived --> Registered : unarchive
 ```
