@@ -7,6 +7,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成（8.1〜8.2） |
+| 0.2 | 2026-04-03 | 8.3〜8.5追記 |
 
 ---
 
@@ -305,3 +306,183 @@ classDiagram
 | EXEC-xxx | 実行エラー | E-20001〜E-20008, E-40001〜E-40002 | SimulationError, BenchmarkError, OrchestratorError |
 | DATA-xxx | データエラー | E-10005〜E-10011 | CDLValidationError, MetricCalculationError |
 | SYS-xxx | システムエラー | E-40003〜E-40007 | ContainerError, RegistryError |
+
+---
+
+## 8.3 エラーハンドリングポリシー（層別）
+
+**関連要件**: REQ-Q-008 / DD-ERR-003
+
+基本設計書 8.1 節の「例外チェーン」「resolution 必須」方針を具体化し、Clean Architecture の各レイヤーにおける例外の捕捉・再送出ルールを定義する。
+
+### 8.3.1 レイヤー別ハンドリングルール
+
+| レイヤー | 例外捕捉ルール | 再送出ルール | 責務 |
+|---|---|---|---|
+| Domain 層 | 例外をキャッチしない | ビジネスルール違反を検出した場合、`DomainError` 派生クラスを送出する | ドメインロジックの不整合を検知し、エラーコード・コンテキストを付与して即座に送出する |
+| UseCase 層 | `DomainError` をキャッチする | 文脈情報（`experiment_id`, `step_name` 等）を追加し、`UseCaseError` 派生クラスでラップして再送出する | ユースケース実行中のドメインエラーに実行文脈を付加し、上位層が原因を特定可能にする |
+| Adapter 層 | `UseCaseError` をキャッチする | ユーザー向けメッセージ（`resolution`）を付与し、`AdapterError` 派生クラスに変換して送出する。CLI 出力・API レスポンス用に `to_dict()` で構造化する | エラーをユーザー可読な形式に変換し、対処手順を提示する |
+| Infra 層 | 外部ツール例外（`docker.errors.APIError`, `FileNotFoundError`, `OSError` 等）をキャッチする | `InfraError` 派生クラスでラップし、元例外を `cause` に格納して Adapter 層へ送出する | 外部依存の生例外をアプリケーション例外に正規化し、例外チェーンを構成する |
+
+### 8.3.2 ハンドリングフロー
+
+```mermaid
+flowchart TD
+    A[外部ツール例外発生<br/>docker.errors.APIError / OSError 等] --> B{Infra 層}
+    B -->|キャッチ & ラップ| C[InfraError<br/>cause=元例外]
+    C --> D{Adapter 層}
+    D -->|ユーザー向けメッセージ変換| E[AdapterError<br/>resolution付与]
+
+    F[ドメインルール違反検出] --> G{Domain 層}
+    G -->|例外送出| H[DomainError<br/>error_code + context]
+    H --> I{UseCase 層}
+    I -->|キャッチ & 文脈追加| J[UseCaseError<br/>experiment_id等付加]
+    J --> D
+
+    D --> K{CLI / API}
+    K -->|to_dict| L[構造化エラー出力<br/>error_code + message + resolution]
+    K -->|__str__| M[テキストエラー出力<br/>コード + メッセージ]
+
+    E --> K
+
+    style A fill:#f9d0d0,stroke:#c0392b
+    style F fill:#f9d0d0,stroke:#c0392b
+    style L fill:#d5f5e3,stroke:#27ae60
+    style M fill:#d5f5e3,stroke:#27ae60
+```
+
+### 8.3.3 禁止事項
+
+| 項目 | 説明 |
+|---|---|
+| 例外の握りつぶし | `except: pass` や空の `except` ブロックは禁止する。すべての例外はログ記録または再送出しなければならない |
+| レイヤーの飛び越え | Infra 層の例外を UseCase 層で直接キャッチしてはならない。必ず Adapter 層を経由する |
+| 生例外の露出 | 外部ライブラリの例外をそのまま上位レイヤーへ伝播させてはならない。必ず gridflow 例外でラップする |
+| `cause` チェーンの省略 | レイヤー境界での例外ラップ時に `cause` を省略してはならない。根本原因のトレーサビリティを維持する |
+
+---
+
+## 8.4 リトライ・フォールバック設計
+
+**関連要件**: REQ-Q-008 / DD-ERR-004
+
+基本設計書 8.4 節の障害復旧方針を具体化し、一時的障害に対するリトライ戦略とフォールバック動作を定義する。
+
+### 8.4.1 リトライ対象操作一覧
+
+| 操作名 | 対象例外 | 最大リトライ回数 | バックオフ戦略 | タイムアウト（1回あたり） | タイムアウト（全体） | フォールバック動作 |
+|---|---|---|---|---|---|---|
+| Connector 実行 | `ConnectorError` (E-30001, E-30003) | 3 | 指数バックオフ（1s, 2s, 4s） + ジッター（0〜500ms） | 30s | 120s | エラーログ出力後、`ConnectorError` を送出して当該ステップを失敗とする |
+| Docker コンテナ起動 | `ContainerError` (E-40003) | 2 | 固定間隔（5s） | 60s | 180s | Docker デーモンの状態をヘルスチェックし、応答なしの場合は `CRITICAL` ログを出力して処理を中断する |
+| Docker イメージ取得 | `ContainerError` (E-40004) | 3 | 指数バックオフ（2s, 4s, 8s） + ジッター（0〜1000ms） | 120s | 600s | ローカルキャッシュにイメージが存在する場合はキャッシュを使用する。存在しない場合は `ContainerError` を送出する |
+| ファイル I/O（読込） | `OSError`, `IOError` | 2 | 固定間隔（1s） | 10s | 30s | 読込失敗時に対象パスのアクセス権限と存在を検証し、具体的な `resolution` を含む `ConfigError` を送出する |
+| ファイル I/O（書込） | `OSError`, `IOError` | 2 | 固定間隔（1s） | 10s | 30s | 書込失敗時に一時ディレクトリへのフォールバック書込を試行する。それも失敗した場合は `ConfigError` を送出する |
+| Scenario Pack レジストリ通信 | `RegistryError` (E-40006) | 3 | 指数バックオフ（1s, 2s, 4s） + ジッター（0〜500ms） | 30s | 120s | ローカルレジストリキャッシュが利用可能な場合はキャッシュから応答する。キャッシュなしの場合は `RegistryError` を送出する |
+| OpenDSS コマンド実行 | `OpenDSSError` (E-30004) | 1 | なし（即時リトライ） | 300s | 600s | リトライ失敗時は中間結果を保存し、`--from-step` による再開を `resolution` に含めて `OpenDSSError` を送出する |
+
+### 8.4.2 リトライ実装方針
+
+- リトライロジックは `gridflow.infra.retry` モジュールにデコレータとして実装する
+- デコレータ `@with_retry(max_retries, backoff, timeout)` を対象操作に適用する
+- リトライの各試行はログレベル `WARNING` で記録する（試行回数、待機時間、エラー内容）
+- 最大リトライ到達時はログレベル `ERROR` で記録し、フォールバック動作に移行する
+- バックオフのジッターは `random.uniform(0, jitter_max)` で算出する（seed 管理対象外）
+
+### 8.4.3 サーキットブレーカー
+
+連続障害が発生する外部依存に対して、サーキットブレーカーパターンを適用する。
+
+| パラメータ | 値 | 説明 |
+|---|---|---|
+| 障害閾値 | 5回 | この回数連続で失敗するとサーキットを OPEN にする |
+| OPEN 期間 | 60s | サーキット OPEN 中はリクエストを即座に拒否する |
+| HALF-OPEN 試行数 | 1回 | OPEN 期間経過後に試行し、成功すれば CLOSED に復帰する |
+| 適用対象 | Connector 実行、レジストリ通信 | ネットワーク依存の操作に限定して適用する |
+
+---
+
+## 8.5 ログ出力仕様（structlog フォーマット・レベル）
+
+**関連要件**: REQ-Q-008, REQ-Q-009 / DD-ERR-005
+
+基本設計書 8.3 節の StructuredLogger インターフェースおよび JSON 構造化ログ方針を具体化し、structlog を用いたログ出力仕様を定義する。
+
+### 8.5.1 structlog 設定方針
+
+| 項目 | 設定値 | 説明 |
+|---|---|---|
+| ライブラリ | `structlog` >= 24.1.0 | 構造化ログの基盤ライブラリ |
+| レンダラー（コンソール） | `structlog.dev.ConsoleRenderer` | 開発・CLI 使用時は人間可読なカラー出力を採用する |
+| レンダラー（ファイル） | `structlog.processors.JSONRenderer` | ファイル出力は JSON 形式で機械処理に適した形式とする |
+| プロセッサチェーン | `add_log_level` -> `TimeStamper(fmt="iso")` -> `StackInfoRenderer` -> `format_exc_info` -> `JSONRenderer` / `ConsoleRenderer` | プロセッサを順次適用し、最終レンダラーで出力する |
+| コンテキスト変数 | `structlog.contextvars` | 非同期処理・スレッド間で実行コンテキスト（`experiment_id` 等）を共有する |
+| ラッパークラス | `structlog.stdlib.BoundLogger` | 標準ライブラリ `logging` との互換性を確保する |
+| 非同期出力 | `QueueHandler` + バックグラウンドスレッド | メインスレッドのブロックを回避する（REQ-Q-010 準拠） |
+
+### 8.5.2 ログレベル定義
+
+| レベル | 用途 | 出力先 | 出力条件 |
+|---|---|---|---|
+| `DEBUG` | 内部変数値、CDL 中間データ、詳細なフロー追跡 | ファイルのみ（`~/.gridflow/logs/`） | `--verbose` フラグ指定時、または設定ファイルで `log_level: DEBUG` 指定時 |
+| `INFO` | ステップ開始・完了、Scenario Pack ロード、メトリクス算出完了 | コンソール + ファイル | デフォルト出力レベル |
+| `WARNING` | リトライ発生、seed 未指定の自動生成、非推奨機能の使用、閾値超過 | コンソール + ファイル | 常時出力 |
+| `ERROR` | 処理失敗（当該ステップは中断、他ステップへの影響は限定的） | コンソール + ファイル + 結果ディレクトリ | 常時出力 |
+| `CRITICAL` | システム全体の継続不可（Docker デーモン応答なし、DAG 循環検出等） | コンソール + ファイル + 結果ディレクトリ | 常時出力 |
+
+### 8.5.3 構造化ログフィールド定義
+
+| フィールド名 | 型 | 必須 | 説明 | 例 |
+|---|---|---|---|---|
+| `timestamp` | `str` (ISO 8601) | Yes | ログ出力時刻（UTC） | `"2026-04-03T10:30:00.123Z"` |
+| `level` | `str` | Yes | ログレベル | `"INFO"` |
+| `event` | `str` | Yes | イベント名（人間可読なメッセージ） | `"Simulation step completed"` |
+| `module` | `str` | Yes | ログ出力元モジュールパス | `"gridflow.usecase.simulation"` |
+| `error_code` | `str` | No | エラーコード（ERROR / CRITICAL 時に付与） | `"E-20001"` |
+| `context` | `dict` | No | 追加のコンテキスト情報 | `{"network": "ieee13", "variant": 3}` |
+| `experiment_id` | `str` | No | 実験 ID（実験実行中のみ） | `"exp-20260403-001"` |
+| `step_name` | `str` | No | ステップ名（ステップ実行中のみ） | `"opendss_simulation"` |
+| `duration_ms` | `int` | No | 処理所要時間（ミリ秒、`timed()` 使用時に自動付与） | `4523` |
+| `retry_count` | `int` | No | リトライ回数（リトライ発生時のみ） | `2` |
+| `cause` | `str` | No | 元例外の文字列表現（エラー時のみ） | `"FileNotFoundError: config.yaml"` |
+| `resolution` | `str` | No | ユーザー向け対処手順（ERROR / CRITICAL 時に付与） | `"設定ファイルの存在を確認してください"` |
+
+### 8.5.4 ログ出力先
+
+| 出力先 | パス | 対象レベル | 形式 | 説明 |
+|---|---|---|---|---|
+| コンソール（stderr） | - | INFO 以上（`--verbose` 時は DEBUG 以上） | `ConsoleRenderer`（カラー付きテキスト） | CLI 使用時のリアルタイムフィードバック |
+| アプリケーションログ | `~/.gridflow/logs/gridflow.log` | DEBUG 以上 | JSON（1行1レコード） | アプリケーション全体のログを集約する |
+| 実験ログ | `~/.gridflow/logs/experiments/{experiment_id}.log` | DEBUG 以上 | JSON（1行1レコード） | 実験単位のログを分離し、`gridflow logs --experiment` で抽出可能にする |
+| 結果ディレクトリログ | `{scenario_pack}/results/{experiment_id}/error.log` | ERROR 以上 | JSON（1行1レコード） | Scenario Pack 結果ディレクトリにエラーログを保存し、再現性検証に使用する |
+
+### 8.5.5 ログローテーション設定
+
+| パラメータ | アプリケーションログ | 実験ログ |
+|---|---|---|
+| ローテーション契機 | ファイルサイズ 10 MB | ファイルサイズ 5 MB |
+| 保持世代数 | 5 世代 | 3 世代 |
+| 保持期間 | 30 日 | 実験完了後 90 日 |
+| 圧縮 | gzip（ローテーション済みファイルを圧縮） | gzip |
+| 実装 | `logging.handlers.RotatingFileHandler` + カスタム期間チェック | `logging.handlers.RotatingFileHandler` + カスタム期間チェック |
+
+### 8.5.6 ログ出力例
+
+```json
+{
+  "timestamp": "2026-04-03T10:30:00.123Z",
+  "level": "ERROR",
+  "event": "Simulation step failed",
+  "module": "gridflow.usecase.simulation",
+  "error_code": "E-20001",
+  "experiment_id": "exp-20260403-001",
+  "step_name": "opendss_simulation",
+  "duration_ms": 30000,
+  "retry_count": 3,
+  "cause": "ConnectorError: コネクタ 'opendss' がエンドポイント 'localhost:5000' への接続に失敗しました",
+  "resolution": "タイムアウト値を延長するか、シミュレーション規模を縮小する",
+  "context": {
+    "network": "ieee13",
+    "variant": 3,
+    "timeout_seconds": 30
+  }
+}
