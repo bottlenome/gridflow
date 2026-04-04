@@ -33,6 +33,7 @@
 | アーキテクチャドキュメント | [../architecture/](../architecture/) | 上位設計（入力） |
 | 計画書 | [../gridtwin_lab_plan.md](../gridtwin_lab_plan.md) | 要件定義（入力） |
 | 基本設計書作成計画 | [../basic_design_plan.md](../basic_design_plan.md) | 本ドキュメントの作成プロセス |
+| 詳細設計書 | [../detailed_design/](../detailed_design/) | 下位設計（出力）— 本基本設計書の各 REQ-xxx を DD-xxx に展開 |
 
 ## 読み方
 

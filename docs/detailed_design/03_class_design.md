@@ -11,31 +11,37 @@
 
 ## 3.1 クラス一覧
 
-| クラス名 | モジュール | レイヤー | 責務 | 関連要件 |
-|---|---|---|---|---|
-| ScenarioPack | gridflow.domain.scenario | Domain | 実験パッケージのデータモデル | REQ-F-001 |
-| PackMetadata | gridflow.domain.scenario | Domain | パックのメタデータ | REQ-F-001 |
-| ScenarioRegistry | gridflow.infra.registry | Infra | パックの登録・検索・バージョン管理 | REQ-F-001 |
-| Orchestrator | gridflow.infra.orchestrator | Infra | 実験実行の統制 | REQ-F-002 |
-| ExecutionPlan | gridflow.infra.orchestrator | Infra | 実行計画の定義 | REQ-F-002 |
-| ContainerManager | gridflow.infra.orchestrator | Infra | Dockerコンテナ管理 | REQ-F-002 |
-| TimeSync | gridflow.infra.orchestrator | Infra | 時間同期制御 | REQ-F-002 |
-| Topology | gridflow.domain.cdl | Domain | ネットワークトポロジ | REQ-F-003 |
-| Node | gridflow.domain.cdl | Domain | ネットワークノード | REQ-F-003 |
-| Edge | gridflow.domain.cdl | Domain | ネットワークエッジ | REQ-F-003 |
-| Asset | gridflow.domain.cdl | Domain | 電力機器 | REQ-F-003 |
-| TimeSeries | gridflow.domain.cdl | Domain | 時系列データ | REQ-F-003 |
-| Event | gridflow.domain.cdl | Domain | シミュレーションイベント | REQ-F-003 |
-| Metric | gridflow.domain.cdl | Domain | 評価指標 | REQ-F-003 |
-| ExperimentMetadata | gridflow.domain.cdl | Domain | 実験メタデータ | REQ-F-003 |
-| ConnectorInterface | gridflow.usecase.interfaces | UseCase | 外部シミュレータ統一IF | REQ-F-007 |
-| OpenDSSConnector | gridflow.adapter.connector | Adapter | OpenDSS接続実装 | REQ-F-007 |
-| BenchmarkHarness | gridflow.adapter.benchmark | Adapter | ベンチマーク評価 | REQ-F-004 |
-| MetricCalculator | gridflow.usecase.interfaces | UseCase | 評価指標計算Protocol | REQ-F-004 |
-| CLIApp | gridflow.adapter.cli | Adapter | CLIエントリポイント | REQ-F-005 |
-| PluginRegistry | gridflow.infra.plugin | Infra | プラグイン管理 | REQ-F-006 |
-| StructuredLogger | gridflow.infra.logging | Infra | 構造化ログ | REQ-Q-008 |
-| ConfigManager | gridflow.infra.config | Infra | 設定管理 | REQ-Q-009 |
+| DD-CLS | クラス名 | モジュール | レイヤー | 責務 | 関連要件 |
+|---|---|---|---|---|---|
+| DD-CLS-001 | ScenarioPack | gridflow.domain.scenario | Domain | 実験パッケージのデータモデル | REQ-F-001 |
+| DD-CLS-002 | PackMetadata | gridflow.domain.scenario | Domain | パックのメタデータ | REQ-F-001 |
+| DD-CLS-003 | ScenarioRegistry | gridflow.infra.registry | Infra | パックの登録・検索・バージョン管理 | REQ-F-001 |
+| DD-CLS-004 | Topology | gridflow.domain.cdl | Domain | ネットワークトポロジ | REQ-F-003 |
+| DD-CLS-005 | Asset | gridflow.domain.cdl | Domain | 電力機器 | REQ-F-003 |
+| DD-CLS-006 | TimeSeries | gridflow.domain.cdl | Domain | 時系列データ | REQ-F-003 |
+| DD-CLS-007 | Orchestrator | gridflow.infra.orchestrator | Infra | 実験実行の統制 | REQ-F-002 |
+| DD-CLS-008 | ExecutionPlan | gridflow.infra.orchestrator | Infra | 実行計画の定義 | REQ-F-002 |
+| DD-CLS-009 | ContainerManager | gridflow.infra.orchestrator | Infra | Dockerコンテナ管理 | REQ-F-002 |
+| DD-CLS-010 | CLIApp | gridflow.adapter.cli | Adapter | CLIエントリポイント | REQ-F-005 |
+| DD-CLS-011 | CommandHandler | gridflow.adapter.cli | Adapter | CLIコマンドハンドラー基底 | REQ-F-005 |
+| DD-CLS-012 | OutputFormatter | gridflow.adapter.cli | Adapter | CLI出力フォーマッタ | REQ-F-005 |
+| DD-CLS-013 | BenchmarkHarness | gridflow.adapter.benchmark | Adapter | ベンチマーク評価 | REQ-F-004 |
+| DD-CLS-014 | MetricCalculator | gridflow.usecase.interfaces | UseCase | 評価指標計算Protocol | REQ-F-004 |
+| DD-CLS-015 | ReportGenerator | gridflow.adapter.benchmark | Adapter | ベンチマークレポート生成 | REQ-F-004 |
+| DD-CLS-016 | PluginRegistry | gridflow.infra.plugin | Infra | プラグイン管理 | REQ-F-006 |
+| DD-CLS-017 | PluginDiscovery | gridflow.infra.plugin | Infra | プラグイン検出・ロード | REQ-F-006 |
+| DD-CLS-018 | ConnectorInterface | gridflow.usecase.interfaces | UseCase | 外部シミュレータ統一IF | REQ-F-007 |
+| DD-CLS-019 | OpenDSSConnector | gridflow.adapter.connector | Adapter | OpenDSS接続実装 | REQ-F-007 |
+| DD-CLS-020 | DataTranslator | gridflow.usecase.interfaces | UseCase | データ変換Protocol | REQ-F-007 |
+| DD-CLS-021 | StructuredLogger | gridflow.infra.logging | Infra | 構造化ログ | REQ-Q-008 |
+| DD-CLS-022 | ConfigManager | gridflow.infra.config | Infra | 設定管理 | REQ-Q-009 |
+| DD-CLS-023 | ErrorHandler | gridflow.infra.error | Infra | エラーハンドリング | REQ-Q-008 |
+| DD-CLS-024 | TimeSync | gridflow.infra.orchestrator | Infra | 時間同期制御 | REQ-F-002 |
+| DD-CLS-025 | Event | gridflow.domain.cdl | Domain | シミュレーションイベント | REQ-F-003 |
+| DD-CLS-026 | Metric | gridflow.domain.cdl | Domain | 評価指標 | REQ-F-003 |
+| DD-CLS-027 | ExperimentMetadata | gridflow.domain.cdl | Domain | 実験メタデータ | REQ-F-003 |
+| DD-CLS-028 | Node | gridflow.domain.cdl | Domain | ネットワークノード | REQ-F-003 |
+| DD-CLS-029 | Edge | gridflow.domain.cdl | Domain | ネットワークエッジ | REQ-F-003 |
 
 ---
 
