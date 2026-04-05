@@ -6,6 +6,7 @@
 |---|---|---|---|
 | 0.1 | 2026-04-03 | 初版作成 | gridflow設計チーム |
 | 0.2 | 2026-04-04 | 3.5〜3.9 追記 | gridflow設計チーム |
+| 0.3 | 2026-04-04 | 3.10 トレース関連クラス追加（Perfetto形式） | gridflow設計チーム |
 
 ---
 
@@ -42,6 +43,9 @@
 | DD-CLS-027 | ExperimentMetadata | gridflow.domain.cdl | Domain | 実験メタデータ | REQ-F-003 |
 | DD-CLS-028 | Node | gridflow.domain.cdl | Domain | ネットワークノード | REQ-F-003 |
 | DD-CLS-029 | Edge | gridflow.domain.cdl | Domain | ネットワークエッジ | REQ-F-003 |
+| DD-CLS-030 | TraceSpan | gridflow.infra.trace | Infra | トレーススパン（OTel互換） | REQ-Q-008 |
+| DD-CLS-031 | TraceRecorder | gridflow.infra.trace | Infra | トレース記録 | REQ-Q-008 |
+| DD-CLS-032 | PerfettoExporter | gridflow.infra.trace | Infra | Perfetto形式エクスポート | REQ-Q-008 |
 
 ---
 
@@ -1449,3 +1453,251 @@ GridflowError基底例外を統一的にハンドリングする。
 | OrchestrationError | E-20xxx | Infra | オーケストレーション関連エラー |
 | ConnectorError | E-30xxx | Adapter | コネクタ関連エラー |
 | ValidationError | E-40xxx | Domain | バリデーション関連エラー |
+
+---
+
+## 3.10 トレース関連クラス設計（REQ-Q-008）
+
+実験実行パイプラインの各ステップの所要時間・状態を記録し、Perfetto（Chrome Trace Format）で出力する。内部データモデルはOpenTelemetry Spanと互換性を持たせ、将来の OTel エクスポータ追加に備える。
+
+### 3.10.1 クラス図
+
+```mermaid
+classDiagram
+    class TraceSpan {
+        <<dataclass>>
+        +str name
+        +str span_id
+        +str|None parent_span_id
+        +str trace_id
+        +int start_time_ns
+        +int end_time_ns
+        +str status
+        +dict~str, Any~ attributes
+        +duration_ms() float
+    }
+
+    class TraceRecorder {
+        -str trace_id
+        -list~TraceSpan~ spans
+        -TraceSpan|None active_span
+        +start_span(name: str, attributes: dict) TraceSpan
+        +end_span(span: TraceSpan, status: str) None
+        +context_span(name: str, attributes: dict) ContextManager
+        +get_spans() list~TraceSpan~
+        +reset() None
+    }
+
+    class TraceExporter {
+        <<Protocol>>
+        +export(spans: list~TraceSpan~, dest: Path) Path
+    }
+
+    class PerfettoExporter {
+        +export(spans: list~TraceSpan~, dest: Path) Path
+    }
+
+    class OTelExporter {
+        +export(spans: list~TraceSpan~, dest: Path) Path
+    }
+
+    TraceRecorder --> TraceSpan : records
+    TraceExporter <|.. PerfettoExporter : implements
+    TraceExporter <|.. OTelExporter : implements (将来)
+    PerfettoExporter ..> TraceSpan : reads
+```
+
+### 3.10.2 TraceSpan
+
+**モジュール:** `gridflow.infra.trace`
+
+`dataclass(frozen=True)` — 記録済みの1スパン。OpenTelemetry Span と 1:1 対応する属性を持つ。
+
+| 属性 | 型 | 説明 | OTel対応フィールド |
+|---|---|---|---|
+| name | str | スパン名（例: "opendss_init", "step_1"） | `Span.name` |
+| span_id | str | スパンの一意識別子（16桁hex） | `Span.span_id` |
+| parent_span_id | str \| None | 親スパンID。ルートスパンはNone | `Span.parent_span_id` |
+| trace_id | str | トレース全体の一意識別子（32桁hex） | `Span.trace_id` |
+| start_time_ns | int | 開始時刻（Unix epoch ナノ秒） | `Span.start_time` |
+| end_time_ns | int | 終了時刻（Unix epoch ナノ秒） | `Span.end_time` |
+| status | str | "ok" \| "error" \| "unset" | `Span.status.status_code` |
+| attributes | dict[str, Any] | 任意のメタデータ | `Span.attributes` |
+
+#### メソッド
+
+**duration_ms**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | `(end_time_ns - start_time_ns) / 1_000_000` を計算する。 |
+| **Output** | `float` — 所要時間（ミリ秒）。 |
+
+### 3.10.3 TraceRecorder
+
+**モジュール:** `gridflow.infra.trace`
+
+実験実行中にスパンを記録するレコーダー。Orchestrator が実験開始時にインスタンス化し、各ステップの開始・終了を記録する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| trace_id | str | 実験全体のトレースID（experiment_idから生成） |
+| spans | list[TraceSpan] | 記録済みスパンのリスト |
+| active_span | TraceSpan \| None | 現在アクティブなスパン |
+
+#### メソッド
+
+**start_span**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `name: str` — スパン名, `attributes: dict` — メタデータ（任意） |
+| **Process** | 新しいTraceSpanを生成し、start_time_nsに現在時刻を記録する。active_spanが存在する場合はそのspan_idをparent_span_idに設定する（自動ネスト）。 |
+| **Output** | `TraceSpan` — 開始されたスパン（end_time_nsは未設定）。 |
+
+**end_span**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `span: TraceSpan` — 終了対象スパン, `status: str` — "ok" \| "error" |
+| **Process** | end_time_nsに現在時刻を記録し、statusを設定する。完了したスパンをspansリストに追加する。 |
+| **Output** | `None`。 |
+
+**context_span**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `name: str` — スパン名, `attributes: dict` — メタデータ（任意） |
+| **Process** | コンテキストマネージャとして動作する。`__enter__` で start_span を呼び、`__exit__` で end_span を呼ぶ。例外発生時は status="error" で終了する。 |
+| **Output** | `ContextManager[TraceSpan]` — with文で使用。 |
+
+**使用例:**
+```python
+recorder = TraceRecorder(trace_id="exp-001")
+with recorder.context_span("opendss_init", {"connector": "opendss"}):
+    connector.initialize(config)
+with recorder.context_span("step_1", {"step": 1}):
+    result = connector.execute(step=1, context=ctx)
+```
+
+### 3.10.4 TraceExporter（Protocol）
+
+**モジュール:** `gridflow.infra.trace`
+
+トレースデータを外部形式にエクスポートする Protocol。
+
+**export**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `spans: list[TraceSpan]` — エクスポート対象, `dest: Path` — 出力先ファイルパス |
+| **Process** | スパンリストを対象形式に変換し、ファイルに書き出す。 |
+| **Output** | `Path` — 出力されたファイルパス。書き込み失敗時は `ExportError` を送出。 |
+
+### 3.10.5 PerfettoExporter
+
+**モジュール:** `gridflow.infra.trace`
+
+TraceSpan を Chrome Trace Format（Perfetto互換）JSON に変換する。
+
+#### TraceSpan → Chrome Trace Event 変換ルール
+
+| TraceSpan属性 | Chrome Trace Eventフィールド | 変換ルール |
+|---|---|---|
+| name | `name` | そのまま |
+| — | `ph` | `"X"`（Complete Event） |
+| start_time_ns | `ts` | `start_time_ns / 1000`（マイクロ秒に変換） |
+| end_time_ns - start_time_ns | `dur` | `(end_time_ns - start_time_ns) / 1000` |
+| trace_id | `pid` | trace_idのハッシュ値を整数化（プロセスID相当） |
+| parent_span_id の有無 | `tid` | ネスト深度に基づきスレッドIDを割当（ルート=1, 子=2, ...） |
+| attributes | `args` | そのまま（+ `span_id`, `status` を追加） |
+
+#### 出力JSON例
+
+```json
+{
+  "traceEvents": [
+    {
+      "name": "experiment",
+      "ph": "X",
+      "ts": 1712200000000,
+      "dur": 312000000,
+      "pid": 1,
+      "tid": 1,
+      "args": {
+        "span_id": "a1b2c3d4e5f60001",
+        "status": "ok",
+        "experiment_id": "exp-001",
+        "pack_id": "ieee13"
+      }
+    },
+    {
+      "name": "opendss_init",
+      "ph": "X",
+      "ts": 1712200001000,
+      "dur": 5200000,
+      "pid": 1,
+      "tid": 2,
+      "args": {
+        "span_id": "a1b2c3d4e5f60002",
+        "parent_span_id": "a1b2c3d4e5f60001",
+        "status": "ok",
+        "connector": "opendss"
+      }
+    },
+    {
+      "name": "step_1_powerflow",
+      "ph": "X",
+      "ts": 1712200006200,
+      "dur": 245000000,
+      "pid": 1,
+      "tid": 2,
+      "args": {
+        "span_id": "a1b2c3d4e5f60003",
+        "parent_span_id": "a1b2c3d4e5f60001",
+        "status": "ok",
+        "step": 1,
+        "voltage_max_pu": 1.05,
+        "converged": true
+      }
+    },
+    {
+      "name": "benchmark_eval",
+      "ph": "X",
+      "ts": 1712200251200,
+      "dur": 61000000,
+      "pid": 1,
+      "tid": 2,
+      "args": {
+        "span_id": "a1b2c3d4e5f60004",
+        "parent_span_id": "a1b2c3d4e5f60001",
+        "status": "ok",
+        "metrics": ["voltage_deviation", "runtime"]
+      }
+    }
+  ],
+  "displayTimeUnit": "ms",
+  "metadata": {
+    "gridflow_version": "0.1.0",
+    "trace_id": "abc123def456",
+    "experiment_id": "exp-001",
+    "format": "perfetto",
+    "otel_compatible": true
+  }
+}
+```
+
+→ **ui.perfetto.dev にドラッグ&ドロップで即座にタイムライン可視化可能**
+
+### 3.10.6 OTelExporter（将来実装）
+
+**モジュール:** `gridflow.infra.trace`（P2以降）
+
+TraceSpan を OTLP JSON 形式に変換する。TraceSpan の属性設計が OpenTelemetry Span と 1:1 対応しているため、変換は直接的である。
+
+| 実装時期 | 条件 |
+|---|---|
+| P2（HIL連携） | 複数マシン間の分散トレースが必要になった場合 |
+
+変換時に W3C Trace Context ヘッダ（`traceparent`）を生成し、コンテナ間のcontext propagation を実現する。

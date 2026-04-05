@@ -3,6 +3,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成（4.6〜4.15） |
+| 0.2 | 2026-04-04 | 4.6.2 gridflow trace 詳細化（Perfetto形式、CLI出力仕様） |
 
 ---
 
@@ -26,9 +27,92 @@
 
 | 項目 | 内容 |
 |---|---|
-| **Input** | `exp_id` (str, required) |
-| **Process** | CDLRepository から該当実験 ID の実行トレースを取得し、タイムライン形式に整形 |
-| **Output** | タイムライン表示（stdout）。該当 ID 不在時は `ExperimentNotFoundError` |
+| **Input** | `exp_id` (str, required), `--format` (str, "table"\|"json"\|"perfetto", default="table"), `--step` (str, optional), `--depth` (int, default=3), `--output` / `-o` (Path, optional) |
+| **Process** | CDLRepository から該当実験 ID のトレースファイル（Perfetto JSON）を読み込み、TraceSpan リストに変換する。`--step` 指定時は該当スパンとその子スパンのみフィルタする。`--format` に応じて出力形式を切り替える。 |
+| **Output** | `table`: CLI テーブル表示（stdout）。`json`: TraceSpan 配列の JSON（stdout）。`perfetto`: Chrome Trace Format JSON ファイル出力（`-o` 指定先、未指定時は `{exp_id}.trace.json`）。該当 ID 不在時は `ExperimentNotFoundError` |
+
+#### トレース記録フロー（Orchestrator → TraceRecorder）
+
+```mermaid
+sequenceDiagram
+    participant Orch as Orchestrator
+    participant TR as TraceRecorder
+    participant Conn as OpenDSSConnector
+    participant BM as BenchmarkHarness
+
+    Orch->>TR: start_span("experiment", {pack_id, seed})
+    Note over TR: ルートスパン開始
+
+    Orch->>TR: start_span("connector_init", {connector: "opendss"})
+    Orch->>Conn: initialize(config)
+    Conn-->>Orch: done
+    Orch->>TR: end_span(status="ok")
+
+    loop 各ステップ
+        Orch->>TR: start_span("step_N", {step: N})
+        Orch->>Conn: execute(step, context)
+        Conn-->>Orch: StepResult
+        Orch->>TR: end_span(status=StepResult.status)
+    end
+
+    Orch->>TR: start_span("benchmark", {metrics: [...]})
+    Orch->>BM: run(experiment_ids, metric_names)
+    BM-->>Orch: BenchmarkReport
+    Orch->>TR: end_span(status="ok")
+
+    Orch->>TR: end_span("experiment", status="ok")
+    Orch->>TR: get_spans()
+    TR-->>Orch: list[TraceSpan]
+    Orch->>PerfettoExporter: export(spans, dest)
+    Note over Orch: trace.json を結果ディレクトリに保存
+```
+
+#### CLI 出力形式
+
+**テーブル形式**（`gridflow trace exp-001`、デフォルト）:
+
+```
+TRACE: exp-001 (total: 312.0s)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP                 DURATION   STATUS   SHARE
+────────────────────────────────────────────────
+experiment           312.0s     ok       100.0%
+├─ opendss_init        5.2s     ok         1.7%
+├─ step_1            245.0s     ok        78.5%  ◀ BOTTLENECK
+├─ step_2              0.8s     ok         0.3%
+└─ benchmark          61.0s     ok        19.6%
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BOTTLENECK: step_1 (78.5% of total)
+```
+
+ボトルネック判定: 全体の50%以上を占めるスパンに `◀ BOTTLENECK` マークを付与。
+
+**JSON形式**（`gridflow trace exp-001 --format json`）:
+
+```json
+{
+  "trace_id": "abc123def456",
+  "experiment_id": "exp-001",
+  "total_duration_ms": 312000,
+  "spans": [
+    {
+      "name": "experiment",
+      "span_id": "a1b2c3d4e5f60001",
+      "parent_span_id": null,
+      "start_time_ns": 1712200000000000,
+      "end_time_ns": 1712200312000000000,
+      "duration_ms": 312000,
+      "status": "ok",
+      "attributes": {"pack_id": "ieee13", "seed": 42}
+    }
+  ],
+  "bottleneck": {"name": "step_1", "share_pct": 78.5}
+}
+```
+
+**Perfetto形式**（`gridflow trace exp-001 --format perfetto -o trace.json`）:
+
+Chrome Trace Format JSON を出力。ui.perfetto.dev で可視化可能。フォーマット詳細は第3章 3.10.5 PerfettoExporter を参照。
 
 ### 4.6.3 gridflow metrics
 
