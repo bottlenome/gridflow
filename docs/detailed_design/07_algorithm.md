@@ -4,6 +4,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成 |
+| 0.2 | 2026-04-04 | 7.2 メトリクス拡充: EN 50160電圧品質4指標, IEEE 1366信頼度3指標(SAIDI/SAIFI/CAIDI), losses追加 |
 
 ---
 
@@ -161,20 +162,27 @@ sequenceDiagram
 
 ## 7.2 Benchmark メトリクス計算アルゴリズム（REQ-F-004）
 
-シミュレーション結果から8つのベンチマーク指標を算出する。
+シミュレーション結果からベンチマーク指標を算出する。電圧品質はEN 50160、信頼度はIEEE 1366に準拠する。
 
 ### 指標一覧
 
-| 指標 | 計算式 | 単位 |
-|---|---|---|
-| voltage_deviation | `max(abs(V_node - V_nominal) / V_nominal * 100)` | % |
-| thermal_overload_hours | `sum(dt for t in steps if I_branch > I_rated)` | h |
-| energy_not_supplied | `sum((P_demand - P_supplied) * dt for t in steps if P_supplied < P_demand)` | MWh |
-| dispatch_cost | `sum(P_gen * cost_per_unit * dt for gen in generators for t in steps)` | USD |
-| co2_emissions | `sum(P_gen * emission_factor * dt for gen in generators for t in steps)` | tCO2 |
-| curtailment | `sum((P_available - P_dispatched) * dt for gen in renewables for t in steps)` | MWh |
-| restoration_time | `t_restored - t_fault` | s |
-| runtime | `t_end - t_start` | s |
+| # | 指標 | 単位 | 準拠規格 | 分類 |
+|---|---|---|---|---|
+| 1 | voltage_deviation_max | % | EN 50160 | 電圧品質 |
+| 2 | voltage_deviation_mean | % | EN 50160 | 電圧品質 |
+| 3 | voltage_deviation_p95 | % | EN 50160 | 電圧品質 |
+| 4 | voltage_violation_ratio | % | EN 50160 | 電圧品質 |
+| 5 | thermal_overload_hours | h | — | 熱的制約 |
+| 6 | energy_not_supplied | MWh | — | 供給信頼度 |
+| 7 | saidi | min/customer | IEEE 1366 | 供給信頼度 |
+| 8 | saifi | 回/customer | IEEE 1366 | 供給信頼度 |
+| 9 | caidi | min/回 | IEEE 1366 | 供給信頼度 |
+| 10 | dispatch_cost | USD | — | 経済性 |
+| 11 | co2_emissions | tCO2 | — | 環境 |
+| 12 | curtailment | MWh | — | 再エネ統合 |
+| 13 | losses | MWh | — | 系統効率 |
+| 14 | restoration_time | s | — | レジリエンス |
+| 15 | runtime | s | — | 計算性能 |
 
 ### クラス図
 
@@ -182,12 +190,19 @@ sequenceDiagram
 classDiagram
     class BenchmarkCalculator {
         -results: SimulationResults
-        +voltage_deviation() float
+        +voltage_deviation_max() float
+        +voltage_deviation_mean() float
+        +voltage_deviation_p95() float
+        +voltage_violation_ratio() float
         +thermal_overload_hours() float
         +energy_not_supplied() float
+        +saidi() float
+        +saifi() float
+        +caidi() float
         +dispatch_cost() float
         +co2_emissions() float
         +curtailment() float
+        +losses() float
         +restoration_time() float
         +runtime() float
         +compute_all() dict[str, float]
@@ -199,18 +214,28 @@ classDiagram
     BenchmarkCalculator --> SimulationResults
 ```
 
-### voltage_deviation
+---
 
-#### IPO
+### 電圧品質指標（EN 50160 準拠）
+
+EN 50160 は欧州の電力品質規格であり、供給電圧の許容変動範囲を定義する。主要な基準は以下の通り。
+
+| EN 50160 基準 | 内容 |
+|---|---|
+| 通常変動範囲 | 公称電圧 Un の ±10% 以内 |
+| 適合条件 | 10分平均値の95%が ±10% 以内（1週間計測） |
+| 短時間変動 | +10% / -15% を許容（ただし適合条件外） |
+
+gridflow では EN 50160 の ±10% 基準をデフォルト閾値とし、設定で変更可能とする。
+
+#### voltage_deviation_max
 
 - **Input**: `nodes: list[NodeResult]` — 各ノードの電圧値, `v_nominal: float` — 公称電圧
 - **Process**: 全ノード・全ステップで電圧偏差率を算出し、最大値を返す。
-- **Output**: `float` — 最大電圧偏差率 [%]。例外: `ValueError`（ノードデータが空の場合）
-
-#### 疑似コード
+- **Output**: `float` — 最大電圧偏差率 [%]
 
 ```python
-def voltage_deviation(nodes: list[NodeResult], v_nominal: float) -> float:
+def voltage_deviation_max(nodes: list[NodeResult], v_nominal: float) -> float:
     max_dev = 0.0
     for step in steps:
         for node in nodes:
@@ -218,6 +243,71 @@ def voltage_deviation(nodes: list[NodeResult], v_nominal: float) -> float:
             max_dev = max(max_dev, dev)
     return max_dev
 ```
+
+#### voltage_deviation_mean
+
+- **Input**: `nodes: list[NodeResult]`, `v_nominal: float`
+- **Process**: 全ノード・全ステップの電圧偏差率の算術平均を返す。
+- **Output**: `float` — 平均電圧偏差率 [%]
+
+```python
+def voltage_deviation_mean(nodes: list[NodeResult], v_nominal: float) -> float:
+    deviations = []
+    for step in steps:
+        for node in nodes:
+            dev = abs(node.voltage_at(step) - v_nominal) / v_nominal * 100
+            deviations.append(dev)
+    return sum(deviations) / len(deviations)
+```
+
+#### voltage_deviation_p95
+
+- **Input**: `nodes: list[NodeResult]`, `v_nominal: float`
+- **Process**: 全ノード・全ステップの電圧偏差率の95パーセンタイル値を返す。EN 50160 の適合判定に使用する。
+- **Output**: `float` — 95パーセンタイル電圧偏差率 [%]
+
+```python
+def voltage_deviation_p95(nodes: list[NodeResult], v_nominal: float) -> float:
+    deviations = []
+    for step in steps:
+        for node in nodes:
+            dev = abs(node.voltage_at(step) - v_nominal) / v_nominal * 100
+            deviations.append(dev)
+    deviations.sort()
+    idx = int(len(deviations) * 0.95)
+    return deviations[idx]
+```
+
+#### voltage_violation_ratio
+
+- **Input**: `nodes: list[NodeResult]`, `v_nominal: float`, `threshold_pct: float = 10.0`（EN 50160 デフォルト ±10%）
+- **Process**: 全ノード・全ステップのうち、閾値を超過したサンプルの割合を返す。EN 50160 では 5% 未満で適合。
+- **Output**: `float` — 違反率 [%]。0.0 = 全サンプル適合、100.0 = 全サンプル違反
+
+```python
+def voltage_violation_ratio(
+    nodes: list[NodeResult], v_nominal: float, threshold_pct: float = 10.0
+) -> float:
+    total = 0
+    violations = 0
+    for step in steps:
+        for node in nodes:
+            dev = abs(node.voltage_at(step) - v_nominal) / v_nominal * 100
+            total += 1
+            if dev > threshold_pct:
+                violations += 1
+    return violations / total * 100
+```
+
+#### EN 50160 適合判定
+
+```python
+def en50160_compliant(p95: float, threshold_pct: float = 10.0) -> bool:
+    """95パーセンタイルが閾値以内であれば適合"""
+    return p95 <= threshold_pct
+```
+
+---
 
 ### thermal_overload_hours
 
@@ -238,6 +328,8 @@ def thermal_overload_hours(branches: list[BranchResult], dt: float) -> float:
                 total += dt
     return total
 ```
+
+---
 
 ### energy_not_supplied
 
@@ -260,6 +352,78 @@ def energy_not_supplied(loads: list[LoadResult], dt: float) -> float:
                 total += (p_demand - p_supplied) * dt
     return total
 ```
+
+---
+
+### 供給信頼度指標（IEEE 1366 準拠）
+
+IEEE 1366 は電力供給信頼度の標準指標を定義する。gridflow では以下の3指標を実装する。
+
+| 指標 | 正式名称 | 定義 |
+|---|---|---|
+| SAIDI | System Average Interruption Duration Index | 顧客あたり平均停電時間 |
+| SAIFI | System Average Interruption Frequency Index | 顧客あたり平均停電回数 |
+| CAIDI | Customer Average Interruption Duration Index | 停電1回あたり平均復旧時間 |
+
+#### saidi
+
+- **Input**: `interruptions: list[Interruption]` — 停電イベントリスト（各イベントに `duration_min: float`, `customers_affected: int` を持つ）, `total_customers: int` — 系統全体の顧客数
+- **Process**: `SAIDI = Σ(duration_i × customers_affected_i) / total_customers`
+- **Output**: `float` — SAIDI [min/customer]
+
+```python
+def saidi(
+    interruptions: list[Interruption], total_customers: int
+) -> float:
+    numerator = sum(
+        i.duration_min * i.customers_affected for i in interruptions
+    )
+    return numerator / total_customers
+```
+
+#### saifi
+
+- **Input**: `interruptions: list[Interruption]`, `total_customers: int`
+- **Process**: `SAIFI = Σ(customers_affected_i) / total_customers`
+- **Output**: `float` — SAIFI [回/customer]
+
+```python
+def saifi(
+    interruptions: list[Interruption], total_customers: int
+) -> float:
+    numerator = sum(i.customers_affected for i in interruptions)
+    return numerator / total_customers
+```
+
+#### caidi
+
+- **Input**: `saidi_val: float`, `saifi_val: float`
+- **Process**: `CAIDI = SAIDI / SAIFI`。SAIFI が 0 の場合（停電なし）は 0.0 を返す。
+- **Output**: `float` — CAIDI [min/回]
+
+```python
+def caidi(saidi_val: float, saifi_val: float) -> float:
+    if saifi_val == 0.0:
+        return 0.0
+    return saidi_val / saifi_val
+```
+
+#### Interruption データクラス
+
+```python
+@dataclass(frozen=True)
+class Interruption:
+    event_id: str           # 停電イベントID
+    start_time: float       # 停電開始時刻 [s]
+    end_time: float         # 復旧完了時刻 [s]
+    duration_min: float     # 停電時間 [min] = (end_time - start_time) / 60
+    customers_affected: int # 影響顧客数
+    cause: str              # 原因（"fault", "maintenance", "overload"）
+```
+
+> **注記:** IEEE 1366 では Major Event Day (MED) の除外ルール（2.5β法）が定義されているが、gridflow のシミュレーション環境では全イベントを含めて計算する。実系統データとの比較時はMED除外オプションを将来追加する。
+
+---
 
 ### dispatch_cost
 
@@ -319,6 +483,31 @@ def curtailment(renewables: list[RenewableResult], dt: float) -> float:
             total += (p_available - p_dispatched) * dt
     return total
 ```
+
+---
+
+### losses（系統損失）
+
+配電系統研究で voltage_deviation と並ぶ基本指標。各ブランチの有効電力損失を全ステップにわたり積算する。
+
+#### IPO
+
+- **Input**: `branches: list[BranchResult]` — 各ブランチの損失情報, `dt: float` — ステップ時間幅 [h]
+- **Process**: 全ブランチ・全ステップの有効電力損失を積算する。
+- **Output**: `float` — 総系統損失 [MWh]
+
+#### 疑似コード
+
+```python
+def losses(branches: list[BranchResult], dt: float) -> float:
+    total = 0.0
+    for step in steps:
+        for branch in branches:
+            total += branch.loss_kw_at(step) / 1000.0 * dt  # kW → MW
+    return total
+```
+
+---
 
 ### restoration_time
 

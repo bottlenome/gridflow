@@ -800,16 +800,23 @@ Strategyパターンを適用し、指標計算ロジックを交換可能にす
 
 #### 標準指標計算器一覧
 
-| クラス名 | 指標名 | 単位 | 説明 |
-|---|---|---|---|
-| VoltageDeviationCalculator | voltage_deviation | % | ノード電圧の基準値からの逸脱率 |
-| ThermalOverloadCalculator | thermal_overload_hours | h | 熱容量超過の累積時間 |
-| EnergyNotSuppliedCalculator | energy_not_supplied | MWh | 供給不能エネルギー量 |
-| DispatchCostCalculator | dispatch_cost | USD | 発電コスト |
-| CO2EmissionsCalculator | co2_emissions | tCO2 | CO2排出量 |
-| CurtailmentCalculator | curtailment | MWh | 出力抑制量 |
-| RestorationTimeCalculator | restoration_time | s | 復旧時間 |
-| RuntimeCalculator | runtime | s | シミュレーション実行時間 |
+| クラス名 | 指標名 | 単位 | 準拠規格 | 説明 |
+|---|---|---|---|---|
+| VoltageDeviationCalculator | voltage_deviation_max | % | EN 50160 | 最大電圧偏差率 |
+| VoltageDeviationCalculator | voltage_deviation_mean | % | EN 50160 | 平均電圧偏差率 |
+| VoltageDeviationCalculator | voltage_deviation_p95 | % | EN 50160 | 95パーセンタイル電圧偏差率 |
+| VoltageDeviationCalculator | voltage_violation_ratio | % | EN 50160 | 電圧違反率（閾値超過サンプル比） |
+| ThermalOverloadCalculator | thermal_overload_hours | h | — | 熱容量超過の累積時間 |
+| EnergyNotSuppliedCalculator | energy_not_supplied | MWh | — | 供給不能エネルギー量 |
+| SAIDICalculator | saidi | min/customer | IEEE 1366 | 顧客あたり平均停電時間 |
+| SAIFICalculator | saifi | 回/customer | IEEE 1366 | 顧客あたり平均停電回数 |
+| CAIDICalculator | caidi | min/回 | IEEE 1366 | 停電1回あたり平均復旧時間 |
+| DispatchCostCalculator | dispatch_cost | USD | — | 発電コスト |
+| CO2EmissionsCalculator | co2_emissions | tCO2 | — | CO2排出量 |
+| CurtailmentCalculator | curtailment | MWh | — | 出力抑制量 |
+| LossesCalculator | losses | MWh | — | 系統損失 |
+| RestorationTimeCalculator | restoration_time | s | — | 復旧時間 |
+| RuntimeCalculator | runtime | s | — | シミュレーション実行時間 |
 
 ### 3.6.4 ReportGenerator
 
