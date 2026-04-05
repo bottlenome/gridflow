@@ -614,3 +614,152 @@ flowchart TD
 | 4 | データ変換エラー | `DataTranslationError` |
 | 10 | Docker 未起動 | `DockerNotRunningError` |
 | 127 | 不明なコマンド | — |
+
+---
+
+## 4.16 パラメータスイープフロー（gridflow sweep）
+
+**関連要件**: REQ-F-001, REQ-F-002, REQ-F-004
+
+### 概要
+
+pack.yaml の `parameters` セクションに定義されたパラメータの全組み合わせで Scenario Pack を自動展開し、逐次実行して結果を集約する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `pack_id: str` — parametersセクションを持つScenario Pack, `--parallel` (int, default=1) — 並列数 |
+| **Process** | 1. pack.yaml の parameters を読み取り、全組み合わせ（直積）を生成する。2. 各組み合わせで一時 Scenario Pack を生成（clone + パラメータ上書き）。3. 逐次（または `--parallel` 指定時は並列）に `Orchestrator.run()` を実行。4. 全結果を SweepReport に集約する。 |
+| **Output** | `SweepReport` — パラメータ値とメトリクス結果の対応表。CSV/JSON エクスポート可能。 |
+
+### pack.yaml 記述例（M1学生ユースケース）
+
+```yaml
+name: ieee34-pv-hosting
+simulation:
+  connector: opendss
+  duration_hours: 24
+  step_size_sec: 900
+  controller: my-voltvar    # ← L2 ControllerPlugin
+
+parameters:
+  pv_penetration: [10, 20, 30, 40, 50, 60, 70, 80]  # 8パターン
+  controller_mode: ["proposed", "conventional"]        # 2パターン
+  # → 8 × 2 = 16 実験が自動実行される
+
+evaluation:
+  metrics: metrics.yaml
+
+visualization:
+  templates:
+    - type: comparison_bar
+      title: "Voltage Violation Ratio vs PV Penetration"
+      x: pv_penetration
+      y: voltage_violation_ratio
+      group_by: controller_mode
+    - type: timeseries
+      title: "Voltage Profile (Node 890)"
+      x: timestamp
+      y: voltage_pu
+```
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant CLI as CLIApp
+    participant SW as SweepHandler
+    participant Reg as ScenarioRegistry
+    participant Orch as Orchestrator
+    participant BM as BenchmarkHarness
+
+    User->>CLI: gridflow sweep ieee34-pv-hosting
+    CLI->>SW: execute(pack_id)
+    SW->>Reg: get(pack_id)
+    Reg-->>SW: pack (with parameters)
+    SW->>SW: expand_parameters() → 16 combinations
+
+    loop 各パラメータ組み合わせ
+        SW->>Reg: clone(pack, params_i)
+        Reg-->>SW: pack_i
+        SW->>Orch: run(pack_i)
+        Orch-->>SW: result_i
+    end
+
+    SW->>BM: run(all_experiment_ids, metrics)
+    BM-->>SW: SweepReport
+    SW-->>CLI: SweepReport
+    CLI-->>User: 結果テーブル + CSV出力
+```
+
+### CLI 出力例
+
+```
+SWEEP: ieee34-pv-hosting (16 experiments, 2 parameters)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+pv_penetration  controller_mode  voltage_p95  violation_ratio  losses
+──────────────────────────────────────────────────────────────
+10              proposed         2.1%         0.0%             0.32 MWh
+10              conventional     2.3%         0.0%             0.35 MWh
+20              proposed         3.8%         0.0%             0.41 MWh
+...
+80              proposed         8.9%         2.1%             0.89 MWh
+80              conventional     12.4%        18.3%            1.12 MWh  ◀ EN50160 VIOLATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SAVED: results/ieee34-pv-hosting_sweep.csv
+```
+
+---
+
+## 4.17 バッチ実行フロー（gridflow run 複数指定）
+
+**関連要件**: REQ-F-002
+
+### 概要
+
+`gridflow run` に複数の pack_id を指定すると逐次バッチ実行する。sweep とは異なり、独立した複数の Scenario Pack を順番に実行する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `pack_ids: list[str]` — 実行対象のパックIDリスト |
+| **Process** | pack_ids を順番に `Orchestrator.run()` で実行し、結果をリストとして返却する。途中で失敗した場合は `--fail-fast`（デフォルト）で停止、`--continue-on-error` で継続。 |
+| **Output** | `list[ExperimentResult]` — 各パックの実験結果。 |
+
+### CLI 構文
+
+```
+gridflow run pack1 pack2 pack3           # 逐次実行（fail-fast）
+gridflow run pack1 pack2 --continue-on-error  # 失敗しても継続
+```
+
+---
+
+## 4.18 可視化テンプレート実行フロー（gridflow plot）
+
+**関連要件**: REQ-F-005
+
+### 概要
+
+pack.yaml の `visualization.templates` に定義されたグラフを matplotlib で生成する。
+
+### IPO
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id: str` — 対象実験ID（またはスイープID）, `--output` / `-o` (Path, default="./plots/") |
+| **Process** | 実験結果を読み込み、テンプレート定義に従って matplotlib でグラフを生成する。`type` に応じたレンダラーを選択する。 |
+| **Output** | PNG ファイル群（`{output}/{template_title}.png`）。 |
+
+### 対応グラフ種別
+
+| type | 説明 | 用途例 |
+|---|---|---|
+| `voltage_profile` | ノード電圧のフィーダー沿いプロファイル | 電圧分布の可視化 |
+| `comparison_bar` | パラメータ別の棒グラフ比較 | PV浸透率 vs メトリクス |
+| `timeseries` | 時系列プロット | 24時間電圧推移 |
+| `heatmap` | 2パラメータのヒートマップ | 感度分析結果 |
+| `custom` | ユーザーPythonスクリプト | 論文用カスタム図 |

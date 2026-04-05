@@ -303,7 +303,38 @@ Scenario Pack のメイン設定ファイル `config.yaml` に対する JSON Sch
           "type": "integer",
           "minimum": 1,
           "description": "シミュレーションステップサイズ（秒）"
+        },
+        "controller": {
+          "type": "string",
+          "description": "制御アルゴリズムPlugin名（オプション。L2 controller型Pluginを指定）"
         }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "description": "パラメータスイープ定義。各キーに配列を指定すると全組み合わせで自動展開される",
+      "additionalProperties": {
+        "oneOf": [
+          {"type": "number"},
+          {"type": "string"},
+          {"type": "boolean"},
+          {
+            "type": "array",
+            "items": {"oneOf": [{"type": "number"}, {"type": "string"}, {"type": "boolean"}]},
+            "minItems": 1,
+            "description": "スイープ値リスト"
+          },
+          {
+            "type": "object",
+            "required": ["start", "stop", "step"],
+            "properties": {
+              "start": {"type": "number"},
+              "stop": {"type": "number"},
+              "step": {"type": "number"}
+            },
+            "description": "range形式（start/stop/step）"
+          }
+        ]
       }
     },
     "evaluation": {
@@ -333,9 +364,18 @@ Scenario Pack のメイン設定ファイル `config.yaml` に対する JSON Sch
         "templates": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "required": ["type", "title"],
+            "properties": {
+              "type": {"type": "string", "enum": ["voltage_profile", "comparison_bar", "timeseries", "heatmap", "custom"], "description": "グラフ種別"},
+              "title": {"type": "string", "description": "グラフタイトル"},
+              "x": {"type": "string", "description": "X軸フィールド名"},
+              "y": {"type": "string", "description": "Y軸フィールド名（配列で複数可）"},
+              "group_by": {"type": "string", "description": "パラメータスイープ時のグループ化キー"},
+              "script": {"type": "string", "description": "custom時のPythonスクリプトパス"}
+            }
           },
-          "description": "可視化テンプレートファイルの相対パスリスト"
+          "description": "可視化テンプレート定義リスト"
         }
       }
     }
