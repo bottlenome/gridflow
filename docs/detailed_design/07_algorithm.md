@@ -5,6 +5,7 @@
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成 |
 | 0.2 | 2026-04-04 | 7.2 メトリクス拡充: EN 50160電圧品質4指標, IEEE 1366信頼度3指標(SAIDI/SAIFI/CAIDI), losses追加 |
+| 0.5 | 2026-04-06 | X6レビュー対応: 第3章との整合性注記追加（クラス定義・用語統一） |
 
 ---
 
@@ -186,10 +187,14 @@ sequenceDiagram
 
 ### クラス図
 
+> **第3章との対応:**
+> - `BenchmarkCalculator` は第3章の MetricCalculator Protocol（Strategy パターン）に対する**内部実装の参照設計**である。各メソッドは個別の MetricCalculator 実装クラスに対応する（[03b 3.6.3](03b_usecase_classes.md#363-metriccalculatorprotocol)参照）。
+> - `SimulationResults` は第3章の `ExperimentResult`（[03a 3.4.13](03a_domain_classes.md#3413-experimentresult)）に相当する。
+
 ```mermaid
 classDiagram
     class BenchmarkCalculator {
-        -results: SimulationResults
+        -results: ExperimentResult
         +voltage_deviation_max() float
         +voltage_deviation_mean() float
         +voltage_deviation_p95() float
@@ -207,11 +212,18 @@ classDiagram
         +runtime() float
         +compute_all() dict[str, float]
     }
-    class SimulationResults {
+    class ExperimentResult {
+        +experiment_id: str
+        +metadata: ExperimentMetadata
         +steps: list[StepResult]
-        +metadata: dict
+        +node_results: list[NodeResult]
+        +branch_results: list[BranchResult]
+        +load_results: list[LoadResult]
+        +generator_results: list[GeneratorResult]
+        +renewable_results: list[RenewableResult]
+        +interruptions: list[Interruption]
     }
-    BenchmarkCalculator --> SimulationResults
+    BenchmarkCalculator --> ExperimentResult
 ```
 
 ---

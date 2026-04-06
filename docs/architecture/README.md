@@ -11,6 +11,7 @@
 | 0.3 | 2026-04-01 | Round 4 完了（ビュー間対応、評価、ADR、付録、README） | bottlenome + Claude |
 | 0.4 | 2026-04-01 | デザインレビュー反映（Bounded Context Map、開発ルール、ADR-001 確定） | bottlenome + Claude |
 | 0.5 | 2026-04-01 | AS-5（論文生産性戦略）追加、QA-11 追加、全ビュー反映 | bottlenome + Claude |
+| 0.6 | 2026-04-06 | アーキテクチャレビュー記録（09_review_record.md）追加 | Claude |
 
 ## ドキュメント構成
 
@@ -25,6 +26,7 @@
 | [06_architecture_evaluation.md](06_architecture_evaluation.md) | アーキテクチャ評価（QA 達成見込み、リスク、感度点、トレードオフ、未解決事項） |
 | [07_adr.md](07_adr.md) | 設計判断の記録（ADR-001〜ADR-007） |
 | [08_appendix.md](08_appendix.md) | 付録（計画書対応表、QA 一覧、用語集、参考文献） |
+| [09_review_record.md](09_review_record.md) | アーキテクチャレビュー記録（ACDM 準拠性チェック、構造品質・整合性レビュー、指摘事項） |
 
 ## 参照ドキュメント
 

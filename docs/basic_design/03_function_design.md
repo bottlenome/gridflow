@@ -7,6 +7,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-01 | 初版作成 |
+| 0.2 | 2026-04-06 | 要求ID→機能ID逆引き対応表を追加（BD-REV-003）、例外名に親クラスとエラーコードを明記（BD-REV-002） |
 
 ---
 
@@ -23,6 +24,21 @@
 | FN-007 | Notebook Bridge | NotebookBridge | UC-06, UC-09, UC-10 | REQ-F-005 | P0 |
 | FN-008 | ロギング・トレーシング | StructuredLogger | UC-05 | REQ-Q-008 | P0 |
 | FN-009 | 段階的カスタムレイヤー | Plugin System | UC-01 | REQ-F-006 | P0 |
+
+### 要求 ID → 機能 ID 対応表
+
+第1章の���求一覧から本章の��能設計への逆引き対応表���示す。
+
+| 要求 ID | 要求名 | 対応機能 ID | 本章セクション |
+|---|---|---|---|
+| REQ-F-001 | Scenario Pack + Registry | FN-001 | 3.2 |
+| REQ-F-002 | Orchestrator | FN-002 | 3.3 |
+| REQ-F-003 | Canonical Data Layer | FN-004 | 3.5 |
+| REQ-F-004 | Benchmark Harness | FN-005 | 3.6 |
+| REQ-F-005 | CLI + Notebook Bridge | FN-006, FN-007 | 3.7 |
+| REQ-F-006 | 段階的カスタムレイヤー | FN-009 | 3.7（3.7.4 節で概要）|
+| REQ-F-007 | Connectors | FN-003 | 3.4 |
+| REQ-Q-008 | 可観測性 | FN-008 | 3.7（ロギング概要）|
 
 ---
 
@@ -70,8 +86,8 @@ class ScenarioRegistryProtocol(Protocol):
         """パックを Registry に登録し、pack_id を返す。
 
         Raises:
-            ValidationError: pack.yaml のスキーマ検証失敗時
-            DuplicatePackError: 同名・同バージョンのパックが既に存在する場合
+            ValidationError(ConfigError): pack.yaml のスキーマ検証失敗時（CONF-001）
+            DuplicatePackError(ConfigError): 同名・同バージョンのパックが既に存在する場合（CONF-002）
         """
         ...
 
@@ -231,7 +247,7 @@ class ConnectorInterface(Protocol):
         """Connector を起動する（Docker コンテナ起動を含む）。
 
         Raises:
-            ConnectorStartError: 起動失敗時（CONN-001）
+            ConnectorStartError(ConnectorError): 起動失敗時（CONN-001）
         """
         ...
 
@@ -243,8 +259,8 @@ class ConnectorInterface(Protocol):
         """1ステップ分のシミュレーションを実行する。
 
         Raises:
-            ConnectorExecutionError: 実行エラー時（CONN-002）
-            ConnectorTimeoutError: タイムアウト時（CONN-003）
+            ConnectorExecutionError(ConnectorError): 実行���ラー時（CONN-002）
+            ConnectorTimeoutError(ConnectorError): タイムアウト時（CONN-003）
         """
         ...
 

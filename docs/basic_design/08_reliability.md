@@ -7,6 +7,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-01 | 初版作成 |
+| 0.2 | 2026-04-06 | GridflowError階層にサブクラスを追加、命名規則を明記（BD-REV-002） |
 
 ---
 
@@ -18,12 +19,19 @@
 
 ```
 GridflowError
-├── ConfigError      # 設定・Scenario Pack の検証エラー
-├── ConnectorError   # 外部シミュレータ連携エラー
-├── ExecutionError   # ワークフロー実行中のエラー
-├── DataError        # CDL データ変換・検証エラー
-└── SystemError      # Docker・ファイルシステム等の基盤エラー
+├── ConfigError          # 設定・Scenario Pack の検証エラー（CONF-xxx）
+│   ├── ValidationError      # pack.yaml スキーマ検証失敗（CONF-001）
+│   └── DuplicatePackError   # 同名・同バージョンの Pack 重複（CONF-002）
+├── ConnectorError       # 外部シミュレータ連携エラー（CONN-xxx）
+│   ├── ConnectorStartError      # Connector 起動失敗（CONN-001）
+│   ├── ConnectorExecutionError  # ステップ実行エラー（CONN-002）
+│   └── ConnectorTimeoutError    # タイムアウト（CONN-003）
+├── ExecutionError       # ワークフロー実行中のエラー（EXEC-xxx）
+├── DataError            # CDL データ変換・検証エラー（DATA-xxx）
+└── SystemError          # Docker・ファイルシステム等の基盤エラー（SYS-xxx）
 ```
+
+**命名規則**: カテゴリベースの親クラス（ConfigError, ConnectorError 等）の下に、操作固有のサブクラス（ValidationError, ConnectorStartError 等）を配置する。第3章の Protocol 定義で使用する例外名はサブクラス名を使用し、エラーコード（CONF-001 等）と1:1で対応する。
 
 ### エラー属性
 

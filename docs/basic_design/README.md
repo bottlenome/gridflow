@@ -7,6 +7,7 @@
 | 版数 | 日付 | 変更内容 | 変更者 |
 |---|---|---|---|
 | 0.1 | 2026-04-01 | 初版作成（全12章 + 付録） | bottlenome + Claude |
+| 0.2 | 2026-04-06 | レビュー記録（review_record.md）追加 | Claude |
 
 ## 目次
 
@@ -25,6 +26,7 @@
 | 第11章 | [11_test_policy.md](11_test_policy.md) | テスト方針（テストレベル、品質属性検証、CI/CD パイプライン） |
 | 第12章 | [12_operation.md](12_operation.md) | 運用・保守設計（運用想定、監視、保守プロセス） |
 | 付録 | [appendix.md](appendix.md) | 用語集、参考文献、更新ドキュメント一覧 |
+| レビュー記録 | [review_record.md](review_record.md) | IPA 準拠性チェック、構造品質・整合性レビュー、指摘事項管理 |
 
 ## 参照ドキュメント
 
