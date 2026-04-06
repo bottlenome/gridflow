@@ -9,6 +9,7 @@
 | 0.1 | 2026-04-03 | 初版作成（全11章 + 付録） | bottlenome + Claude |
 | 0.2 | 2026-04-04 | 第3章後半追記、Phase 6 整合性確認完了 | bottlenome + Claude |
 | 0.3 | 2026-04-06 | レビュー記録（review_record.md）追加 | Claude |
+| 0.5 | 2026-04-06 | 第3章をClean Architectureレイヤー別に4ファイルへ分割（03a/03b/03c/03d） | Claude |
 
 ## 目次
 
@@ -16,7 +17,11 @@
 |---|---|---|
 | 第1章 | [01_requirements.md](01_requirements.md) | 要件一覧（DD-xxx ID 体系、REQ-xxx → DD-xxx トレーサビリティマトリクス） |
 | 第2章 | [02_module_structure.md](02_module_structure.md) | モジュール構成設計（パッケージ構成、依存関係、レイヤー配置、命名規則） |
-| 第3章 | [03_class_design.md](03_class_design.md) | クラス設計（Scenario Pack / Orchestrator / CDL / Connector / Benchmark / CLI / Plugin API / 共通基盤） |
+| 第3章 | [03_class_design.md](03_class_design.md) | クラス設計（Index） — 以下4ファイルに分割 |
+| 　3A | [03a_domain_classes.md](03a_domain_classes.md) | ドメイン層（クラス一覧, Scenario Pack, CDL） |
+| 　3B | [03b_usecase_classes.md](03b_usecase_classes.md) | ユースケース層（Orchestrator, Connector, Benchmark） |
+| 　3C | [03c_adapter_classes.md](03c_adapter_classes.md) | アダプタ層（CLI, Plugin API） |
+| 　3D | [03d_infra_classes.md](03d_infra_classes.md) | インフラ層（共通基盤, トレース） |
 | 第4章 | [04_process_flow.md](04_process_flow.md) | 処理フロー設計（UC-01〜UC-10 シーケンス図・アクティビティ図、バッチ処理設計） |
 | 第5章 | [05_state_transition.md](05_state_transition.md) | 状態遷移設計（Orchestrator / Connector / Scenario Pack / バッチジョブの状態遷移図・状態遷移表） |
 | 第6章 | [06_data_detail.md](06_data_detail.md) | データ詳細設計（ER 図、CDL 属性定義、JSON Schema、入出力設計、物理ストレージ設計） |
