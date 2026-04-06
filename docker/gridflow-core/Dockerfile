@@ -37,4 +37,6 @@ USER gridflow
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD python -c "import gridflow" || exit 1
 
+EXPOSE 8888
+
 ENTRYPOINT ["python", "-m", "gridflow"]
