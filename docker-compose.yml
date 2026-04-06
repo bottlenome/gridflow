@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  gridflow-core:
+    build:
+      context: .
+      dockerfile: docker/gridflow-core/Dockerfile
+    image: gridflow/gridflow-core:latest
+    container_name: gridflow-core
+    ports:
+      - "8888:8888"
+    networks:
+      - gridflow-net
+    volumes:
+      - shared-data:/app/data
+      - ./scenario-packs:/app/scenarios:ro
+    environment:
+      - GRIDFLOW_ENV=development
+      - GRIDFLOW_LOG_LEVEL=INFO
+    depends_on:
+      opendss-connector:
+        condition: service_healthy
+    restart: unless-stopped
+
+  opendss-connector:
+    build:
+      context: .
+      dockerfile: docker/opendss-connector/Dockerfile
+    image: gridflow/opendss-connector:latest
+    container_name: opendss-connector
+    networks:
+      - gridflow-net
+    volumes:
+      - shared-data:/app/data
+    environment:
+      - GRIDFLOW_ENV=development
+      - GRIDFLOW_LOG_LEVEL=INFO
+    restart: unless-stopped
+
+networks:
+  gridflow-net:
+    driver: bridge
+
+volumes:
+  shared-data:
+    driver: local
