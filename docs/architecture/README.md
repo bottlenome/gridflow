@@ -30,6 +30,8 @@
 
 - [gridflow 計画書](../gridtwin_lab_plan.md) — プロダクト定義、機能要件、ロードマップ
 - [アーキテクチャドキュメント作成計画](../architecture_document_plan.md) — 本ドキュメント群の作成プロセス
+- [基本設計書](../basic_design/) — 本 ACDM を入力とした外部仕様設計
+- [詳細設計書](../detailed_design/) — 基本設計書を入力とした内部仕様設計（REQ-xxx → DD-xxx 展開）
 
 ## 読み方
 
