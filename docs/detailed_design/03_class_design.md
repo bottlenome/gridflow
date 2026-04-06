@@ -7,6 +7,7 @@
 | 0.1 | 2026-04-03 | 初版作成 | gridflow設計チーム |
 | 0.2 | 2026-04-04 | 3.5〜3.9 追記 | gridflow設計チーム |
 | 0.3 | 2026-04-04 | 3.10 トレース関連クラス追加（Perfetto形式） | gridflow設計チーム |
+| 0.4 | 2026-04-06 | 不足クラス追加（CDLRepository, CLIサブコマンドハンドラー, HealthChecker, MigrationRunner）、状態属性追加（Orchestrator, ScenarioPack）、例外クラス階層統一（DD-REV-101/102/103） | Claude |
 
 ---
 
@@ -103,6 +104,7 @@ classDiagram
 | network_dir | Path | ネットワーク定義ディレクトリ |
 | timeseries_dir | Path | 時系列データディレクトリ |
 | config_dir | Path | 設定ファイルディレクトリ |
+| status | PackStatus | 現在の状態（Draft / Validated / Registered / Running / Completed）。第5章 5.3 状態遷移参照 |
 
 ### 3.2.3 PackMetadata
 
@@ -225,6 +227,7 @@ classDiagram
 | container_manager | ContainerManager | コンテナ管理インスタンス |
 | time_sync | TimeSync | 時間同期制御インスタンス |
 | config | dict | オーケストレータ設定 |
+| state | OrchestratorState | 現在の状態（Idle / Initializing / Running / Completed / Failed）。第5章 5.1 状態遷移参照 |
 
 #### メソッド
 
@@ -528,6 +531,52 @@ classDiagram
 | connector | str | 使用したコネクタ名 |
 | seed | int \| None | 乱数シード。未指定時はNone |
 | parameters | dict | 実験パラメータ |
+
+### 3.4.11 CanonicalData（Union型）
+
+CDL エンティティの統一的な型表現。DataTranslator Protocol の入出力型として使用する。
+
+```python
+CanonicalData = Topology | Asset | TimeSeries | Event | Metric | ExperimentMetadata
+```
+
+### 3.4.12 CDLRepository（Protocol）
+
+**モジュール:** `gridflow.usecase.interfaces`
+
+CDL データの永続化・取得を担う UseCase 層 Protocol。
+
+**store**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `data: CanonicalData` -- 格納対象の CDL データ |
+| **Process** | データをシリアライズし、ストレージに書き込む。data_id を生成して返却する。 |
+| **Output** | `str` -- 格納されたデータの一意識別子。 |
+
+**get**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `data_id: str` -- 取得対象のデータ識別子 |
+| **Process** | ストレージからデータを読み込み、デシリアライズして返却する。 |
+| **Output** | `CanonicalData` -- 取得されたデータ。未発見時は `DataNotFoundError(RegistryError)` を送出。 |
+
+**get_result**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id: str` -- 実験 ID |
+| **Process** | 指定実験の全結果データを取得する。 |
+| **Output** | `ExperimentResult` -- 実験結果。未発見時は `ExperimentNotFoundError(OrchestratorError)` を送出。 |
+
+**export**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `exp_id: str` -- 実験 ID, `format: str` -- 出力フォーマット（"csv" / "json" / "parquet"）, `output_dir: Path` -- 出力先ディレクトリ |
+| **Process** | 指定フォーマットで実験結果をファイルに出力する。 |
+| **Output** | `Path` -- 出力ファイルパス。フォーマット未対応時は `UnsupportedFormatError(AdapterError)` を送出。 |
 
 ---
 
@@ -1057,6 +1106,69 @@ exp-001 success 12.3 voltage_deviation=1.2
 exp-002 running - -
 ```
 
+### 3.7.8 CLIサブコマンドハンドラー
+
+第4章のシーケンス図に登場するCLIサブコマンドのハンドラーを、CommandHandler（3.7.3）の具象クラスとして定義する。
+
+#### DebugCommandHandler
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+`gridflow debug` コマンドを処理する。Docker 状態確認・HealthCheck・設定検証を統合し、診断レポートを出力する。
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `ctx: Context` -- CLI コンテキスト, `args: dict` -- `--verbose` 等のオプション |
+| **Process** | ContainerManager.check_status() で Docker 状態を確認し、各 Connector の health_check() を実行し、ConfigManager.validate() で設定を検証する。結果を DiagnosticReport にまとめる。 |
+| **Output** | `int` -- 終了コード（0: 正常, 1: 問題あり） |
+
+#### InitCommandHandler
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+`gridflow init` コマンドを処理する。初期設定ファイル生成・Docker イメージ取得・ヘルスチェックを実行する。
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `ctx: Context` -- CLI コンテキスト, `args: dict` -- `--template` 等のオプション |
+| **Process** | gridflow.yaml を生成し、docker compose pull でイメージを取得し、HealthChecker.run_health_check() で動作確認する。 |
+| **Output** | `int` -- 終了コード（0: 正常, 1: 失敗） |
+
+#### UpdateCommandHandler
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+`gridflow update` コマンドを処理する。gridflow 自体のアップデートとマイグレーションを実行する。
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `ctx: Context` -- CLI コンテキスト, `args: dict` -- `--check` 等のオプション |
+| **Process** | PyPI で最新バージョンを確認し、pip upgrade を実行し、Docker イメージを更新し、MigrationRunner.run_pending() でスキーママイグレーションを実行する。 |
+| **Output** | `int` -- 終了コード（0: 正常, 1: 失敗） |
+
+#### MetricsCommandHandler
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+`gridflow metrics` コマンドを処理する。KPI の集計・表示を担う（第4章で KPIAggregator として登場）。
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `ctx: Context` -- CLI コンテキスト, `args: dict` -- `--experiment` 等のフィルタオプション |
+| **Process** | CDLRepository.get_all_results() から結果を取得し、BenchmarkHarness のメトリクス計算機能を利用して集計する。 |
+| **Output** | `int` -- 終了コード（0: 正常, 1: データなし） |
+
+#### DiagnosticReport（dataclass）
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| docker_status | dict | Docker デーモン・コンテナの状態 |
+| health_results | list[HealthStatus] | 各 Connector のヘルスチェック結果 |
+| config_validation | bool | 設定バリデーション結果 |
+| timestamp | datetime | 診断実行日時 |
+
 ---
 
 ## 3.8 Plugin API関連クラス設計（REQ-F-006）
@@ -1553,14 +1665,82 @@ GridflowError基底例外を統一的にハンドリングする。
 | message | str | エラーメッセージ |
 | context | dict | エラー発生時のコンテキスト情報 |
 
-#### 主要サブクラス一覧
+#### 例外クラス階層
 
-| クラス名 | エラーコード範囲 | レイヤー | 説明 |
-|---|---|---|---|
-| ConfigError | E-10xxx | Infra | 設定関連エラー |
-| OrchestrationError | E-20xxx | Infra | オーケストレーション関連エラー |
-| ConnectorError | E-30xxx | Adapter | コネクタ関連エラー |
-| ValidationError | E-40xxx | Domain | バリデーション関連エラー |
+第8章のエラーコード体系（E-10xxx〜E-40xxx）に準拠する。カテゴリベース例外を親クラス、操作固有例外をサブクラスとする。
+
+```
+GridflowError
+├── DomainError
+│   ├── ScenarioPackError       (E-10001〜E-10004)
+│   │   └── PackNotFoundError
+│   ├── CDLValidationError      (E-10005〜E-10008)
+│   └── MetricCalculationError  (E-10009〜E-10011)
+├── UseCaseError
+│   ├── SimulationError         (E-20001〜E-20008)
+│   │   └── ExecutionError
+│   └── BenchmarkError          (E-20005〜E-20007)
+│       └── NoComparableMetricsError
+├── AdapterError
+│   ├── ConnectorError          (E-30001〜E-30003)
+│   │   ├── ConnectorInitError
+│   │   ├── ConnectorExecuteError
+│   │   └── ConnectorTeardownError
+│   ├── OpenDSSError            (E-30004〜E-30006)
+│   ├── CLIError                (E-30007〜E-30008)
+│   │   └── CLIArgumentError
+│   ├── PluginError             (E-30009〜E-30012)
+│   │   ├── PluginAlreadyRegisteredError
+│   │   ├── PluginNotFoundError
+│   │   └── PluginLoadError
+│   ├── ExportError             (E-30013)
+│   └── UnsupportedFormatError  (E-30014)
+└── InfraError
+    ├── OrchestratorError       (E-40001〜E-40002)
+    │   ├── ExperimentNotFoundError
+    │   └── ServiceNotFoundError
+    ├── ContainerError          (E-40003〜E-40005)
+    │   ├── ContainerStartError
+    │   └── ContainerStopError
+    ├── RegistryError           (E-40006〜E-40007)
+    │   └── TemplateNotFoundError
+    └── ConfigError             (E-40008〜E-40011)
+        ├── ConfigValidationError
+        ├── ConfigKeyNotFoundError
+        ├── ConfigTypeError
+        ├── ConfigFileNotFoundError
+        └── ConfigParseError
+```
+
+> **命名規則**: 第3章の各メソッド定義（IPO 形式の Output）で使用する例外名はサブクラス名（操作固有名）を使用し、括弧内に親クラスを明記する（例: `PackNotFoundError(RegistryError)`）。詳細は第8章を参照。
+
+### 3.9.6 HealthChecker
+
+**モジュール:** `gridflow.infra.health`
+
+システム全体のヘルスチェックを実行する共通基盤クラス。`gridflow init`、`gridflow debug` 等の複数コマンドから利用される。
+
+**run_health_check**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `timeout_s: int = 30` -- ヘルスチェックのタイムアウト（秒） |
+| **Process** | Docker デーモンの稼働確認、各 Connector の health_check() 呼び出し、CDL ストレージのアクセス確認を順次実行する。 |
+| **Output** | `HealthCheckResult` -- 全チェック結果。`ok: bool`, `checks: list[HealthCheckItem]`, `message: str` を含む。 |
+
+### 3.9.7 MigrationRunner
+
+**モジュール:** `gridflow.infra.migration`
+
+スキーマバージョンアップ時のマイグレーションを実行する共通基盤クラス。`gridflow update` から呼び出される。
+
+**run_pending**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | 現在のスキーマバージョンと最新バージョンを比較し、未適用のマイグレーションスクリプトを順次実行する。実行前にバックアップを作成し、失敗時はロールバックする。 |
+| **Output** | `MigrationResult` -- `applied: list[str]`（適用済みマイグレーション名）, `success: bool`, `rollback: bool` を含む。失敗時は `ExecutionError(SimulationError)` を送出。 |
 
 ---
 

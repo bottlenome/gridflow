@@ -9,6 +9,7 @@
 | 0.1 | 2026-04-03 | 初版作成（8.1〜8.2） |
 | 0.2 | 2026-04-03 | 8.3〜8.5追記 |
 | 0.3 | 2026-04-04 | ADR: エラー処理方式の設計判断を追加 |
+| 0.4 | 2026-04-06 | 8.1.5 具象クラスにサブクラス追加、第3章との例外名統一（DD-REV-102） |
 
 ---
 
@@ -264,38 +265,62 @@ classDiagram
 
 ### 8.1.5 具象クラス定義
 
+各カテゴリベース親クラスの下に、第3章のクラス設計で使用される操作固有のサブクラスを定義する。
+
 #### Domain 層
 
-| クラス | 固有属性 | 説明 |
-|---|---|---|
-| `ScenarioPackError` | `pack_id: str` | Scenario Pack のスキーマ不正、ハッシュ不一致、バージョン非互換など |
-| `CDLValidationError` | `field_path: str`, `expected_type: str` | CDL データモデルのバリデーション失敗。不正フィールド・型不一致を報告する |
-| `MetricCalculationError` | `metric_name: str`, `step_name: str` | メトリクス計算中の異常。ゼロ除算、NaN 検出、値域超過など |
+| 親クラス | サブクラス | 固有属性 | 説明 |
+|---|---|---|---|
+| `ScenarioPackError` | — | `pack_id: str` | Scenario Pack のスキーマ不正、ハッシュ不一致、バージョン非互換など |
+| | `PackNotFoundError` | `pack_id: str` | 指定された pack_id の Pack が Registry に存在しない |
+| `CDLValidationError` | — | `field_path: str`, `expected_type: str` | CDL データモデルのバリデーション失敗 |
+| `MetricCalculationError` | — | `metric_name: str`, `step_name: str` | メトリクス計算中の異常 |
 
 #### UseCase 層
 
-| クラス | 固有属性 | 説明 |
-|---|---|---|
-| `SimulationError` | `experiment_id: str`, `step_name: str` | シミュレーション実行中の失敗。ステップ実行タイムアウト、依存ステップ未完了など |
-| `BenchmarkError` | `experiment_ids: list[str]`, `metric_name: str` | ベンチマーク比較処理の失敗。比較対象不足、メトリクス欠損など |
+| 親クラス | サブクラス | 固有属性 | 説明 |
+|---|---|---|---|
+| `SimulationError` | — | `experiment_id: str`, `step_name: str` | シミュレーション実行中の失敗 |
+| | `ExecutionError` | `experiment_id: str`, `step_name: str` | ステップ実行の汎用エラー |
+| `BenchmarkError` | — | `experiment_ids: list[str]`, `metric_name: str` | ベンチマーク比較処理の失敗 |
+| | `NoComparableMetricsError` | `experiment_ids: list[str]` | 比較対象メトリクスが実験に存在しない |
 
 #### Adapter 層
 
-| クラス | 固有属性 | 説明 |
-|---|---|---|
-| `ConnectorError` | `connector_name: str`, `endpoint: str` | 外部シミュレータへの接続失敗。タイムアウト、認証エラー、プロトコル不一致など |
-| `OpenDSSError` | `dss_command: str`, `dss_error_text: str` | OpenDSS 固有のエラー。DSS コマンド実行失敗、モデル収束不良など |
-| `CLIError` | `command: str`, `exit_code: int` | CLI コマンドのパースエラー、不正な引数組み合わせ、権限不足など |
-| `PluginError` | `plugin_name: str`, `plugin_version: str` | プラグインのロード失敗、インターフェース不一致、バージョン非互換など |
+| 親クラス | サブクラス | 固有属性 | 説明 |
+|---|---|---|---|
+| `ConnectorError` | — | `connector_name: str`, `endpoint: str` | 外部シミュレータへの接続失敗 |
+| | `ConnectorInitError` | `connector_name: str` | Connector 初期化失敗（E-30001） |
+| | `ConnectorExecuteError` | `connector_name: str`, `step: int` | ステップ実行エラー（E-30002） |
+| | `ConnectorTeardownError` | `connector_name: str` | 終了処理失敗（E-30003） |
+| `OpenDSSError` | — | `dss_command: str`, `dss_error_text: str` | OpenDSS 固有のエラー |
+| `CLIError` | — | `command: str`, `exit_code: int` | CLI コマンドのパースエラー |
+| | `CLIArgumentError` | `command: str`, `argument: str` | CLI 引数の不正 |
+| `PluginError` | — | `plugin_name: str`, `plugin_version: str` | プラグイン関連エラー |
+| | `PluginAlreadyRegisteredError` | `plugin_name: str` | 同名プラグインの重複登録（E-30010） |
+| | `PluginNotFoundError` | `plugin_name: str` | プラグインが見つからない（E-30011） |
+| | `PluginLoadError` | `plugin_name: str`, `reason: str` | プラグインロード失敗（E-30012） |
+| `ExportError` | — | `format: str`, `output_path: str` | エクスポート処理の失敗（E-30013） |
+| `UnsupportedFormatError` | — | `format: str`, `supported: list[str]` | 未対応出力フォーマット（E-30014） |
 
 #### Infra 層
 
-| クラス | 固有属性 | 説明 |
-|---|---|---|
-| `OrchestratorError` | `workflow_id: str`, `step_index: int` | ワークフロー実行制御の異常。DAG 構築失敗、ステップスケジューリングエラーなど |
-| `ContainerError` | `container_id: str`, `image_ref: str` | Docker コンテナの起動失敗、イメージ取得エラー、リソース制限超過など |
-| `RegistryError` | `registry_url: str`, `resource_key: str` | Scenario Pack レジストリへのアクセス失敗。認証エラー、リソース未発見など |
-| `ConfigError` | `config_path: str`, `key: str` | 設定ファイルの読込失敗、必須キー欠損、値の型不正、環境変数未定義など |
+| 親クラス | サブクラス | 固有属性 | 説明 |
+|---|---|---|---|
+| `OrchestratorError` | — | `workflow_id: str`, `step_index: int` | ワークフロー実行制御の異常 |
+| | `ExperimentNotFoundError` | `experiment_id: str` | 指定実験 ID が存在しない |
+| | `ServiceNotFoundError` | `service_name: str` | Docker サービスが起動していない |
+| `ContainerError` | — | `container_id: str`, `image_ref: str` | Docker コンテナの操作失敗 |
+| | `ContainerStartError` | `container_id: str`, `image_ref: str` | コンテナ起動失敗 |
+| | `ContainerStopError` | `container_id: str` | コンテナ停止失敗 |
+| `RegistryError` | — | `registry_url: str`, `resource_key: str` | Registry アクセス失敗 |
+| | `TemplateNotFoundError` | `template_name: str` | テンプレートが見つからない |
+| `ConfigError` | — | `config_path: str`, `key: str` | 設定ファイル関連エラー |
+| | `ConfigValidationError` | `key: str`, `reason: str` | 設定バリデーション失敗（E-40008） |
+| | `ConfigKeyNotFoundError` | `key: str` | 必須キー欠損（E-40009） |
+| | `ConfigTypeError` | `key: str`, `expected: str`, `actual: str` | 設定値の型不正（E-40010） |
+| | `ConfigFileNotFoundError` | `config_path: str` | 設定ファイル読込失敗（E-40011） |
+| | `ConfigParseError` | `config_path: str`, `reason: str` | 設定ファイルパース失敗 |
 
 ### 8.1.6 例外チェーンポリシー
 

@@ -13,40 +13,90 @@
 ## R2: 相互整合性レビュー（X1〜X4）
 - 対象: ch03 vs ch04/ch05/ch08/ch10
 
-### 最重要課題（未対応）
-
-#### 課題1: 第3章のクラス定義不足（X2: ch03↔ch04）
+### 課題1: 第3章のクラス定義不足（X2: ch03↔ch04）
 第4章のシーケンス図に登場するが第3章に未定義のクラス:
 CDLRepository, DataTranslator, CanonicalData, PluginDiscovery,
 DebugManager, HealthChecker, InitHandler, UpdateHandler,
 MigrationRunner, KPIAggregator, ConfigValidator, Formatter
 
-**対応方針**: 第3章に不足クラスを追加。ただし全てが独立クラスである必要はなく、
-既存クラスのメソッドとして統合できるものは統合する。
-- CDLRepository → 3.4節に追加（UseCase層Protocol）
-- DataTranslator → 3.5節で定義済み（WI-01に含まれている）
-- PluginDiscovery → 3.8節で定義済み（WI-01に含まれている）
-- DebugManager/HealthChecker/InitHandler/UpdateHandler/MigrationRunner/KPIAggregator
-  → CLIのサブコマンドハンドラーとして3.7節に統合
-- ConfigValidator → 3.9節 ConfigManager.validate() として統合
-- Formatter → 3.7節 OutputFormatter として既に定義済み
+**対応状況**: ✅ **対応済み（2026-04-06, DD-REV-101）**
+- CDLRepository → 3.4.12節に Protocol 追加
+- CanonicalData → 3.4.11節に Union 型定義追加
+- DataTranslator → 3.5.4節で定義済み（対応不要）
+- PluginDiscovery → 3.8.4節で定義済み（対応不要）
+- DebugManager/InitHandler/UpdateHandler/KPIAggregator → 3.7.8節に CLIサブコマンドハンドラーとして統合追加
+- HealthChecker → 3.9.6節に共通基盤クラスとして追加
+- MigrationRunner → 3.9.7節に共通基盤クラスとして追加
+- ConfigValidator → ConfigManager.validate() として統合済み（対応不要）
+- Formatter → OutputFormatter として定義済み（対応不要）
 
-#### 課題2: 例外名の体系的不一致（X4: ch03↔ch08）
+### 課題2: 例外名の体系的不一致（X4: ch03↔ch08）
 第3章: 操作固有名（PackNotFoundError, ContainerStartError, ExecutionError等）
 第8章: カテゴリベース名（RegistryError, ContainerError, OrchestratorError等）
 
-**対応方針**: 第8章のカテゴリベース例外を親クラスとし、第3章の操作固有例外を
-サブクラスとして第8章に追加する。
-例: RegistryError → PackNotFoundError(RegistryError)
-    ContainerError → ContainerStartError(ContainerError)
+**対応状況**: ✅ **対応済み（2026-04-06, DD-REV-102）**
+- 第3章 3.9.5節: 例外クラス階層を4層構造（DomainError/UseCaseError/AdapterError/InfraError）に再構成、全サブクラスを明記
+- 第8章 8.1.5節: 具象クラス定義にサブクラス列を追加、エラーコードとの対応を明記
 
-#### 課題3: 状態属性の欠落（X3: ch03↔ch05）
+### 課題3: 状態属性の欠落（X3: ch03↔ch05）
 第5章で状態遷移が定義されているが、第3章のクラスに状態属性がない。
 
-**対応方針**: 第3章の以下クラスにstate属性を追加:
-- Orchestrator: state: OrchestratorState (Enum)
-- ScenarioPack: status: PackStatus (Enum)
-- ConnectorInterface: （Protocolなので状態はConnector実装側で管理）
+**対応状況**: ✅ **対応済み（2026-04-06, DD-REV-103）**
+- Orchestrator: state: OrchestratorState 追加
+- ScenarioPack: status: PackStatus 追加
+- ConnectorInterface: Protocolなので対応不要
 
 ## R2: 相互整合性レビュー（X5〜X7）
-- 未実施
+- 実施日: 2026-04-06
+
+### X5: ch06（データ詳細設計）↔ ch03（クラス設計）
+
+**結果**: ERROR 10件, WARNING 7件
+
+**ERROR（修正必須）:**
+1. CDLエンティティのID属性命名が不統一（第6章: `id`, 第3章: `{entity}_id`）— Topology, Node, Edge, Asset, TimeSeries, Event の6エンティティ
+2. Metric 属性体系の不整合（第6章: `name` をPK、第3章: `metric_id` と `name` を分離）
+3. ScenarioPack 属性定義の乖離（第6章: ER図に基本属性のみ、第3章: 詳細クラス定義）
+4. PackMetadata の第6章での定義欠落
+5. Event.target_id の参照対象の矛盾（第6章: Node/Edge、第3章: Asset）
+
+**WARNING（改善推奨）:**
+1. コンテナ型の不一致（tuple vs list）
+2. 相互に属性欠落あり（name, source_bus, node_type, length_km, resolution_s 等）
+3. ExperimentMetadata.seed 型の相違（int vs int|None）
+4. Asset.node_id vs Asset.bus の属性名相違
+
+### X6: ch07（アルゴリズム設計）↔ ch03（クラス設計）
+
+**結果**: ERROR 8件, WARNING 4件
+
+**ERROR（修正必須）:**
+1. HELICSBroker クラスが第3章に未定義（Federation-driven 時間同期で必要）
+2. SimulationResults クラスが未定義（メトリクス計算入力型）
+3. Result 型群が未定義（NodeResult, BranchResult, LoadResult, GeneratorResult, RenewableResult）
+4. Interruption クラスが第3章に未定義（IEEE 1366 指標計算で必要）
+5. SimulationTask / TaskResult が未定義（バッチスケジューリングで必要）
+6. ExperimentResult が第3章に未定義（Orchestrator.run() 戻り値、MetricCalculator 入力型）
+7. TimeSyncStrategy 関連クラス（OrchestratorDriven/FederationDriven/HybridSync）が第3章に未定義
+8. ConnectorInterface に execute_at メソッドが未定義（HELICS 連携時の時刻ベース実行）
+
+**WARNING（改善推奨）:**
+1. Connector クラス名の不統一（"Connector" vs "ConnectorInterface"）
+2. メトリクス計算入力型の用語不統一（SimulationResults vs ExperimentResult）
+3. 標準指標計算器の実装戦略が不明（クラス定義なし、表のみ）
+4. execute_at の仕様明確化
+
+### X7: ch09（設定管理設計）↔ ch11（ビルド・デプロイ設計）
+
+**結果**: ERROR 0件, WARNING 4件
+
+**WARNING（改善推奨）:**
+1. ボリュームマウントパスの不整合（`/data` vs `/app/data`, `/scenario-packs` vs `/app/scenarios`）
+2. CI 環境用 docker-compose.test.yml の設定仕様が第9章に未記載
+3. Dockerfile 内のデフォルト値が ENV 指定されていない
+4. パッケージバージョン指定と設定項目の関連が未記載
+
+### X5〜X7 総合
+- X5: ERROR 10件 — CDLエンティティの属性定義統一が最優先課題
+- X6: ERROR 8件 — アルゴリズムで必要なクラスの第3章への追加が必要
+- X7: ERROR 0件 — 基本的に整合。ボリュームパスの統一が推奨
