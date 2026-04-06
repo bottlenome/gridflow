@@ -7,6 +7,7 @@
 | 0.1 | 2026-04-03 | 初版作成 | gridflow設計チーム |
 | 0.4 | 2026-04-06 | 不足クラス追加（CanonicalData, CDLRepository）、状態属性追加（ScenarioPack）（DD-REV-101/103） | Claude |
 | 0.5 | 2026-04-06 | 第3章分割（03_class_design.md → 03a/03b/03c/03d） | Claude |
+| 0.6 | 2026-04-06 | X5/X6レビュー対応: Event.target拡張(target_id+target_type), Metric PK統一(metric_id→name), Asset.bus→node_id統一, ExperimentResult/Result型群/Interruption追加 | Claude |
 
 ---
 
@@ -50,6 +51,21 @@
 | DD-CLS-030 | TraceSpan | gridflow.infra.trace | Infra | トレーススパン（OTel互換） | REQ-Q-008 |
 | DD-CLS-031 | TraceRecorder | gridflow.infra.trace | Infra | トレース記録 | REQ-Q-008 |
 | DD-CLS-032 | PerfettoExporter | gridflow.infra.trace | Infra | Perfetto形式エクスポート | REQ-Q-008 |
+| DD-CLS-033 | ExperimentResult | gridflow.domain.result | Domain | 実験結果の集約データモデル | REQ-F-002 |
+| DD-CLS-034 | NodeResult | gridflow.domain.result | Domain | ノード別シミュレーション結果 | REQ-F-002 |
+| DD-CLS-035 | BranchResult | gridflow.domain.result | Domain | ブランチ別シミュレーション結果 | REQ-F-002 |
+| DD-CLS-036 | LoadResult | gridflow.domain.result | Domain | 負荷別シミュレーション結果 | REQ-F-002 |
+| DD-CLS-037 | GeneratorResult | gridflow.domain.result | Domain | 発電機別シミュレーション結果 | REQ-F-002 |
+| DD-CLS-038 | RenewableResult | gridflow.domain.result | Domain | 再エネ別シミュレーション結果 | REQ-F-002 |
+| DD-CLS-039 | Interruption | gridflow.domain.result | Domain | 停電イベント（IEEE 1366用） | REQ-F-004 |
+| DD-CLS-040 | TimeSyncStrategy | gridflow.usecase.interfaces | UseCase | 時間同期戦略Protocol | REQ-F-002 |
+| DD-CLS-041 | OrchestratorDriven | gridflow.infra.orchestrator | Infra | Orchestrator駆動の時間同期 | REQ-F-002 |
+| DD-CLS-042 | FederationDriven | gridflow.infra.orchestrator | Infra | HELICS Federation駆動の時間同期 | REQ-F-002 |
+| DD-CLS-043 | HybridSync | gridflow.infra.orchestrator | Infra | ハイブリッド時間同期 | REQ-F-002 |
+| DD-CLS-044 | HELICSBroker | gridflow.infra.orchestrator | Infra | HELICS Broker管理 | REQ-F-002 |
+| DD-CLS-045 | FederatedConnectorInterface | gridflow.usecase.interfaces | UseCase | HELICS対応コネクタIF | REQ-F-007 |
+| DD-CLS-046 | SimulationTask | gridflow.usecase.scheduling | UseCase | バッチスケジューリング用タスク | REQ-F-002 |
+| DD-CLS-047 | TaskResult | gridflow.usecase.scheduling | UseCase | タスク実行結果 | REQ-F-002 |
 
 ---
 
@@ -181,6 +197,8 @@ classDiagram
 
 CDL（Common Data Language）ドメインクラスは全て `dataclass(frozen=True)` として定義し、イミュータブルとする。全クラスに共通メソッド `to_dict()` および `validate()` を実装する。
 
+> **コンテナ型の使い分け:** frozen dataclass の内部属性には不変コンテナ `tuple` を使用する（第6章準拠）。メソッドの引数・戻り値には `list` を使用し、呼び出し側の利便性を確保する。
+
 ### 3.4.1 クラス図
 
 ```mermaid
@@ -219,7 +237,7 @@ classDiagram
         +str asset_id
         +str name
         +str asset_type
-        +str bus
+        +str node_id
         +float rated_power_kw
         +dict parameters
         +to_dict() dict
@@ -241,18 +259,19 @@ classDiagram
         +str event_id
         +str event_type
         +datetime timestamp
-        +str target_asset
+        +str target_id
+        +str target_type
         +dict parameters
         +to_dict() dict
         +validate() None
     }
 
     class Metric {
-        +str metric_id
         +str name
         +float value
         +str unit
         +int|None step
+        +float|None threshold
         +to_dict() dict
         +validate() None
     }
@@ -270,7 +289,9 @@ classDiagram
 
     Topology --> Node : nodes
     Topology --> Edge : edges
-    Event ..> Asset : target_asset
+    Event ..> Node : "target (node)"
+    Event ..> Edge : "target (edge)"
+    Event ..> Asset : "target (asset)"
     ExperimentMetadata ..> TimeSeries : references
     ExperimentMetadata ..> Metric : references
 ```
@@ -340,7 +361,7 @@ classDiagram
 | asset_id | str | 機器の一意識別子 |
 | name | str | 機器名 |
 | asset_type | str | 機器種別（例: "pv", "battery", "load"） |
-| bus | str | 接続先バスのノードID |
+| node_id | str | 接続先ノードID（Node.node_id を参照） |
 | rated_power_kw | float | 定格電力（kW） |
 | parameters | dict | 機器固有の追加パラメータ |
 
@@ -364,9 +385,10 @@ classDiagram
 | 属性 | 型 | 説明 |
 |---|---|---|
 | event_id | str | イベントの一意識別子 |
-| event_type | str | イベント種別（例: "fault", "switch", "setpoint"） |
+| event_type | str | イベント種別（例: "fault", "switch", "setpoint", "load_change", "generation_change"） |
 | timestamp | datetime | イベント発生時刻 |
-| target_asset | str | 対象機器のasset_id |
+| target_id | str | 対象要素の識別子（Node.node_id, Edge.edge_id, または Asset.asset_id） |
+| target_type | str | 対象要素の種別（"node" \| "edge" \| "asset"） |
 | parameters | dict | イベント固有のパラメータ |
 
 ### 3.4.9 Metric
@@ -375,11 +397,11 @@ classDiagram
 
 | 属性 | 型 | 説明 |
 |---|---|---|
-| metric_id | str | 指標の一意識別子 |
-| name | str | 指標名 |
+| name | str | 指標名（実験内で一意、PK） |
 | value | float | 指標値 |
 | unit | str | 単位 |
 | step | int \| None | 対応するステップ番号。全体指標の場合はNone |
+| threshold | float \| None | 閾値（超過で警告）。不要時はNone |
 
 ### 3.4.10 ExperimentMetadata
 
@@ -439,6 +461,145 @@ CDL データの永続化・取得を担う UseCase 層 Protocol。
 | **Input** | `exp_id: str` -- 実験 ID, `format: str` -- 出力フォーマット（"csv" / "json" / "parquet"）, `output_dir: Path` -- 出力先ディレクトリ |
 | **Process** | 指定フォーマットで実験結果をファイルに出力する。 |
 | **Output** | `Path` -- 出力ファイルパス。フォーマット未対応時は `UnsupportedFormatError(AdapterError)` を送出。 |
+
+---
+
+## 3.4+ シミュレーション結果型（REQ-F-002, REQ-F-004）
+
+第7章（アルゴリズム設計）のメトリクス計算・バッチスケジューリングで使用するシミュレーション結果のデータ型を定義する。全て `dataclass(frozen=True)` とする。
+
+### 3.4.13 ExperimentResult
+
+**モジュール:** `gridflow.domain.result`
+
+Orchestrator.run() の戻り値であり、BenchmarkHarness / MetricCalculator の入力型。第7章の `SimulationResults` に相当する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| experiment_id | str | 実験の一意識別子 |
+| metadata | ExperimentMetadata | 実験メタデータ |
+| steps | list[StepResult] | 各ステップの実行結果リスト |
+| node_results | list[NodeResult] | ノード別結果（電圧等） |
+| branch_results | list[BranchResult] | ブランチ別結果（電流・損失等） |
+| load_results | list[LoadResult] | 負荷別結果（需要・供給） |
+| generator_results | list[GeneratorResult] | 発電機別結果（出力・コスト） |
+| renewable_results | list[RenewableResult] | 再エネ別結果（可用・出力抑制） |
+| interruptions | list[Interruption] | 停電イベントリスト（IEEE 1366指標計算用） |
+| metrics | dict[str, MetricValue] | 算出済み指標のマッピング |
+| elapsed_s | float | 総実行時間（秒） |
+
+### 3.4.14 NodeResult
+
+**モジュール:** `gridflow.domain.result`
+
+ノード単位の時系列シミュレーション結果。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| node_id | str | 対象ノードID |
+| voltages | tuple[float, ...] | 各ステップの電圧値（pu） |
+
+#### メソッド
+
+**voltage_at**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `step: int` -- ステップ番号 |
+| **Process** | 指定ステップの電圧値を返却する。 |
+| **Output** | `float` -- 電圧値（pu）。 |
+
+### 3.4.15 BranchResult
+
+**モジュール:** `gridflow.domain.result`
+
+ブランチ（線路・変圧器）単位の時系列シミュレーション結果。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| edge_id | str | 対象エッジID |
+| currents | tuple[float, ...] | 各ステップの電流値（A） |
+| losses_kw | tuple[float, ...] | 各ステップの損失（kW） |
+| i_rated | float | 定格電流（A） |
+
+#### メソッド
+
+| メソッド | Input | Output | 説明 |
+|---|---|---|---|
+| current_at | `step: int` | `float` | 指定ステップの電流値 |
+| loss_kw_at | `step: int` | `float` | 指定ステップの損失 |
+
+### 3.4.16 LoadResult
+
+**モジュール:** `gridflow.domain.result`
+
+負荷単位の時系列シミュレーション結果。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| asset_id | str | 対象負荷のアセットID |
+| demands | tuple[float, ...] | 各ステップの需要（kW） |
+| supplied | tuple[float, ...] | 各ステップの供給量（kW） |
+
+#### メソッド
+
+| メソッド | Input | Output | 説明 |
+|---|---|---|---|
+| demand_at | `step: int` | `float` | 指定ステップの需要 |
+| supplied_at | `step: int` | `float` | 指定ステップの供給量 |
+
+### 3.4.17 GeneratorResult
+
+**モジュール:** `gridflow.domain.result`
+
+発電機単位の時系列シミュレーション結果。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| asset_id | str | 対象発電機のアセットID |
+| powers | tuple[float, ...] | 各ステップの出力（kW） |
+| cost_per_unit | float | 単位発電コスト（USD/kWh） |
+| emission_factor | float | CO2排出係数（tCO2/kWh） |
+
+#### メソッド
+
+| メソッド | Input | Output | 説明 |
+|---|---|---|---|
+| power_at | `step: int` | `float` | 指定ステップの出力 |
+
+### 3.4.18 RenewableResult
+
+**モジュール:** `gridflow.domain.result`
+
+再エネ発電機単位の時系列シミュレーション結果。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| asset_id | str | 対象再エネ機のアセットID |
+| available | tuple[float, ...] | 各ステップの可用出力（kW） |
+| dispatched | tuple[float, ...] | 各ステップの実出力（kW） |
+
+#### メソッド
+
+| メソッド | Input | Output | 説明 |
+|---|---|---|---|
+| available_at | `step: int` | `float` | 指定ステップの可用出力 |
+| dispatched_at | `step: int` | `float` | 指定ステップの実出力 |
+
+### 3.4.19 Interruption
+
+**モジュール:** `gridflow.domain.result`
+
+停電イベントのデータモデル。IEEE 1366 信頼性指標（SAIDI/SAIFI/CAIDI）の計算入力として使用する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| event_id | str | 停電イベントID |
+| start_time | float | 停電開始時刻（秒） |
+| end_time | float | 停電終了時刻（秒） |
+| duration_min | float | 停電時間（分） |
+| customers_affected | int | 影響を受けた顧客数 |
+| cause | str | 原因（"fault" \| "maintenance" \| "overload"） |
 
 ---
 

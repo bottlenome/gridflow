@@ -8,6 +8,7 @@
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成（6.1〜6.4） |
 | 0.2 | 2026-04-03 | 6.5〜6.8追記 |
+| 0.5 | 2026-04-06 | X5レビュー対応: ID命名統一({entity}_id), Event.target_type追加, 属性欠落補完(name, source_bus, node_type, length_km, resolution_s, rated_power_kw), PackMetadata追加, seed型修正(int→int\|None) |
 
 ---
 
@@ -21,11 +22,28 @@ CDL を構成する全エンティティ間の関係を以下の ER 図に示す
 erDiagram
     ScenarioPack ||--o{ ExperimentMetadata : "generates"
     ScenarioPack {
-        string schema_version
+        string pack_id PK
         string name
-        string description
-        boolean baseline
+        string version
+        PackMetadata metadata
+        Path network_dir
+        Path timeseries_dir
+        Path config_dir
+        PackStatus status
     }
+
+    PackMetadata {
+        string name
+        string version
+        string description
+        string author
+        datetime created_at
+        string connector
+        int_or_None seed
+        dict parameters
+    }
+
+    ScenarioPack ||--|| PackMetadata : "has"
 
     ExperimentMetadata ||--|| Topology : "references"
     ExperimentMetadata ||--o{ TimeSeries : "contains"
@@ -36,53 +54,62 @@ erDiagram
         datetime created_at
         string scenario_pack_id FK
         string connector
-        int seed
+        int_or_None seed
+        dict parameters
     }
 
     Topology ||--|{ Node : "has"
     Topology ||--|{ Edge : "has"
     Topology ||--o{ Asset : "has"
     Topology {
-        string id PK
+        string topology_id PK
+        string name
+        string source_bus
         dict metadata
     }
 
     Node {
-        string id PK
+        string node_id PK
         string name
+        string node_type
         float voltage_kv
         tuple coordinates
     }
 
     Edge {
-        string id PK
+        string edge_id PK
         string from_node FK
         string to_node FK
         string edge_type
+        float length_km
         dict properties
     }
 
     Asset {
-        string id PK
+        string asset_id PK
+        string name
         AssetType asset_type
         string node_id FK
+        float rated_power_kw
         dict parameters
     }
 
     TimeSeries {
-        string id PK
+        string series_id PK
         string name
         list_datetime timestamps
         list_float values
         string unit
+        float resolution_s
         dict metadata
     }
 
     Event {
-        string id PK
+        string event_id PK
         string event_type
         datetime timestamp
         string target_id FK
+        string target_type
         dict params
     }
 
@@ -124,17 +151,20 @@ erDiagram
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、一意 | トポロジー識別子 |
+| `topology_id` | `str` | 必須 | 空文字不可、一意 | トポロジー識別子 |
+| `name` | `str` | 必須 | 空文字不可 | トポロジー名 |
 | `nodes` | `tuple[Node, ...]` | 必須 | 1 個以上 | 所属するノードの不変タプル |
 | `edges` | `tuple[Edge, ...]` | 必須 | 1 個以上 | 所属するエッジの不変タプル |
+| `source_bus` | `str` | 必須 | 有効な Node.node_id を参照 | 電源バスのノードID |
 | `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 座標系、基準電圧等の補助情報 |
 
 ### 6.2.2 Node
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、Topology 内で一意 | ノード識別子 |
+| `node_id` | `str` | 必須 | 空文字不可、Topology 内で一意 | ノード識別子 |
 | `name` | `str` | 必須 | 空文字不可 | ノード表示名 |
+| `node_type` | `str` | 必須 | `"bus"` \| `"load"` \| `"generator"` | ノード種別 |
 | `voltage_kv` | `float` | 必須 | 正の値 | 定格電圧 (kV) |
 | `coordinates` | `tuple[float, float] \| None` | オプション | デフォルト `None`、(緯度, 経度) | 地理座標 |
 
@@ -142,40 +172,45 @@ erDiagram
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、Topology 内で一意 | エッジ識別子 |
-| `from_node` | `str` | 必須 | 有効な Node.id を参照 | 始点ノード ID |
-| `to_node` | `str` | 必須 | 有効な Node.id を参照 | 終点ノード ID |
+| `edge_id` | `str` | 必須 | 空文字不可、Topology 内で一意 | エッジ識別子 |
+| `from_node` | `str` | 必須 | 有効な Node.node_id を参照 | 始点ノード ID |
+| `to_node` | `str` | 必須 | 有効な Node.node_id を参照 | 終点ノード ID |
 | `edge_type` | `str` | 必須 | `"line"` \| `"transformer"` \| `"switch"` | エッジ種別 |
+| `length_km` | `float \| None` | オプション | デフォルト `None` | 線路長（km）。該当しない場合はNone |
 | `properties` | `dict[str, object]` | オプション | デフォルト `{}` | インピーダンス、定格容量等の物理パラメータ |
 
 ### 6.2.4 Asset
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、一意 | アセット識別子 |
-| `asset_type` | `AssetType` | 必須 | Enum: `GENERATOR`, `LOAD`, `STORAGE`, `LINE`, `TRANSFORMER` | アセット種別 |
-| `node_id` | `str` | 必須 | 有効な Node.id を参照 | 接続先ノード ID |
+| `asset_id` | `str` | 必須 | 空文字不可、一意 | アセット識別子 |
+| `name` | `str` | 必須 | 空文字不可 | 機器名 |
+| `asset_type` | `str` | 必須 | `"pv"` \| `"battery"` \| `"load"` \| `"generator"` \| `"transformer"` | アセット種別 |
+| `node_id` | `str` | 必須 | 有効な Node.node_id を参照 | 接続先ノード ID |
+| `rated_power_kw` | `float` | 必須 | 正の値 | 定格電力（kW） |
 | `parameters` | `dict[str, object]` | オプション | デフォルト `{}` | 定格出力、容量等のアセット固有パラメータ |
 
 ### 6.2.5 TimeSeries
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、一意 | 時系列識別子 |
+| `series_id` | `str` | 必須 | 空文字不可、一意 | 時系列識別子 |
 | `name` | `str` | 必須 | 空文字不可 | 時系列の表示名（例: `"load_profile"` ） |
 | `timestamps` | `tuple[datetime, ...]` | 必須 | 昇順、1 個以上、`values` と同数 | タイムスタンプ列 |
 | `values` | `tuple[float, ...]` | 必須 | `timestamps` と同数 | 値列 |
 | `unit` | `str` | 必須 | 空文字不可（例: `"kW"`, `"kVar"`, `"V"` ） | 物理単位 |
-| `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 解像度、補間方式等の補助情報 |
+| `resolution_s` | `float` | 必須 | 正の値 | データ解像度（秒） |
+| `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 補間方式等の補助情報 |
 
 ### 6.2.6 Event
 
 | 属性名 | Python 型 | 必須/オプション | 制約 | 説明 |
 |---|---|---|---|---|
-| `id` | `str` | 必須 | 空文字不可、一意 | イベント識別子 |
-| `event_type` | `str` | 必須 | `"fault"` \| `"switch"` \| `"load_change"` \| `"generation_change"` | イベント種別 |
+| `event_id` | `str` | 必須 | 空文字不可、一意 | イベント識別子 |
+| `event_type` | `str` | 必須 | `"fault"` \| `"switch"` \| `"load_change"` \| `"generation_change"` \| `"setpoint"` | イベント種別 |
 | `timestamp` | `datetime` | 必須 | シミュレーション時間範囲内 | 発生時刻 |
-| `target_id` | `str` | 必須 | 有効な Node.id または Edge.id を参照 | 対象要素 ID |
+| `target_id` | `str` | 必須 | 有効な Node.node_id, Edge.edge_id, または Asset.asset_id を参照 | 対象要素 ID |
+| `target_type` | `str` | 必須 | `"node"` \| `"edge"` \| `"asset"` | 対象要素の種別 |
 | `params` | `dict[str, object]` | オプション | デフォルト `{}` | イベント固有パラメータ（障害種別、変化量等） |
 
 ### 6.2.7 Metric
@@ -197,7 +232,7 @@ erDiagram
 | `scenario_pack_id` | `str` | 必須 | 有効な ScenarioPack 名を参照 | 元となる Scenario Pack の識別子 |
 | `connector` | `str` | 必須 | 登録済み Connector 名（例: `"opendss"`, `"pandapower"` ） | 使用した Connector |
 | `parameters` | `dict[str, object]` | オプション | デフォルト `{}` | 実験固有パラメータ（シミュレーション設定等） |
-| `seed` | `int` | オプション | デフォルト `0`、非負整数 | 乱数シード（再現性担保） |
+| `seed` | `int \| None` | オプション | デフォルト `None`、指定時は非負整数 | 乱数シード（再現性担保）。未指定時はNone |
 
 ---
 

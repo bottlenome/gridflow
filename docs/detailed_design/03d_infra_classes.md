@@ -9,6 +9,7 @@
 | 0.3 | 2026-04-04 | 3.10 トレース関連クラス追加（Perfetto形式） | gridflow設計チーム |
 | 0.4 | 2026-04-06 | HealthChecker, MigrationRunner 追加、例外クラス階層統一（DD-REV-101/102） | Claude |
 | 0.5 | 2026-04-06 | 第3章分割（03_class_design.md → 03a/03b/03c/03d） | Claude |
+| 0.6 | 2026-04-06 | X6レビュー対応: HELICSBroker追加 | Claude |
 
 ---
 
@@ -265,6 +266,38 @@ GridflowError
 | **Input** | なし |
 | **Process** | 現在のスキーマバージョンと最新バージョンを比較し、未適用のマイグレーションスクリプトを順次実行する。実行前にバックアップを作成し、失敗時はロールバックする。 |
 | **Output** | `MigrationResult` -- `applied: list[str]`（適用済みマイグレーション名）, `success: bool`, `rollback: bool` を含む。失敗時は `ExecutionError(SimulationError)` を送出。 |
+
+### 3.9.8 HELICSBroker
+
+**モジュール:** `gridflow.infra.orchestrator`
+
+HELICS（Hierarchical Engine for Large-scale Infrastructure Co-Simulation）Broker の管理クラス。FederationDriven / HybridSync 時間同期戦略（[03b 3.3.6](03b_usecase_classes.md#336-timesyncstrategyprotocol)）で使用される。
+
+#### メソッド
+
+**initialize**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `connectors: list[FederatedConnectorInterface]` -- HELICS 対応コネクタのリスト |
+| **Process** | HELICS Broker プロセスを起動し、各コネクタを Federate として登録する。接続確立のタイムアウトは設定値（デフォルト30秒）に従う。 |
+| **Output** | `None`。タイムアウト時は `BrokerTimeoutError(OrchestratorError)` を送出。 |
+
+**request_time**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `current_time: float` -- 現在のシミュレーション時刻（秒） |
+| **Process** | HELICS Broker に時刻付与を要求し、全 Federate が同期した時点で付与時刻を返却する。 |
+| **Output** | `float` -- 付与されたシミュレーション時刻（秒）。同期失敗時は `SyncError(SimulationError)` を送出。 |
+
+**finalize**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | HELICS Broker を終了し、全 Federate を切断する。リソースを解放する。 |
+| **Output** | `None`。 |
 
 ---
 

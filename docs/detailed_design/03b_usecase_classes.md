@@ -8,6 +8,7 @@
 | 0.2 | 2026-04-04 | 3.5〜3.6 追記 | gridflow設計チーム |
 | 0.4 | 2026-04-06 | 状態属性追加（Orchestrator）（DD-REV-103） | Claude |
 | 0.5 | 2026-04-06 | 第3章分割（03_class_design.md → 03a/03b/03c/03d） | Claude |
+| 0.6 | 2026-04-06 | X6レビュー対応: TimeSyncStrategy(Protocol)+3実装追加, FederatedConnectorInterface追加, SimulationTask/TaskResult追加 | Claude |
 
 ---
 
@@ -148,11 +149,102 @@ classDiagram
 
 **モジュール:** `gridflow.infra.orchestrator`
 
+時間同期の**設定データ**。TimeSyncStrategy（3.3.6）の実行パラメータとして使用される。
+
 | 属性 | 型 | 説明 |
 |---|---|---|
-| mode | str | 同期モード（例: "lockstep", "async"） |
+| mode | str | 同期モード（"orchestrator" \| "federation" \| "hybrid"） |
 | step_size | float | 1ステップあたりの時間幅（秒） |
 | total_steps | int | 総ステップ数 |
+
+### 3.3.6 TimeSyncStrategy（Protocol）
+
+**モジュール:** `gridflow.usecase.interfaces`
+
+時間同期の**実行戦略**インタフェース。第7章（7.1節）で定義されるアルゴリズムに対応する。TimeSync（3.3.5）が設定、TimeSyncStrategy が振る舞いを担う。
+
+```mermaid
+classDiagram
+    class TimeSyncStrategy {
+        <<Protocol>>
+        +advance(step: int, context: dict) dict
+    }
+
+    class OrchestratorDriven {
+        -list~ConnectorInterface~ connectors
+        -CDLRepository cdl_repo
+        +advance(step: int, context: dict) dict
+    }
+
+    class FederationDriven {
+        -HELICSBroker broker
+        -list~FederatedConnectorInterface~ connectors
+        +advance(step: int, context: dict) dict
+    }
+
+    class HybridSync {
+        -OrchestratorDriven orchestrator
+        -FederationDriven federation
+        +advance(step: int, context: dict) dict
+    }
+
+    TimeSyncStrategy <|.. OrchestratorDriven : implements
+    TimeSyncStrategy <|.. FederationDriven : implements
+    TimeSyncStrategy <|.. HybridSync : implements
+```
+
+#### メソッド
+
+**advance**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `step: int` -- 現在のステップ番号, `context: dict` -- ステップ実行コンテキスト |
+| **Process** | 同期戦略に従って全コネクタの1ステップ実行を統制し、結果を集約して返却する。 |
+| **Output** | `dict` -- 集約された実行結果コンテキスト。同期失敗時は `SyncError(SimulationError)` を送出。 |
+
+#### OrchestratorDriven
+
+Orchestrator が直接ステップタイミングを制御する。OpenDSS / pandapower 等の非リアルタイムコネクタ向け。各コネクタを順次 `execute(step, context)` で呼び出し、CDLRepository に結果を格納する。
+
+#### FederationDriven
+
+HELICS Broker がタイミングを管理する。HELICS 対応シミュレータ向け。`broker.request_time()` で付与された時刻で `connector.execute_at(granted_time, context)` を呼び出す。
+
+#### HybridSync
+
+OrchestratorDriven と FederationDriven を組み合わせ、HELICS 対応/非対応コネクタを1つの実験で混在実行する。ステップごとに Orchestrator 管理コネクタを先に実行し、その後 Broker 経由で Federation 管理コネクタを実行する。
+
+### 3.3.7 SimulationTask / TaskResult
+
+**モジュール:** `gridflow.usecase.scheduling`
+
+バッチスケジューリング（第7章 7.3節）で使用するタスク定義と結果。
+
+**SimulationTask**（`dataclass`）
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| task_id | str | タスクの一意識別子 |
+| pack | ScenarioPack | 実行対象のシナリオパック |
+| options | dict | 実行オプション |
+
+**execute**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし（属性から取得） |
+| **Process** | Orchestrator.run() を非同期で呼び出し、ExperimentResult を取得する。 |
+| **Output** | `TaskResult` -- タスク実行結果。失敗時は `SchedulerError(SimulationError)` を送出。 |
+
+**TaskResult**（`dataclass(frozen=True)`）
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| task_id | str | 対応するタスクID |
+| status | str | "completed" \| "failed" |
+| data | ExperimentResult \| None | 成功時の実験結果 |
+| error | str \| None | 失敗時のエラーメッセージ |
 
 ---
 
@@ -168,6 +260,11 @@ classDiagram
         +execute(step: int, context: dict~str, Any~) StepResult
         +health_check() HealthStatus
         +teardown() None
+    }
+
+    class FederatedConnectorInterface {
+        <<Protocol>>
+        +execute_at(granted_time: float, context: dict~str, Any~) StepResult
     }
 
     class OpenDSSConnector {
@@ -203,6 +300,7 @@ classDiagram
         +str message
     }
 
+    ConnectorInterface <|-- FederatedConnectorInterface : extends
     ConnectorInterface <|.. OpenDSSConnector : implements
     DataTranslator <|.. OpenDSSTranslator : implements
     OpenDSSConnector --> DataTranslator : uses
@@ -249,6 +347,24 @@ UseCase層に定義し、DIP（依存性逆転の原則）を適用する。Adap
 | **Input** | なし |
 | **Process** | コネクタの終了処理を実行する。外部シミュレータとの接続切断、一時ファイルの削除、リソースの解放を行う。 |
 | **Output** | `None`。終了処理失敗時は `ConnectorTeardownError`（E-30003）を送出。 |
+
+### 3.5.2a FederatedConnectorInterface（Protocol）
+
+**モジュール:** `gridflow.usecase.interfaces`
+
+HELICS 対応コネクタ向けの拡張 Protocol。ConnectorInterface を継承し、時刻ベースの実行メソッド `execute_at` を追加する。FederationDriven / HybridSync 戦略で使用される。
+
+#### メソッド
+
+**execute_at**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `granted_time: float` -- HELICS Broker から付与されたシミュレーション時刻（秒）, `context: dict[str, Any]` -- ステップ実行コンテキスト |
+| **Process** | 付与された時刻で1ステップ分のシミュレーションを実行する。`execute(step, context)` のステップベース実行に対し、時刻ベースでの実行を提供する。 |
+| **Output** | `StepResult` -- ステップ実行結果。実行失敗時は `ConnectorExecuteError`（E-30002）を送出。 |
+
+> **備考:** HELICS 非対応のコネクタ（OpenDSS等）はこの Protocol を実装する必要はない。ConnectorInterface のみ実装すれば OrchestratorDriven 戦略で使用可能。
 
 ### 3.5.3 OpenDSSConnector
 

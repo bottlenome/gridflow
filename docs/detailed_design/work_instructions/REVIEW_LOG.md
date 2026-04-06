@@ -100,3 +100,32 @@ MigrationRunner, KPIAggregator, ConfigValidator, Formatter
 - X5: ERROR 10件 — CDLエンティティの属性定義統一が最優先課題
 - X6: ERROR 8件 — アルゴリズムで必要なクラスの第3章への追加が必要
 - X7: ERROR 0件 — 基本的に整合。ボリュームパスの統一が推奨
+
+## X5/X6 対応（2026-04-06）
+
+### X5対応（DD-REV-201〜DD-REV-207）
+
+| ID | 対応内容 | 対象ファイル |
+|---|---|---|
+| DD-REV-201 | ID命名統一: ch06の `id` → `{entity}_id`（topology_id, node_id, edge_id, asset_id, series_id, event_id） | 06_data_detail.md |
+| DD-REV-202 | Event.target拡張: `target_asset` → `target_id` + `target_type`（node/edge/asset の3種参照に対応） | 03a_domain_classes.md, 06_data_detail.md |
+| DD-REV-203 | Metric PK統一: `metric_id` 削除、`name` をPKに統一 | 03a_domain_classes.md |
+| DD-REV-204 | ScenarioPack/PackMetadata: ch06のER図・属性表にPackMetadata追加、全属性を第3章と整合 | 06_data_detail.md |
+| DD-REV-205 | Asset.bus → node_id: 第3章を `node_id` に統一（第6章と整合） | 03a_domain_classes.md |
+| DD-REV-206 | 属性欠落補完: ch06に name, source_bus, node_type, length_km, resolution_s, rated_power_kw 追加 | 06_data_detail.md |
+| DD-REV-207 | seed型統一: `int` → `int \| None`（デフォルト None）、tuple vs list 注記追加 | 06_data_detail.md, 03a_domain_classes.md |
+
+### X6対応（DD-REV-301〜DD-REV-308）
+
+| ID | 対応内容 | 対象ファイル |
+|---|---|---|
+| DD-REV-301 | ExperimentResult 正式定義追加（03a 3.4.13）、ch07 SimulationResults との対応注記 | 03a_domain_classes.md, 07_algorithm.md |
+| DD-REV-302 | Result型群追加（NodeResult, BranchResult, LoadResult, GeneratorResult, RenewableResult）→ 03a 3.4.14〜3.4.18 | 03a_domain_classes.md |
+| DD-REV-303 | Interruption dataclass追加（03a 3.4.19）— IEEE 1366 指標計算用 | 03a_domain_classes.md |
+| DD-REV-304 | TimeSyncStrategy Protocol + 3実装（OrchestratorDriven/FederationDriven/HybridSync）追加 → 03b 3.3.6 | 03b_usecase_classes.md |
+| DD-REV-305 | HELICSBroker 追加 → 03d 3.9.8 | 03d_infra_classes.md |
+| DD-REV-306 | FederatedConnectorInterface Protocol 追加（execute_at メソッド）→ 03b 3.5.2a | 03b_usecase_classes.md |
+| DD-REV-307 | SimulationTask / TaskResult 追加 → 03b 3.3.7 | 03b_usecase_classes.md |
+| DD-REV-308 | ch07 BenchmarkCalculator/SimulationResults に第3章との対応注記追加 | 07_algorithm.md |
+
+**クラス一覧更新**: DD-CLS-033〜DD-CLS-047（15クラス追加、全47クラス）

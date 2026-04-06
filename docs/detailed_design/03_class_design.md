@@ -9,6 +9,7 @@
 | 0.3 | 2026-04-04 | 3.10 トレース関連クラス追加（Perfetto形式） | gridflow設計チーム |
 | 0.4 | 2026-04-06 | 不足クラス追加、状態属性追加、例外クラス階層統一（DD-REV-101/102/103） | Claude |
 | 0.5 | 2026-04-06 | Clean Architecture レイヤー別に4ファイルへ分割、本ファイルをIndexに変更 | Claude |
+| 0.6 | 2026-04-06 | X5/X6レビュー対応: 15クラス追加（Result型群, TimeSyncStrategy, HELICSBroker等）、属性統一 | Claude |
 
 ---
 
@@ -18,10 +19,10 @@
 
 | ファイル | レイヤー | 含まれるセクション | 主要クラス |
 |---|---|---|---|
-| [03a_domain_classes.md](03a_domain_classes.md) | Domain（ドメイン層） | 3.1 クラス一覧, 3.2 Scenario Pack, 3.4 CDL | ScenarioPack, PackMetadata, ScenarioRegistry, Topology, Node, Edge, Asset, TimeSeries, Event, Metric, ExperimentMetadata, CanonicalData, CDLRepository |
-| [03b_usecase_classes.md](03b_usecase_classes.md) | UseCase（ユースケース層） | 3.3 Orchestrator, 3.5 Connector, 3.6 Benchmark | Orchestrator, ExecutionPlan, ContainerManager, TimeSync, ConnectorInterface, OpenDSSConnector, DataTranslator, BenchmarkHarness, MetricCalculator, ReportGenerator |
+| [03a_domain_classes.md](03a_domain_classes.md) | Domain（ドメイン層） | 3.1 クラス一覧, 3.2 Scenario Pack, 3.4 CDL, 3.4+ 結果型 | ScenarioPack, PackMetadata, ScenarioRegistry, Topology, Node, Edge, Asset, TimeSeries, Event, Metric, ExperimentMetadata, CanonicalData, CDLRepository, ExperimentResult, NodeResult, BranchResult, LoadResult, GeneratorResult, RenewableResult, Interruption |
+| [03b_usecase_classes.md](03b_usecase_classes.md) | UseCase（ユースケース層） | 3.3 Orchestrator, 3.5 Connector, 3.6 Benchmark | Orchestrator, ExecutionPlan, ContainerManager, TimeSync, TimeSyncStrategy, OrchestratorDriven, FederationDriven, HybridSync, ConnectorInterface, FederatedConnectorInterface, OpenDSSConnector, DataTranslator, BenchmarkHarness, MetricCalculator, ReportGenerator, SimulationTask, TaskResult |
 | [03c_adapter_classes.md](03c_adapter_classes.md) | Adapter（アダプタ層） | 3.7 CLI, 3.8 Plugin API | CLIApp, CommandHandler, OutputFormatter, PluginRegistry, PluginDiscovery, L2PluginBase, ControllerPlugin |
-| [03d_infra_classes.md](03d_infra_classes.md) | Infrastructure（インフラ層） | 3.9 共通基盤, 3.10 トレース | StructuredLogger, ConfigManager, ErrorHandler, GridflowError, HealthChecker, MigrationRunner, TraceSpan, TraceRecorder, PerfettoExporter |
+| [03d_infra_classes.md](03d_infra_classes.md) | Infrastructure（インフラ層） | 3.9 共通基盤, 3.10 トレース | StructuredLogger, ConfigManager, ErrorHandler, GridflowError, HealthChecker, MigrationRunner, HELICSBroker, TraceSpan, TraceRecorder, PerfettoExporter |
 
 ## レイヤー依存関係
 
@@ -37,7 +38,7 @@ graph TD
 
 > **依存方向**: Domain ← UseCase ← Adapter / Infrastructure（Clean Architecture の依存性ルールに従う）
 
-## クラス一覧（全32クラス）
+## クラス一覧（全47クラス）
 
 全クラスの一覧は [03a_domain_classes.md § 3.1](03a_domain_classes.md#31-クラス一覧) を参照。
 
