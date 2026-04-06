@@ -8,6 +8,7 @@
 |---|---|---|---|
 | 0.1 | 2026-04-03 | 初版作成（全11章 + 付録） | bottlenome + Claude |
 | 0.2 | 2026-04-04 | 第3章後半追記、Phase 6 整合性確認完了 | bottlenome + Claude |
+| 0.3 | 2026-04-06 | レビュー記録（review_record.md）追加 | Claude |
 
 ## 目次
 
@@ -25,6 +26,7 @@
 | 第10章 | [10_test_detail.md](10_test_detail.md) | テスト詳細設計（テストケース設計、単体・統合・E2E・品質属性テスト、フィクスチャ設計） |
 | 第11章 | [11_build_deploy.md](11_build_deploy.md) | ビルド・デプロイ詳細設計（Dockerfile、Docker Compose、CI/CD パイプライン、パッケージング、SemVer） |
 | 付録 | [appendix.md](appendix.md) | 完全対応表（REQ-xxx → DD-xxx）、用語集、参考文献、更新ドキュメント一覧 |
+| レビュー記録 | [review_record.md](review_record.md) | IPA 準拠性チェック、構造品質・整合性レビュー、既存レビュー統合、指摘事項管理 |
 
 ## 参照ドキュメント
 
