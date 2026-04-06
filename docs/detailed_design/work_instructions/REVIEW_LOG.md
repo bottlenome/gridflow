@@ -97,9 +97,9 @@ MigrationRunner, KPIAggregator, ConfigValidator, Formatter
 4. パッケージバージョン指定と設定項目の関連が未記載
 
 ### X5〜X7 総合
-- X5: ERROR 10件 — CDLエンティティの属性定義統一が最優先課題
-- X6: ERROR 8件 — アルゴリズムで必要なクラスの第3章への追加が必要
-- X7: ERROR 0件 — 基本的に整合。ボリュームパスの統一が推奨
+- X5: ERROR 10件 → ✅ **全件対応済み**（DD-REV-201〜207, 2026-04-06）
+- X6: ERROR 8件 → ✅ **全件対応済み**（DD-REV-301〜308, 2026-04-06）
+- X7: ERROR 0件, WARNING 4件 → 軽微、実装フェーズで対応可能
 
 ## X5/X6 対応（2026-04-06）
 
