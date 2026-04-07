@@ -26,7 +26,7 @@ class TestOpenDSSSmoke:
     def test_import_opendssdirect(self) -> None:
         """Verify OpenDSSDirect.py can be imported."""
         opendssdirect = pytest.importorskip("opendssdirect")
-        assert hasattr(opendssdirect, "run_command")
+        assert hasattr(opendssdirect, "Command")
 
     def test_ieee13_power_flow(self) -> None:
         """Run IEEE 13-node feeder power flow and verify convergence."""
@@ -37,17 +37,17 @@ class TestOpenDSSSmoke:
             pytest.skip(f"IEEE 13-node DSS file not found: {master_file}")
 
         # Redirect OpenDSS to the example directory
-        opendssdirect.run_command(f"Redirect [{master_file}]")
+        opendssdirect.Command(f"Redirect [{master_file}]")
 
         # Solve power flow
-        opendssdirect.run_command("Solve")
+        opendssdirect.Command("Solve")
 
         # Check convergence
         converged = opendssdirect.Solution.Converged()
         assert converged, "Power flow did not converge"
 
-        # Retrieve node voltages
-        voltages = opendssdirect.Circuit.AllBusVmagPu()
+        # Retrieve node voltages (per-unit magnitudes)
+        voltages = opendssdirect.Circuit.AllBusMagPu()
         assert len(voltages) > 0, "No voltage results returned"
 
         # Verify voltages are within reasonable range (0.8 - 1.2 pu)
@@ -62,8 +62,8 @@ class TestOpenDSSSmoke:
         if not master_file.exists():
             pytest.skip(f"IEEE 13-node DSS file not found: {master_file}")
 
-        opendssdirect.run_command(f"Redirect [{master_file}]")
-        opendssdirect.run_command("Solve")
+        opendssdirect.Command(f"Redirect [{master_file}]")
+        opendssdirect.Command("Solve")
 
         bus_names = opendssdirect.Circuit.AllBusNames()
         # IEEE 13-node feeder typically has 13+ buses (including source bus)

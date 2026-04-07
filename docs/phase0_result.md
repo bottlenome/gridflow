@@ -5,6 +5,7 @@
 | 版数 | 日付 | 変更内容 | 著者 |
 |---|---|---|---|
 | 0.1 | 2026-04-07 | 初版作成 | Claude |
+| 0.2 | 2026-04-07 | OpenDSS smoke test 実行検証完了。完了条件 #5/#6 を達成に更新 | Claude |
 
 ---
 
@@ -24,8 +25,8 @@
 | 2 | pytest が動作し空テストスイートが PASS | ✅ | 58件全PASS（拡充後） |
 | 3 | CI で lint + test が自動実行される | ✅ | uv.lock コミット・dependency-groups 修正済み |
 | 4 | Domain層コアデータモデルが型定義済み | ✅ | ScenarioPack, CDL全エンティティ, Result型群 |
-| 5 | OpenDSS が Docker 内で動作確認済み | ⚠️ | smoke test 作成済み、Docker内実行検証は環境依存 |
-| 6 | IEEE 13ノードでパワーフロー成功するスモークテスト | ⚠️ | テストコード・DSSファイル作成済み、OpenDSSDirect.py 未インストール環境では skip |
+| 5 | OpenDSS が Docker 内で動作確認済み | ✅ | OpenDSSDirect.py を `[project.optional-dependencies] opendss` に追加。Docker imageは `uv pip install OpenDSSDirect.py` で構築済み |
+| 6 | IEEE 13ノードでパワーフロー成功するスモークテスト | ✅ | smoke test 3件 全PASS。電圧 0.8〜1.2 pu 範囲内を確認。CI workflow に `smoke-opendss` job 追加 |
 
 ---
 
@@ -200,7 +201,6 @@ StepResult の詳細クラス設計（属性一覧、メソッド、配置モジ
 - [ ] 5.1: ScenarioPack の `to_dict()` / `validate()` 実装
 - [ ] 5.2: frozen dataclass の `parameters` 型を設計書方針に従って修正
 - [ ] 5.3: StepResult クラスと ExperimentResult.steps 属性の実装
-- [ ] OpenDSS Docker 環境での smoke test 実行検証
 
 ---
 
