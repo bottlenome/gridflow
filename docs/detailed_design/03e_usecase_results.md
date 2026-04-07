@@ -193,4 +193,4 @@ class StepStatus(Enum):
 
 ---
 
-> **関連文書:** Domain 層のシミュレーション結果型 (NodeResult / BranchResult / LoadResult / GeneratorResult / RenewableResult / Interruption) は → [03a §3.4.14〜3.4.19](03a_domain_classes.md) / Orchestrator は → [03d §3.8](03d_infra_classes.md) / Connector の HealthStatus は → [03b §3.5.5](03b_usecase_classes.md)
+> **関連文書:** Domain 層のシミュレーション結果型 (NodeResult / BranchResult / LoadResult / GeneratorResult / RenewableResult / Interruption) は → [03a §3.4.14〜3.4.19](03a_domain_classes.md) / Orchestrator (UseCase 層ビジネスロジック) は → [03b §3.3](03b_usecase_classes.md) / Orchestrator の Infra 実装 (ContainerOrchestratorRunner / ContainerManager / FederationDriven) は → [03d §3.8](03d_infra_classes.md) / Connector の HealthStatus は → [03b §3.5.5](03b_usecase_classes.md)

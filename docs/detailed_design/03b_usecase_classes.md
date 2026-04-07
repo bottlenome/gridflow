@@ -16,7 +16,7 @@
 
 > **ナビゲーション:** [クラス設計 Index](03_class_design.md) | [03a ドメイン層](03a_domain_classes.md) | **03b ユースケース層（本文書）** | [03c アダプタ層](03c_adapter_classes.md) | [03d インフラ層](03d_infra_classes.md) | [03e UseCase結果型](03e_usecase_results.md)
 
-> **本ファイルの責務（v0.7 整理）:** UseCase 層のクラス／Protocol（Connector IF、Benchmark UseCase、TimeSyncStrategy 等）を収録する。Orchestrator 系（Infra 層）は [03d](03d_infra_classes.md) へ、StepResult/ExperimentResult は [03e](03e_usecase_results.md) へ移設済み。
+> **本ファイルの責務（v0.8 改訂）:** UseCase 層のクラス／Protocol を収録する。特に §3.3 は v0.8（論点6.6）で Orchestrator の責務分割を実施し、UseCase ビジネスロジック部分（Orchestrator / OrchestratorRunner Protocol / ExecutionPlan / TimeSync / OrchestratorDriven / HybridSync / SimulationTask / TaskResult）を本ファイルに復活させた。Infra 技術詳細（ContainerOrchestratorRunner / ContainerManager / FederationDriven）は [03d §3.8](03d_infra_classes.md) へ、結果型（StepResult / ExperimentResult）は [03e](03e_usecase_results.md) へ。
 
 ---
 

@@ -413,7 +413,7 @@ GridflowError
         └── ConfigParseError
 ```
 
-> **命名規則**: 第3章の各メソッド定義（IPO 形式の Output）で使用する例外名はサブクラス名（操作固有名）を使用し、括弧内に親クラスを明記する（例: `PackNotFoundError(RegistryError)`）。詳細は第8章を参照。
+> **命名規則**: 第3章の各メソッド定義（IPO 形式の Output）で使用する例外名はサブクラス名（操作固有名）を使用し、括弧内に親クラスを明記する（例: `PackNotFoundError(ScenarioPackError)` — Domain 層、論点6.3 参照）。詳細は第8章を参照。
 
 ### 3.9.6 HealthChecker
 
