@@ -6,6 +6,7 @@
 |---|---|---|---|
 | 0.1 | 2026-04-07 | 初版作成 | Claude |
 | 0.2 | 2026-04-07 | OpenDSS smoke test 実行検証完了。完了条件 #5/#6 を達成に更新 | Claude |
+| 0.3 | 2026-04-07 | 設計書修正レビュー完了。論点6.1〜6.5 をディスカッション形式で確定し、対応する設計書 (03a/03b/03d/03e/08/02/development_plan) を更新。section 7.1 のチェックを完了。詳細議論は `docs/detailed_design/review_record.md` 参照 | Claude |
 
 ---
 
@@ -190,17 +191,19 @@ StepResult の詳細クラス設計（属性一覧、メソッド、配置モジ
 
 ### 7.1 設計書修正（次回設計書更新時）
 
-- [ ] 6.1: `parameters: dict` と frozen 不変原則の矛盾解消
-- [ ] 6.2: 03b ファイル名／内容のレイヤー整理
-- [ ] 6.3: PackNotFoundError のレイヤー配置の明文化
-- [ ] 6.4: StepResult の詳細クラス設計追加
-- [ ] 6.5: 開発計画書 1.4 のディレクトリ構成を詳細設計に合わせて更新
+- [x] 6.1: `parameters: dict` と frozen 不変原則の矛盾解消 → **対応案 B 採択** (`tuple[tuple[str, object], ...]`)。03a 3.4.1/3.4.6/3.4.8/3.4.10 更新済み
+- [x] 6.2: 03b ファイル名／内容のレイヤー整理 → **対応案 B 採択**。Orchestrator 系を 03d §3.8 へ移設、03b は純粋 UseCase に整理
+- [x] 6.3: PackNotFoundError のレイヤー配置の明文化 → **対応案 D 採択**。Domain 配置維持＋ScenarioRegistry を Domain Protocol 化、エラー契約を 8.1 冒頭で明文化
+- [x] 6.4: StepResult の詳細クラス設計追加 → **新ファイル 03e_usecase_results.md 作成**。UseCase 層配置、StepStatus enum、frozen、属性拡張 (step_id/timestamp/error)、ExperimentResult も同所に移設
+- [x] 6.5: 開発計画書 1.4 のディレクトリ構成を詳細設計に合わせて更新 → **対応案 D 採択**。歴史的経緯保持のため注記追加で対応
 
 ### 7.2 Phase 1 での実装対応
 
 - [ ] 5.1: ScenarioPack の `to_dict()` / `validate()` 実装
-- [ ] 5.2: frozen dataclass の `parameters` 型を設計書方針に従って修正
-- [ ] 5.3: StepResult クラスと ExperimentResult.steps 属性の実装
+- [ ] 5.2: frozen dataclass の `parameters` 型を `tuple[tuple[str, object], ...]` に修正（論点6.1 B 採択）。Asset / Event / ExperimentMetadata / PackMetadata の Phase 0 実装が `dict` のままなので Phase 1 で書き換え必須
+- [ ] 5.3: StepResult クラスと ExperimentResult.steps 属性の実装（論点6.4: 03e_usecase_results.md 準拠。`gridflow.usecase.result` モジュール新設、StepStatus enum、step_id/timestamp/error 属性含む）
+- [ ] 5.4: ScenarioRegistry を Domain Protocol として `gridflow.domain.scenario.registry` に新設し、Infra 実装 (`FileScenarioRegistry`) を `gridflow.infra.scenario.file_registry` に配置する（論点6.3）
+- [ ] 5.5: ExperimentResult を `gridflow.domain.result` から `gridflow.usecase.result` に移設する（論点6.4）
 
 ---
 
