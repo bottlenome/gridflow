@@ -46,4 +46,7 @@ USER gridflow
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD python -c "import opendssdirect" || exit 1
 
-ENTRYPOINT ["python", "-m", "gridflow.connectors.opendss"]
+# The opendss-connector image ships OpenDSS + the gridflow package so the
+# same entrypoint works as the main CLI — Phase 1 MVP uses in-process
+# execution (see infra.orchestrator.InProcessOrchestratorRunner).
+ENTRYPOINT ["python", "-m", "gridflow"]

@@ -6,13 +6,14 @@ import pytest
 
 from gridflow.domain.cdl import Asset, Event, ExperimentMetadata, Metric, TimeSeries
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import as_params, get_param
 
 
 class TestAsset:
     def test_create_asset(self) -> None:
         asset = Asset(asset_id="pv-001", name="PV Panel 1", asset_type="pv", node_id="632", rated_power_kw=100.0)
         assert asset.asset_id == "pv-001"
-        assert asset.parameters == {}
+        assert asset.parameters == ()
 
     def test_asset_to_dict(self) -> None:
         asset = Asset(
@@ -21,11 +22,17 @@ class TestAsset:
             asset_type="pv",
             node_id="632",
             rated_power_kw=100.0,
-            parameters={"efficiency": 0.2},
+            parameters=as_params({"efficiency": 0.2}),
         )
         d = asset.to_dict()
         assert d["rated_power_kw"] == 100.0
         assert d["parameters"] == {"efficiency": 0.2}
+        assert get_param(asset.parameters, "efficiency") == 0.2
+
+    def test_asset_is_hashable(self) -> None:
+        asset = Asset(asset_id="pv-001", name="pv", asset_type="pv", node_id="632", rated_power_kw=100.0)
+        assert hash(asset) == hash(asset)
+        assert len({asset, asset}) == 1
 
     def test_asset_validate_negative_power(self) -> None:
         asset = Asset(asset_id="pv-001", name="PV", asset_type="pv", node_id="632", rated_power_kw=-10.0)
@@ -99,10 +106,11 @@ class TestEvent:
             timestamp=datetime(2026, 1, 1, tzinfo=UTC),
             target_id="650",
             target_type="node",
-            parameters={"impedance": 0.001},
+            parameters=as_params({"impedance": 0.001}),
         )
         d = event.to_dict()
         assert d["timestamp"] == "2026-01-01T00:00:00+00:00"
+        assert d["parameters"] == {"impedance": 0.001}
 
 
 class TestMetric:

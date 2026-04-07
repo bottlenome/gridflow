@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,8 @@ class TimeSeries:
         values: Tuple of values.
         unit: Unit string (e.g. "kW", "V", "A").
         resolution_s: Data resolution in seconds.
+        metadata: Series-level metadata as a frozen tuple-of-tuples
+            (see ``gridflow.domain.util.params``).
     """
 
     series_id: str
@@ -27,6 +30,7 @@ class TimeSeries:
     values: tuple[float, ...]
     unit: str
     resolution_s: float
+    metadata: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -37,6 +41,7 @@ class TimeSeries:
             "values": list(self.values),
             "unit": self.unit,
             "resolution_s": self.resolution_s,
+            "metadata": params_to_dict(self.metadata),
         }
 
     def validate(self) -> None:

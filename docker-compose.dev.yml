@@ -1,0 +1,25 @@
+version: "3.9"
+
+# Developer overlay: bind-mounts the source tree so edits are picked up
+# without rebuilding the image. Run with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  gridflow-core:
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./examples:/app/examples:ro
+    environment:
+      - GRIDFLOW_ENV=development
+      - GRIDFLOW_LOG_LEVEL=DEBUG
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["python", "-m", "gridflow", "--help"]
+
+  opendss-connector:
+    volumes:
+      - ./src:/app/src
+      - ./examples:/app/examples:ro
+    environment:
+      - GRIDFLOW_ENV=development
+      - GRIDFLOW_LOG_LEVEL=DEBUG

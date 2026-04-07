@@ -1,1 +1,1 @@
-"""Infrastructure layer - technical foundation (Phase 1)."""
+"""Infrastructure layer — filesystem, Docker, logging, YAML glue."""

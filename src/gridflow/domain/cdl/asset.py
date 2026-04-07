@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 
 @dataclass(frozen=True)
@@ -17,7 +18,8 @@ class Asset:
         asset_type: Asset type (e.g. "pv", "battery", "load").
         node_id: Connected node ID (references Node.node_id).
         rated_power_kw: Rated power in kW.
-        parameters: Asset-specific additional parameters.
+        parameters: Asset-specific additional parameters as a frozen
+            tuple-of-tuples (see ``gridflow.domain.util.params``).
     """
 
     asset_id: str
@@ -25,7 +27,7 @@ class Asset:
     asset_type: str
     node_id: str
     rated_power_kw: float
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -35,7 +37,7 @@ class Asset:
             "asset_type": self.asset_type,
             "node_id": self.node_id,
             "rated_power_kw": self.rated_power_kw,
-            "parameters": dict(self.parameters),
+            "parameters": params_to_dict(self.parameters),
         }
 
     def validate(self) -> None:

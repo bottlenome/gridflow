@@ -1,1 +1,1 @@
-"""Adapter layer - external interface adapters (Phase 1)."""
+"""Adapter layer — CLI, connectors, benchmark harness, plugin hooks."""

@@ -1,8 +1,11 @@
-"""Simulation result domain models."""
+"""Simulation result domain models (time-series value objects).
+
+The aggregate :class:`~gridflow.usecase.result.ExperimentResult` lives in the
+Use Case layer; import it from ``gridflow.usecase.result`` instead.
+"""
 
 from gridflow.domain.result.results import (
     BranchResult,
-    ExperimentResult,
     GeneratorResult,
     Interruption,
     LoadResult,
@@ -12,7 +15,6 @@ from gridflow.domain.result.results import (
 
 __all__ = [
     "BranchResult",
-    "ExperimentResult",
     "GeneratorResult",
     "Interruption",
     "LoadResult",

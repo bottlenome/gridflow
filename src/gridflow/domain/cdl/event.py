@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 VALID_TARGET_TYPES = frozenset({"node", "edge", "asset"})
 
@@ -20,7 +21,8 @@ class Event:
         timestamp: Event occurrence time.
         target_id: Target element identifier (Node.node_id, Edge.edge_id, or Asset.asset_id).
         target_type: Target element type ("node" | "edge" | "asset").
-        parameters: Event-specific parameters.
+        parameters: Event-specific parameters as a frozen tuple-of-tuples
+            (see ``gridflow.domain.util.params``).
     """
 
     event_id: str
@@ -28,7 +30,7 @@ class Event:
     timestamp: datetime
     target_id: str
     target_type: str
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -38,7 +40,7 @@ class Event:
             "timestamp": self.timestamp.isoformat(),
             "target_id": self.target_id,
             "target_type": self.target_type,
-            "parameters": dict(self.parameters),
+            "parameters": params_to_dict(self.parameters),
         }
 
     def validate(self) -> None:

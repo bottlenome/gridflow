@@ -11,16 +11,13 @@ pack:
     an in-line transformer, and distributed loads.
   author: gridflow team
   connector: opendss
-  seed: null
+  seed: 42
 
 network:
   master_file: IEEE13Nodeckt.dss
-  description: >
-    IEEE 13-node radial distribution feeder.
-    Nominal voltage: 4.16 kV.
-    Source bus: 650 (115 kV substation).
 
 parameters:
+  master_file: IEEE13Nodeckt.dss
   voltage_base_kv: 4.16
   source_bus: "650"
   max_iterations: 100

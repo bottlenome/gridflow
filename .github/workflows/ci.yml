@@ -64,7 +64,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: Run tests with coverage
+      - name: Unit + E2E tests (no OpenDSS)
         run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing tests/ -m "not spike"
 
       - name: Upload coverage report
@@ -88,5 +88,17 @@ jobs:
       - name: Install dependencies (with OpenDSS)
         run: uv sync --frozen --dev --extra opendss
 
-      - name: Run OpenDSS smoke test (IEEE 13-node)
-        run: uv run pytest tests/spike/test_opendss_smoke.py -v -m spike
+      - name: Run OpenDSS smoke tests (spike)
+        run: uv run pytest tests/spike/ tests/e2e/test_opendss_e2e.py -v -m spike
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build gridflow-core image
+        run: docker build -f docker/gridflow-core/Dockerfile -t gridflow/gridflow-core:ci .
+
+      - name: Build opendss-connector image
+        run: docker build -f docker/opendss-connector/Dockerfile -t gridflow/opendss-connector:ci .

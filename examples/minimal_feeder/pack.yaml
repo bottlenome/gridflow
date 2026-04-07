@@ -1,0 +1,23 @@
+# Minimal 2-bus feeder Scenario Pack — CI smoke fixture
+# Used by the reproducibility E2E test because it is tiny and solves
+# deterministically in well under a second.
+
+pack:
+  name: minimal_feeder
+  version: "1.0.0"
+  description: >
+    Two-bus radial test feeder. Source → load over a single line.
+    Solely used by gridflow's own reproducibility E2E test.
+  author: gridflow team
+  connector: opendss
+  seed: 0
+
+network:
+  master_file: minimal.dss
+
+parameters:
+  master_file: minimal.dss
+  voltage_base_kv: 12.47
+  source_bus: "sourcebus"
+  max_iterations: 50
+  tolerance: 0.0001
