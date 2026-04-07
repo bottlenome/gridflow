@@ -1,0 +1,27 @@
+# IEEE 13-Node Test Feeder Scenario Pack
+# Reference: IEEE PES Distribution System Analysis Subcommittee
+
+pack:
+  name: ieee13
+  version: "1.0.0"
+  description: >
+    IEEE 13-node test feeder for power flow analysis.
+    Standard benchmark feeder with unbalanced loading,
+    overhead and underground lines, shunt capacitors,
+    an in-line transformer, and distributed loads.
+  author: gridflow team
+  connector: opendss
+  seed: null
+
+network:
+  master_file: IEEE13Nodeckt.dss
+  description: >
+    IEEE 13-node radial distribution feeder.
+    Nominal voltage: 4.16 kV.
+    Source bus: 650 (115 kV substation).
+
+parameters:
+  voltage_base_kv: 4.16
+  source_bus: "650"
+  max_iterations: 100
+  tolerance: 0.0001
