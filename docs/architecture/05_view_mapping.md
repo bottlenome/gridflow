@@ -10,8 +10,11 @@
 
 | 静的ビューのコンポーネント (3.2) | Clean Architecture 層 | 関与する UC | シーケンス図での参加者名 |
 |---|---|---|---|
-| **Orchestrator** | Use Cases | UC-01, UC-04, UC-06, UC-07 | Orchestrator / Orch |
-| **ScenarioRegistry** | Use Cases | UC-01, UC-02, UC-07, UC-08 | Registry / Scenario Registry |
+| **Orchestrator** (UseCase 部分) | Use Cases | UC-01, UC-04, UC-06, UC-07 | Orchestrator / Orch |
+| **OrchestratorRunner** (Protocol) | Use Cases | UC-01, UC-04 | Runner I/F（Orchestrator が依存する物理実行基盤の境界） |
+| **ContainerOrchestratorRunner** | Infrastructure | UC-01, UC-04 | Container Runner（OrchestratorRunner の Docker 実装、論点6.6） |
+| **ScenarioRegistry** (Protocol) | Entities (Domain Protocol) | UC-01, UC-02, UC-07, UC-08 | Registry / Scenario Registry |
+| **FileScenarioRegistry** | Infrastructure | UC-01, UC-02, UC-07, UC-08 | File Registry（ScenarioRegistry の Infra 実装、論点6.3） |
 | **BenchmarkHarness** | Use Cases | UC-03 | Harness / Benchmark Harness |
 | **Observability** | Use Cases | UC-01, UC-05, UC-06 | Logger / Observability |
 | **Installer** | Use Cases | UC-07 | Installer |
@@ -73,8 +76,8 @@
 
 | FR | 実現するコンポーネント | 関与する UC |
 |---|---|---|
-| FR-01 Scenario Pack + Registry | ScenarioPack (Entities), ScenarioRegistry (Use Cases) | UC-01, UC-02, UC-03, UC-07, UC-08 |
-| FR-02 Orchestrator | Orchestrator (Use Cases), Scheduler | UC-01, UC-04, UC-06, UC-07 |
+| FR-01 Scenario Pack + Registry | ScenarioPack (Entities), ScenarioRegistry (Domain Protocol), FileScenarioRegistry (Infrastructure) | UC-01, UC-02, UC-03, UC-07, UC-08 |
+| FR-02 Orchestrator | Orchestrator (Use Cases ビジネスロジック), OrchestratorRunner (Use Cases Protocol), ContainerOrchestratorRunner (Infrastructure), Scheduler | UC-01, UC-04, UC-06, UC-07 |
 | FR-03 CDL | CanonicalDataLayer (Entities + Adapters), DataExport | UC-01, UC-03, UC-06, UC-08, UC-09 |
 | FR-04 Benchmark Harness | BenchmarkHarness, MetricCalculator | UC-03 |
 | FR-05 CLI + Notebook | CLIApp, NotebookBridge | UC-01〜UC-10 |

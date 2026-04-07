@@ -204,6 +204,7 @@ StepResult の詳細クラス設計（属性一覧、メソッド、配置モジ
 - [ ] 5.3: StepResult クラスと ExperimentResult.steps 属性の実装（論点6.4: 03e_usecase_results.md 準拠。`gridflow.usecase.result` モジュール新設、StepStatus enum、step_id/timestamp/error 属性含む）
 - [ ] 5.4: ScenarioRegistry を Domain Protocol として `gridflow.domain.scenario.registry` に新設し、Infra 実装 (`FileScenarioRegistry`) を `gridflow.infra.scenario.file_registry` に配置する（論点6.3）
 - [ ] 5.5: ExperimentResult を `gridflow.domain.result` から `gridflow.usecase.result` に移設する（論点6.4）
+- [ ] 5.6: Orchestrator を責務分割（論点6.6）。`gridflow.usecase.orchestrator.Orchestrator` (ビジネスロジック) と `gridflow.infra.orchestrator.ContainerOrchestratorRunner` (Docker 実装) に分け、`OrchestratorRunner` Protocol を境界とする。OrchestratorDriven/HybridSync は UseCase 層に、FederationDriven は Infra 層に配置 |
 
 ---
 

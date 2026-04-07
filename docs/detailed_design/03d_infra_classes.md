@@ -11,113 +11,138 @@
 | 0.5 | 2026-04-06 | 第3章分割（03_class_design.md → 03a/03b/03c/03d） | Claude |
 | 0.6 | 2026-04-06 | X6レビュー対応: HELICSBroker追加 | Claude |
 | 0.7 | 2026-04-07 | Phase0結果レビュー対応: §3.8 Orchestrator関連を 03b から移設（論点6.2: ファイル名と内容のレイヤー整合化）。Orchestrator/ExecutionPlan/ContainerManager/TimeSync/TimeSyncStrategy 実装/SimulationTask/TaskResult を収録 | Claude |
+| 0.8 | 2026-04-07 | 論点6.6 Orchestrator 責務分割: §3.8 を Infra 部分のみに縮小。ContainerOrchestratorRunner (新), ContainerManager, FederationDriven のみ残置。UseCase ビジネスロジック (Orchestrator/ExecutionPlan/TimeSync/OrchestratorDriven/HybridSync/SimulationTask) は 03b §3.3 へ。アーキテクチャ doc との整合回復 | Claude |
 
 ---
 
 > **ナビゲーション:** [クラス設計 Index](03_class_design.md) | [03a ドメイン層](03a_domain_classes.md) | [03b ユースケース層](03b_usecase_classes.md) | [03c アダプタ層](03c_adapter_classes.md) | **03d インフラ層（本文書）** | [03e UseCase結果型](03e_usecase_results.md)
 
-> **本ファイルの責務:** Infra 層クラス（共通基盤、トレース、Orchestrator 系）を収録する。v0.7 で 03b から Orchestrator 関連 (§3.8) を移設した。
+> **本ファイルの責務:** Infra 層クラス（共通基盤、トレース、Orchestrator の Infra 部分）を収録する。v0.7 で Orchestrator 関連を 03b から移設し、v0.8 (論点6.6) で UseCase 部分を 03b §3.3 に戻した。本ファイル §3.8 には Docker・HELICSBroker など技術詳細に依存する Infra クラスのみが残る。
 
 ---
 
-## 3.8 Orchestrator関連（REQ-F-002）
+## 3.8 Orchestrator 関連（Infra 層、REQ-F-002）
 
-> **本節の経緯:** 03b_usecase_classes.md §3.3 に記載されていた Orchestrator 関連クラスを v0.7 で本ファイルへ移設した。これらのクラスは `gridflow.infra.orchestrator` モジュール配下に配置されており、Infra 層に属する。`TimeSyncStrategy` Protocol 自体は UseCase 層 (`gridflow.usecase.interfaces`) に属するが、その実装 (OrchestratorDriven / FederationDriven / HybridSync) は Infra 層 Orchestrator と密結合のため一括で本節に集約する。
+> **v0.8 改訂（論点6.6: Orchestrator の責務分割）:** v0.7 では Orchestrator 関連クラスを一括で本節に集約していたが、UseCase ビジネスロジック (Orchestrator 本体, ExecutionPlan, OrchestratorDriven 等) と Infra 技術詳細 (Docker, HELICSBroker) が混在していた。Clean Architecture の層境界とアーキテクチャドキュメント (`docs/architecture/03_static_view.md` L301 で Orchestrator は Use Cases 層) との整合のため、責務を分割した。
+>
+> **本節 (03d §3.8) に残るのは Infra 技術詳細のみ:**
+> - `ContainerOrchestratorRunner`: `OrchestratorRunner` Protocol の Docker 実装
+> - `ContainerManager`: Docker 操作の低レベル詳細（ContainerOrchestratorRunner の内部実装）
+> - `FederationDriven`: HELICSBroker (Infra 技術詳細) に直接依存する TimeSyncStrategy 実装
+>
+> **UseCase 層に移った Orchestrator ビジネスロジックは [03b §3.3](03b_usecase_classes.md#33-orchestrator-関連usecase-層reqf002) を参照:**
+> - `Orchestrator` (UseCase 本体)、`OrchestratorRunner` Protocol (UseCase 境界)
+> - `ExecutionPlan`, `TimeSync` (純粋データクラス)
+> - `TimeSyncStrategy` Protocol, `OrchestratorDriven`, `HybridSync` (技術詳細に非依存)
+> - `SimulationTask` / `TaskResult`
+>
+> 詳細経緯は `review_record.md` §8.6 (論点6.6) 参照。
 
-### 3.8.1 クラス図
+### 3.8.1 クラス図（Infra 部分）
 
 ```mermaid
 classDiagram
-    class Orchestrator {
-        +ContainerManager container_manager
-        +TimeSync time_sync
-        +dict config
-        +run(pack: ScenarioPack, options: dict) ExperimentResult
-        +run_batch(packs: list~ScenarioPack~, options: dict) list~ExperimentResult~
-        +cancel(exp_id: str) None
+    class OrchestratorRunner {
+        <<Protocol UseCase>>
+        +prepare(plan: ExecutionPlan) None
+        +run_connector(connector_id, step, context) StepResult
+        +health_check(connector_id) HealthStatus
+        +teardown() None
+        note "→ 03b §3.3.3 (UseCase Protocol)"
     }
 
-    class ExecutionPlan {
-        +str experiment_id
-        +ScenarioPack pack
-        +list~StepConfig~ steps
-        +list~str~ connectors
-        +tuple~tuple~str,object~~ parameters
+    class ContainerOrchestratorRunner {
+        <<Infra>>
+        -ContainerManager container_manager
+        -tuple~str~ active_services
+        +prepare(plan: ExecutionPlan) None
+        +run_connector(connector_id, step, context) StepResult
+        +health_check(connector_id) HealthStatus
+        +teardown() None
     }
 
     class ContainerManager {
+        <<Infra>>
         +str compose_project
         +str network
         +int max_parallel
-        +start(services: list~str~) None
-        +stop(services: list~str~) None
+        +start(services: tuple~str~) None
+        +stop(services: tuple~str~) None
         +health_check(service: str) HealthStatus
     }
 
-    class TimeSync {
-        +str mode
-        +float step_size
-        +int total_steps
+    class FederationDriven {
+        <<Infra>>
+        -HELICSBroker broker
+        -tuple~FederatedConnectorInterface~ connectors
+        +advance(step: int, context: tuple) tuple
     }
 
-    Orchestrator --> ContainerManager : container_manager
-    Orchestrator --> TimeSync : time_sync
-    Orchestrator ..> ExecutionPlan : creates
-    ExecutionPlan --> ScenarioPack : pack
+    class TimeSyncStrategy {
+        <<Protocol UseCase>>
+        note "→ 03b §3.3.6"
+    }
+
+    OrchestratorRunner <|.. ContainerOrchestratorRunner : implements
+    ContainerOrchestratorRunner --> ContainerManager : delegates Docker ops
+    TimeSyncStrategy <|.. FederationDriven : implements
+    FederationDriven --> HELICSBroker : uses
 ```
 
-### 3.8.2 Orchestrator
+### 3.8.2 ContainerOrchestratorRunner
 
 **モジュール:** `gridflow.infra.orchestrator`
+**レイヤー:** Infra
+**実装する Protocol:** `gridflow.usecase.interfaces.OrchestratorRunner`（[03b §3.3.3](03b_usecase_classes.md#333-orchestratorrunnerprotocol)）
+
+UseCase Orchestrator が依存する `OrchestratorRunner` Protocol の Docker Compose 実装。Connector を Docker コンテナとして起動・停止し、REST 経由で `execute` を呼び出す。
 
 | 属性 | 型 | 説明 |
 |---|---|---|
-| container_manager | ContainerManager | コンテナ管理インスタンス |
-| time_sync | TimeSync | 時間同期制御インスタンス |
-| config | dict | オーケストレータ設定 |
-| state | OrchestratorState | 現在の状態（Idle / Initializing / Running / Completed / Failed）。第5章 5.1 状態遷移参照 |
+| container_manager | ContainerManager | Docker 操作の低レベル委譲先 |
+| active_services | tuple[str, ...] | 現在起動中のサービス名 |
+| timeout_s | float | コネクタ通信のタイムアウト（秒） |
 
 #### メソッド
 
-**run**
+**prepare**
 
 | 項目 | 内容 |
 |---|---|
-| **Input** | `pack: ScenarioPack`, `options: dict` |
-| **Process** | ExecutionPlan を生成し、ContainerManager でコンテナを起動後、TimeSync に従って時間ステップを進行しながらシミュレーションを実行する。各ステップの結果を収集し、完了後にコンテナを停止する。 |
-| **Output** | `ExperimentResult` -- 実験結果（[03e](03e_usecase_results.md) 参照）。実行失敗時は `ExecutionError` を送出。 |
+| **Input** | `plan: ExecutionPlan` |
+| **Process** | plan.connectors に対応する Docker サービスを `container_manager.start()` で起動し、ヘルスチェックが通るまで待機する |
+| **Output** | `None`。起動失敗時は `RunnerStartError(InfraError)` を送出 |
 
-**run_batch**
-
-| 項目 | 内容 |
-|---|---|
-| **Input** | `packs: list[ScenarioPack]`, `options: dict` |
-| **Process** | 複数のシナリオパックを順次または max_parallel に従い並列で実行する。各パックに対して run を呼び出し、結果をリストとして集約する。 |
-| **Output** | `list[ExperimentResult]` |
-
-**cancel**
+**run_connector**
 
 | 項目 | 内容 |
 |---|---|
-| **Input** | `exp_id: str` |
-| **Process** | 実行中の実験を特定し、関連コンテナを停止してリソースを解放する。 |
-| **Output** | `None`。該当実験が存在しない場合は `ExperimentNotFoundError` を送出。 |
+| **Input** | `connector_id: str`, `step: int`, `context: tuple[tuple[str, object], ...]` |
+| **Process** | 指定 connector_id のコンテナに対して REST `/execute` を呼び出し、StepResult を取得する |
+| **Output** | `StepResult` ([03e §3.11.3](03e_usecase_results.md))。通信失敗時は `ConnectorCommunicationError(InfraError)`、コネクタ不在時は `ConnectorNotFoundError(InfraError)` を送出 |
 
-### 3.8.3 ExecutionPlan
+**health_check**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `connector_id: str` |
+| **Process** | `container_manager.health_check(connector_id)` を委譲呼び出し |
+| **Output** | `HealthStatus` |
+
+**teardown**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | `container_manager.stop(active_services)` で全サービスを停止。エラーは記録のみで例外送出しない（best-effort） |
+| **Output** | `None` |
+
+### 3.8.3 ContainerManager
 
 **モジュール:** `gridflow.infra.orchestrator`
+**レイヤー:** Infra
 
-| 属性 | 型 | 説明 |
-|---|---|---|
-| experiment_id | str | 実験の一意識別子 |
-| pack | ScenarioPack | 対象シナリオパック |
-| steps | list[StepConfig] | 実行ステップの設定リスト |
-| connectors | list[str] | 使用するコネクタ名のリスト |
-| parameters | tuple[tuple[str, object], ...] | 実行パラメータ（v0.7: dict→tuple、論点6.1） |
-
-### 3.8.4 ContainerManager
-
-**モジュール:** `gridflow.infra.orchestrator`
+Docker Compose による低レベルコンテナ操作。ContainerOrchestratorRunner の内部実装として使われる。
 
 | 属性 | 型 | 説明 |
 |---|---|---|
@@ -129,109 +154,42 @@ classDiagram
 
 | メソッド | Input | Output / 例外 |
 |---|---|---|
-| start | `services: list[str]` | `None` / `ContainerStartError` |
-| stop | `services: list[str]` | `None` / `ContainerStopError` |
-| health_check | `service: str` | `HealthStatus` / `ServiceNotFoundError` |
+| start | `services: tuple[str, ...]` | `None` / `ContainerStartError(InfraError)` |
+| stop | `services: tuple[str, ...]` | `None` / `ContainerStopError(InfraError)` |
+| health_check | `service: str` | `HealthStatus` / `ServiceNotFoundError(InfraError)` |
 
-### 3.8.5 TimeSync
+### 3.8.4 ExecutionPlan / TimeSync → 03b へ
 
-**モジュール:** `gridflow.infra.orchestrator`
+`ExecutionPlan` と `TimeSync` は純粋なデータクラスであり Docker・HELICS 等の技術詳細に依存しないため、UseCase 層 [03b §3.3.4 / §3.3.5](03b_usecase_classes.md#334-executionplan) に配置する。本節からは削除済み。
 
-時間同期の**設定データ**。TimeSyncStrategy（3.8.6）の実行パラメータとして使用される。
+### 3.8.5 FederationDriven（Infra 層 TimeSyncStrategy 実装）
+
+**モジュール:** `gridflow.infra.orchestrator.timesync`
+**レイヤー:** Infra
+**実装する Protocol:** `gridflow.usecase.interfaces.TimeSyncStrategy`（[03b §3.3.6](03b_usecase_classes.md#336-timesyncstrategyprotocolと-usecase-実装)）
+
+`TimeSyncStrategy` Protocol の HELICS Federation 実装。`HELICSBroker`（§3.9.8）に直接依存するため Infra 層に属する（OrchestratorDriven / HybridSync が UseCase 層に置けるのとは対照的）。
 
 | 属性 | 型 | 説明 |
 |---|---|---|
-| mode | str | 同期モード（"orchestrator" \| "federation" \| "hybrid"） |
-| step_size | float | 1ステップあたりの時間幅（秒） |
-| total_steps | int | 総ステップ数 |
-
-### 3.8.6 TimeSyncStrategy（Protocol）と実装
-
-**Protocol モジュール:** `gridflow.usecase.interfaces`（UseCase 層）
-**実装モジュール:** `gridflow.infra.orchestrator`（Infra 層）
-
-時間同期の**実行戦略**インタフェース（第7章 7.1 節アルゴリズム対応）。TimeSync (3.8.5) が設定、TimeSyncStrategy が振る舞いを担う。
-
-```mermaid
-classDiagram
-    class TimeSyncStrategy {
-        <<Protocol>>
-        +advance(step: int, context: dict) dict
-    }
-
-    class OrchestratorDriven {
-        -list~ConnectorInterface~ connectors
-        -CDLRepository cdl_repo
-        +advance(step: int, context: dict) dict
-    }
-
-    class FederationDriven {
-        -HELICSBroker broker
-        -list~FederatedConnectorInterface~ connectors
-        +advance(step: int, context: dict) dict
-    }
-
-    class HybridSync {
-        -OrchestratorDriven orchestrator
-        -FederationDriven federation
-        +advance(step: int, context: dict) dict
-    }
-
-    TimeSyncStrategy <|.. OrchestratorDriven : implements
-    TimeSyncStrategy <|.. FederationDriven : implements
-    TimeSyncStrategy <|.. HybridSync : implements
-```
+| broker | HELICSBroker | HELICS Broker インスタンス |
+| connectors | tuple[FederatedConnectorInterface, ...] | HELICS 対応コネクタ |
 
 **advance**
 
 | 項目 | 内容 |
 |---|---|
-| **Input** | `step: int`, `context: dict` |
-| **Process** | 同期戦略に従って全コネクタの1ステップ実行を統制し、結果を集約して返却する。 |
-| **Output** | `dict`。同期失敗時は `SyncError(SimulationError)` を送出。 |
+| **Input** | `step: int`, `context: tuple[tuple[str, object], ...]` |
+| **Process** | `broker.request_time()` で付与された時刻で各 `connector.execute_at(granted_time, context)` を呼び出し、結果を集約する |
+| **Output** | `tuple[tuple[str, object], ...]`。同期失敗時は `SyncError(SimulationError)` を送出 |
 
-#### OrchestratorDriven
+### 3.8.6 OrchestratorDriven / HybridSync → 03b へ
 
-Orchestrator が直接ステップタイミングを制御する。OpenDSS / pandapower 等の非リアルタイムコネクタ向け。各コネクタを順次 `execute(step, context)` で呼び出し、CDLRepository に結果を格納する。
+これらの TimeSyncStrategy 実装は `ConnectorInterface` Protocol または他の `TimeSyncStrategy` Protocol のみに依存し、HELICSBroker 等の技術詳細を持たないため UseCase 層に配置する。詳細は [03b §3.3.6](03b_usecase_classes.md#336-timesyncstrategyprotocolと-usecase-実装) を参照。
 
-#### FederationDriven
+### 3.8.7 SimulationTask / TaskResult → 03b へ
 
-HELICS Broker がタイミングを管理する。HELICS 対応シミュレータ向け。`broker.request_time()` で付与された時刻で `connector.execute_at(granted_time, context)` を呼び出す。
-
-#### HybridSync
-
-OrchestratorDriven と FederationDriven を組み合わせ、HELICS 対応/非対応コネクタを1つの実験で混在実行する。ステップごとに Orchestrator 管理コネクタを先に実行し、その後 Broker 経由で Federation 管理コネクタを実行する。
-
-### 3.8.7 SimulationTask / TaskResult
-
-**モジュール:** `gridflow.usecase.scheduling`（※ Protocol/データクラスとしては UseCase 層に属するが、Orchestrator と密接に連動するため本節で言及）
-
-バッチスケジューリング（第7章 7.3 節）で使用するタスク定義と結果。
-
-**SimulationTask**（`dataclass`）
-
-| 属性 | 型 | 説明 |
-|---|---|---|
-| task_id | str | タスクの一意識別子 |
-| pack | ScenarioPack | 実行対象のシナリオパック |
-| options | tuple[tuple[str, object], ...] | 実行オプション（v0.7: dict→tuple） |
-
-**execute**
-
-| 項目 | 内容 |
-|---|---|
-| **Input** | なし（属性から取得） |
-| **Process** | Orchestrator.run() を非同期で呼び出し、ExperimentResult を取得する。 |
-| **Output** | `TaskResult`。失敗時は `SchedulerError(SimulationError)` を送出。 |
-
-**TaskResult**（`dataclass(frozen=True)`）
-
-| 属性 | 型 | 説明 |
-|---|---|---|
-| task_id | str | 対応するタスクID |
-| status | str | "completed" \| "failed" |
-| data | ExperimentResult \| None | 成功時の実験結果（[03e](03e_usecase_results.md) 参照） |
-| error | str \| None | 失敗時のエラーメッセージ |
+UseCase 層に属するため [03b §3.3.7](03b_usecase_classes.md#337-simulationtask--taskresult) を参照。
 
 ---
 

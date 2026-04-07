@@ -297,8 +297,9 @@ graph TB
 
 | 3.1.2 の概念コンポーネント | Clean Architecture 層 | 根拠 |
 |---|---|---|
-| Scenario Pack + Registry | Entities + Use Cases | Pack のデータ構造は Entities、管理ロジックは Use Cases |
-| Orchestrator | Use Cases | 実行制御のビジネスロジック。外部ツールは Connector I/F 越しに呼ぶ |
+| Scenario Pack + Registry | Entities (Domain Protocol) + Infrastructure | Pack のデータ構造は Entities。`ScenarioRegistry` は Domain Protocol として定義し（Pack の存在保証は Domain ルール）、実装 (`FileScenarioRegistry`) は Infrastructure 層に配置する。詳細設計 論点6.3 |
+| Orchestrator (UseCase 部分) | Use Cases | 実験実行のビジネスロジック（ステップ進行、Connector 呼び出し順序、結果集約）。Docker 等の技術詳細を一切知らない。物理実行基盤は `OrchestratorRunner` Protocol 経由で Infrastructure に委譲 |
+| ContainerOrchestratorRunner / ContainerManager / FederationDriven | Infrastructure | Orchestrator が依存する `OrchestratorRunner` Protocol の Docker 実装、および HELICSBroker 依存の TimeSyncStrategy 実装。技術詳細は本層に閉じ込める。詳細設計 論点6.6 |
 | Connectors | Interface Adapters | 外部ツールの詳細を隠蔽し、CDL 形式に変換する |
 | Canonical Data Layer | Entities (データモデル) + Interface Adapters (永続化) | データ構造は Entities、ファイル I/O は Adapters |
 | Data Export | Interface Adapters | CDL → CSV/JSON/Parquet の変換 |

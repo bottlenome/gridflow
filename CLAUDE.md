@@ -25,6 +25,7 @@ gridflow は研究系ツールであり、**再現性・等価性・ハッシュ
 - **論点6.1（parameters の型）**: `dict` → `tuple[tuple[str, object], ...]` に統一。「parameters だけ」ではなく `metadata` / `properties` / `params` も含めて全付帯属性を tuple 化（v0.x で適用）
 - **論点6.4（StepResult）**: 「最小3属性で十分」ではなく、`step_id` / `timestamp` / `error` / Enum status まで一度で確定
 - **論点6.3（PackNotFoundError）**: 「Domain に置くだけ」ではなく `ScenarioRegistry` を Domain Protocol 化してエラー契約まで明示
+- **論点6.6（Orchestrator の責務分割）**: 「アーキテクチャ doc を Infra に直す（妥協案 B）」「詳細設計を UseCase に戻す（妥協案 A）」ではなく、**役割分割（C 案）** を選択。`Orchestrator` (UseCase, ビジネスロジック) と `ContainerOrchestratorRunner` (Infra, Docker 操作) を `OrchestratorRunner` Protocol で接続。実装影響が大きくても層境界を完全に守る
 
 ### 0.4 妥協の誘惑が来たときの対処
 

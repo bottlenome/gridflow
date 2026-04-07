@@ -133,3 +133,36 @@ ACDM が要求する成果物・構成要素に対して、本ドキュメント
 **総合判定: 承認（WARNING 2件、INFO 3件。ERROR なし）**
 
 本アーキテクチャドキュメントは ACDM に準拠した高品質な成果物であり、次フェーズ（基本設計・詳細設計）の入力として十分な品質を有する。
+
+---
+
+## 6. 詳細設計フェーズからの逆流レビュー（2026-04-07）
+
+### 6.1 概要
+
+詳細設計の Phase 0 結果レビュー（`docs/detailed_design/review_record.md` §8、論点6.1〜6.6）の過程で、本アーキテクチャドキュメントとの整合矛盾が検出された。詳細設計側で吸収可能な範囲は詳細設計を更新し、本ドキュメントを正と位置付けた論点（6.6 = Orchestrator 責務分割）については本ドキュメントに合わせて詳細設計を再分割した。
+
+### 6.2 検出された矛盾と対応
+
+| # | 矛盾内容 | 対応 |
+|---|---|---|
+| 1 | 03_static_view.md L301 / 05_view_mapping.md L13 で Orchestrator が "Use Cases" 層と記載されていたが、詳細設計 v0.7 では `gridflow.infra.orchestrator` (Infra 層) に集約されていた | **詳細設計側を再分割（論点6.6）**。Orchestrator のビジネスロジック (実験実行制御) を UseCase 層に、Docker 操作・HELICSBroker 依存の技術詳細を Infra 層に分離。`OrchestratorRunner` Protocol を UseCase 層に新設し、Infra 実装 (`ContainerOrchestratorRunner`) が Protocol を満たす形にした |
+| 2 | 05_view_mapping.md L14 で ScenarioRegistry が "Use Cases" 層と記載されていたが、論点6.3 で Domain Protocol + Infra 実装の二段構えに決定済み | **本ドキュメントを更新**。L14 を「Entities (Domain Protocol)」に、Infra 実装 `FileScenarioRegistry` を別行で追加。FR-01 行も同様に更新 |
+| 3 | 03_static_view.md L300 で「Scenario Pack + Registry → Entities + Use Cases」と記載 | **本ドキュメントを更新**。L300 を「Entities (Domain Protocol) + Infrastructure」に修正 |
+
+### 6.3 「妥協なき理想設計」原則の確認
+
+`CLAUDE.md` §0 で確立された「一貫性に例外を作らない／責務分離の言い訳で原則を緩めない」原則に基づき、論点6.6 の責務分割は **C 案（クラス分割）** を選択した。これは実装影響が大きい（既存の単一 Orchestrator クラスを 2 クラスに分割する）が、Clean Architecture の層境界とアーキテクチャドキュメントの位置付けを完全に一致させることを優先した。
+
+### 6.4 関連修正ファイル一覧
+
+| ファイル | 修正概要 |
+|---|---|
+| `docs/architecture/03_static_view.md` | L300-301 のレイヤー対応表を更新（Orchestrator 分割、ScenarioRegistry Protocol/Infra 二段構え） |
+| `docs/architecture/05_view_mapping.md` | L13-14 / L79-80 を更新（Orchestrator・ScenarioRegistry の Protocol/実装分離） |
+| `docs/architecture/09_review_record.md` | 本セクション §6 を追記 |
+| `docs/detailed_design/03b_usecase_classes.md` | §3.3 を UseCase Orchestrator として復活 |
+| `docs/detailed_design/03d_infra_classes.md` | §3.8 を Infra 部分のみに縮小 |
+| `docs/detailed_design/02_module_structure.md` | usecase/orchestrator/ ディレクトリ新設、infra/orchestrator/ 縮小 |
+| `docs/detailed_design/review_record.md` | §8.6 として論点6.6 を記録 |
+
