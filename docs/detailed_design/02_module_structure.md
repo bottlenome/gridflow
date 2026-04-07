@@ -7,6 +7,8 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成 |
+| 0.2 | 2026-04-07 | Phase0結果レビュー対応: (1) `domain/scenario/registry.py` (Protocol) と `errors.py` を追加 (論点6.3)。(2) `usecase/result.py` を追加 (StepResult/ExperimentResult、論点6.4)。(3) `infra/scenario/file_registry.py` を追加 (Domain Protocol 実装)。詳細経緯は `review_record.md` 参照 |
+| 0.3 | 2026-04-07 | 論点6.6 Orchestrator 責務分割: `usecase/orchestrator/` を新設（Orchestrator/ExecutionPlan/TimeSync/OrchestratorDriven/HybridSync）、`infra/orchestrator/` を縮小（ContainerOrchestratorRunner/ContainerManager/FederationDriven のみ）。アーキテクチャ doc との整合回復 |
 
 ---
 
@@ -26,6 +28,8 @@ gridflow/
 │       │   ├── scenario/
 │       │   │   ├── __init__.py
 │       │   │   ├── scenario_pack.py         # ScenarioPack, PackMetadata
+│       │   │   ├── registry.py              # ScenarioRegistry (Protocol) ★v0.7 追加（論点6.3）
+│       │   │   ├── errors.py                # ScenarioPackError, PackNotFoundError ★Domain契約
 │       │   │   └── interfaces.py            # ScenarioRepositoryInterface
 │       │   └── cdl/
 │       │       ├── __init__.py
@@ -41,7 +45,18 @@ gridflow/
 │       │   ├── run_simulation.py            # RunSimulation
 │       │   ├── compare_benchmark.py         # CompareBenchmark
 │       │   ├── import_scenario.py           # ImportScenario
-│       │   └── interfaces.py               # Use Case 層 Protocol 定義
+│       │   ├── result.py                    # StepStatus, StepResult, ExperimentResult ★v0.7 新設（論点6.4）
+│       │   ├── orchestrator/                # ★v0.8 新設（論点6.6）UseCase Orchestrator
+│       │   │   ├── __init__.py
+│       │   │   ├── orchestrator.py           # Orchestrator (ビジネスロジック、Docker非依存)
+│       │   │   ├── execution_plan.py         # ExecutionPlan
+│       │   │   ├── time_sync.py              # TimeSync (設定データ)
+│       │   │   └── timesync/                 # TimeSyncStrategy 実装 (UseCase部分)
+│       │   │       ├── __init__.py
+│       │   │       ├── orchestrator_driven.py # OrchestratorDriven
+│       │   │       └── hybrid_sync.py        # HybridSync
+│       │   ├── scheduling.py                 # SimulationTask, TaskResult
+│       │   └── interfaces.py                # Use Case 層 Protocol 定義 (OrchestratorRunner, TimeSyncStrategy 等)
 │       │
 │       ├── adapter/                         # Adapter 層 ― 外部変換
 │       │   ├── __init__.py
@@ -63,15 +78,19 @@ gridflow/
 │       │
 │       └── infra/                           # Infrastructure 層 ― 技術基盤
 │           ├── __init__.py
-│           ├── orchestrator/
+│           ├── orchestrator/                # ★v0.8 改訂（論点6.6）Infra 部分のみ
 │           │   ├── __init__.py
-│           │   ├── orchestrator.py           # Orchestrator
-│           │   ├── execution_plan.py         # ExecutionPlan
-│           │   ├── container_manager.py      # ContainerManager
-│           │   └── time_sync.py             # TimeSync
-│           ├── registry/
+│           │   ├── container_orchestrator_runner.py  # ContainerOrchestratorRunner (OrchestratorRunner Protocol の Docker 実装)
+│           │   ├── container_manager.py      # ContainerManager (Docker 操作低レベル)
+│           │   └── timesync/                 # TimeSyncStrategy 実装 (Infra部分)
+│           │       ├── __init__.py
+│           │       └── federation_driven.py  # FederationDriven (HELICSBroker 依存)
+│           ├── scenario/
 │           │   ├── __init__.py
-│           │   └── scenario_registry.py     # ScenarioRegistry
+│           │   └── file_registry.py         # FileScenarioRegistry（domain.scenario.registry.ScenarioRegistry Protocol 実装）★v0.7
+│           ├── registry/                    # ※従来パス。v0.7 で domain Protocol 化に伴い infra.scenario へ実装移動を推奨
+│           │   ├── __init__.py
+│           │   └── scenario_registry.py     # ScenarioRegistry（旧配置、移行対象）
 │           ├── plugin/
 │           │   ├── __init__.py
 │           │   ├── plugin_registry.py       # PluginRegistry

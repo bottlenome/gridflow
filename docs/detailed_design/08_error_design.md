@@ -10,6 +10,7 @@
 | 0.2 | 2026-04-03 | 8.3〜8.5追記 |
 | 0.3 | 2026-04-04 | ADR: エラー処理方式の設計判断を追加 |
 | 0.4 | 2026-04-06 | 8.1.5 具象クラスにサブクラス追加、第3章との例外名統一（DD-REV-102） |
+| 0.5 | 2026-04-07 | Phase0 結果レビュー対応: (1) 8.0.5 StepResult を Enum 化＋属性拡張（論点6.4）、(2) 8.1 冒頭にレイヤー配置指針を追記（論点6.3）、(3) PackNotFoundError を Domain 契約として明示。詳細経緯は `review_record.md` 参照 |
 
 ---
 
@@ -89,9 +90,16 @@ gridflow で使用する戻り値型エラーの一覧。
 |---|---|---|
 | `ValidationResult` | バリデーション結果 | `valid: bool`, `errors: list[ValidationError]`, `warnings: list[str]` |
 | `HealthStatus` | コネクタ稼働状態 | `healthy: bool`, `message: str` |
-| `StepResult` | ステップ実行結果 | `status: str` ("success"\|"warning"\|"error"), `data: dict`, `elapsed_ms: float` |
+| `StepResult` | ステップ実行結果 | `step_id: str`, `status: StepStatus` (Enum: SUCCESS\|WARNING\|ERROR), `data: tuple[tuple[str, object], ...]`, `elapsed_ms: float`, `timestamp: datetime`, `error: GridflowError \| None` |
 
-これらは全て `dataclass(frozen=True)` で定義し、イミュータブルとする。`StepResult.status == "error"` の場合、呼び出し側（Orchestrator）がエラー処理を行う責務を持つ。
+これらは全て `dataclass(frozen=True)` で定義し、イミュータブルとする。`StepResult.status == StepStatus.ERROR` の場合、呼び出し側（Orchestrator）がエラー処理を行う責務を持ち、`error` 属性に格納された `GridflowError` を参照する。
+
+> **v0.7 改訂（論点6.4）:** StepResult は当初 status: str / data: dict の3属性のみだったが、Phase 0 結果レビューで属性拡張・型安全化を決定した：
+> - `status` を Enum (`StepStatus`) 化（型安全・誤値防止）
+> - `data` を `tuple[tuple[str, object], ...]` 化（frozen 不変原則と整合、論点6.1）
+> - `step_id` / `timestamp` / `error` を追加（識別・追跡・例外伝搬）
+> - 完全なクラス設計は [03e_usecase_results.md §3.11.3](03e_usecase_results.md) 参照
+> - 配置レイヤーは UseCase 層 (`gridflow.usecase.result`) に確定（旧 8.0.5 では未指定）
 
 ### 8.0.6 将来の方針転換条件（P2: HIL連携）
 
@@ -110,6 +118,12 @@ gridflow で使用する戻り値型エラーの一覧。
 ## 8.1 例外クラス階層設計
 
 **関連要件**: REQ-Q-008 / DD-ERR-001
+
+> **レイヤー配置の指針（v0.7 追記、論点6.3）:**
+> - **Domain ルール違反系のエラー**は Domain 層に配置する。例: `PackNotFoundError`（「Pack は ID で一意に識別され実在する」という Domain 不変条件の違反）。これらは storage backend の実装詳細に依存しない契約として、Domain Protocol（例: `ScenarioRegistry`）の戻り値仕様で送出が宣言される。Infra 層実装はこの契約を満たす責務を負う。
+> - **技術的失敗系のエラー**は Infra 層に配置する。例: `ContainerStartError`, `OpenDSSError`, `FileReadError`。これらは具体的な技術スタック・通信・OS 等に起因する。
+> - **使い分け基準:** 「ユーザのアクションが原因（"指定したものが存在しない"）」→ Domain 系。「システム側の問題（"接続失敗"）」→ Infra 系。
+> - 詳細経緯は `review_record.md` 論点6.3 参照。
 
 ### 8.1.1 クラス階層図
 
@@ -272,7 +286,7 @@ classDiagram
 | 親クラス | サブクラス | 固有属性 | 説明 |
 |---|---|---|---|
 | `ScenarioPackError` | — | `pack_id: str` | Scenario Pack のスキーマ不正、ハッシュ不一致、バージョン非互換など |
-| | `PackNotFoundError` | `pack_id: str` | 指定された pack_id の Pack が Registry に存在しない |
+| | `PackNotFoundError` | `pack_id: str` | 指定された pack_id の Pack が Registry に存在しない。**Domain 契約**として `ScenarioRegistry` Protocol（[03a §3.2.4](03a_domain_classes.md)）の `get()` 戻り値仕様で送出が宣言される。Infra 層実装（FileScenarioRegistry 等）はこの契約を満たす責務を負う（v0.7 論点6.3） |
 | `CDLValidationError` | — | `field_path: str`, `expected_type: str` | CDL データモデルのバリデーション失敗 |
 | `MetricCalculationError` | — | `metric_name: str`, `step_name: str` | メトリクス計算中の異常 |
 

@@ -7,6 +7,7 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-01 | 初版作成 |
+| 0.2 | 2026-04-07 | StepResult を論点6.4 に合わせて拡張（StepStatus enum, step_id/timestamp/error 追加, data: tuple化）。Metric.metadata を tuple 化。詳細設計 03e_usecase_results.md / review_record.md §8.1 §8.2 参照 |
 
 ---
 
@@ -35,12 +36,26 @@ from typing import Protocol, Any
 from dataclasses import dataclass
 
 
+from datetime import datetime
+from enum import Enum
+
+
+class StepStatus(Enum):
+    SUCCESS = "success"
+    WARNING = "warning"
+    ERROR = "error"
+
+
 @dataclass(frozen=True)
 class StepResult:
-    """1 ステップの実行結果。"""
-    status: str          # "success" | "warning" | "error"
-    data: dict[str, Any] # CDL 準拠の出力データ
-    elapsed_ms: float    # 実行時間（ミリ秒）
+    """1 ステップの実行結果（v0.x: 論点6.4 で属性拡張）。
+    詳細クラス設計は詳細設計 03e_usecase_results.md §3.11.3 参照。"""
+    step_id: str
+    status: StepStatus
+    data: tuple[tuple[str, object], ...]  # CDL 準拠の出力データ（不変、利用時は dict(self.data)）
+    elapsed_ms: float                     # 実行時間（ミリ秒）
+    timestamp: datetime
+    error: "GridflowError | None" = None  # ERROR時の例外オブジェクト
 
 
 @dataclass(frozen=True)
@@ -141,7 +156,7 @@ class Metric:
     name: str
     value: float
     unit: str
-    metadata: dict[str, Any]
+    metadata: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則徹底（論点6.1拡張）
 
 
 class MetricCalculator(Protocol):

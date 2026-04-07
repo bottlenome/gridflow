@@ -7,6 +7,8 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-01 | 初版作成 |
+| 0.2 | 2026-04-07 | Asset.parameters / Event.params / ExperimentMetadata.parameters を `dict` → `tuple[tuple[str, object], ...]` に変更（frozen 不変原則と整合）。詳細設計 論点6.1、`docs/detailed_design/review_record.md` §8.2 参照 |
+| 0.3 | 2026-04-07 | 全 frozen dataclass の `metadata` / `properties` も `tuple[tuple[str, object], ...]` に統一（Topology / Edge / TimeSeries / Metric）。妥協なき不変原則徹底のため、論点6.1 を全付帯属性に拡張 |
 
 ---
 
@@ -152,7 +154,7 @@ classDiagram
         +str id
         +list~Node~ nodes
         +list~Edge~ edges
-        +dict metadata
+        +tuple~tuple~str,object~~ metadata
     }
 
     class Node {
@@ -167,14 +169,14 @@ classDiagram
         +str from_node
         +str to_node
         +str edge_type
-        +dict properties
+        +tuple~tuple~str,object~~ properties
     }
 
     class Asset {
         +str id
         +str asset_type
         +str node_id
-        +dict parameters
+        +tuple~tuple~str,object~~ parameters
     }
 
     class TimeSeries {
@@ -183,7 +185,7 @@ classDiagram
         +list~datetime~ timestamps
         +list~float~ values
         +str unit
-        +dict metadata
+        +tuple~tuple~str,object~~ metadata
     }
 
     class Event {
@@ -191,7 +193,7 @@ classDiagram
         +str event_type
         +datetime timestamp
         +str target_id
-        +dict params
+        +tuple~tuple~str,object~~ params
     }
 
     class Metric {
@@ -199,7 +201,7 @@ classDiagram
         +float value
         +str unit
         +float~optional~ threshold
-        +dict metadata
+        +tuple~tuple~str,object~~ metadata
     }
 
     class ExperimentMetadata {
@@ -207,7 +209,7 @@ classDiagram
         +datetime created_at
         +str scenario_pack_id
         +str connector
-        +dict parameters
+        +tuple~tuple~str,object~~ parameters
         +int seed
     }
 
@@ -258,7 +260,7 @@ class Edge:
     from_node: str
     to_node: str
     edge_type: str
-    properties: dict[str, object] = field(default_factory=dict)
+    properties: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則徹底
 
 
 @dataclass(frozen=True)
@@ -268,7 +270,7 @@ class Topology:
     id: str
     nodes: tuple[Node, ...]
     edges: tuple[Edge, ...]
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則徹底
 
 
 @dataclass(frozen=True)
@@ -278,7 +280,7 @@ class Asset:
     id: str
     asset_type: AssetType
     node_id: str
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則と整合（詳細設計 論点6.1）
 
 
 @dataclass(frozen=True)
@@ -290,7 +292,7 @@ class TimeSeries:
     timestamps: tuple[datetime, ...]
     values: tuple[float, ...]
     unit: str
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則徹底
 
 
 @dataclass(frozen=True)
@@ -301,7 +303,7 @@ class Event:
     event_type: str
     timestamp: datetime
     target_id: str
-    params: dict[str, object] = field(default_factory=dict)
+    params: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple（論点6.1）
 
 
 @dataclass(frozen=True)
@@ -312,7 +314,7 @@ class Metric:
     value: float
     unit: str
     threshold: float | None = None
-    metadata: dict[str, object] = field(default_factory=dict)
+    metadata: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple、frozen不変原則徹底
 
 
 @dataclass(frozen=True)
@@ -323,7 +325,7 @@ class ExperimentMetadata:
     created_at: datetime
     scenario_pack_id: str
     connector: str
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: tuple[tuple[str, object], ...] = ()  # v0.x: dict→tuple（論点6.1）
     seed: int = 0
 ```
 
