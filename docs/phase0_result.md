@@ -7,6 +7,7 @@
 | 0.1 | 2026-04-07 | 初版作成 | Claude |
 | 0.2 | 2026-04-07 | OpenDSS smoke test 実行検証完了。完了条件 #5/#6 を達成に更新 | Claude |
 | 0.3 | 2026-04-07 | 設計書修正レビュー完了。論点6.1〜6.5 をディスカッション形式で確定し、対応する設計書 (03a/03b/03d/03e/08/02/development_plan) を更新。section 7.1 のチェックを完了。詳細議論は `docs/detailed_design/review_record.md` 参照 | Claude |
+| 0.4 | 2026-04-07 | 論点6.6 Orchestrator 責務分割を追加。Phase 0 実装 vs 設計書 v0.8 の矛盾チェックを実施し、7.2 に 5.7/5.8 項を追加（ScenarioPack frozen化 / tuple エルゴノミクスヘルパー）。5.2 の対象範囲を parameters のみから metadata/properties を含む全付帯属性に拡張（行番号付き）。詳細議論は `review_record.md` §8.6 参照 | Claude |
 
 ---
 
@@ -200,11 +201,35 @@ StepResult の詳細クラス設計（属性一覧、メソッド、配置モジ
 ### 7.2 Phase 1 での実装対応
 
 - [ ] 5.1: ScenarioPack の `to_dict()` / `validate()` 実装
-- [ ] 5.2: frozen dataclass の `parameters` 型を `tuple[tuple[str, object], ...]` に修正（論点6.1 B 採択）。Asset / Event / ExperimentMetadata / PackMetadata の Phase 0 実装が `dict` のままなので Phase 1 で書き換え必須
+- [ ] 5.2: frozen dataclass の付帯属性を **すべて** `tuple[tuple[str, object], ...]` に修正（論点6.1 拡張）。対象属性・ファイル・行番号は以下：
+  - `parameters` 系:
+    - `src/gridflow/domain/cdl/asset.py:28` Asset.parameters
+    - `src/gridflow/domain/cdl/event.py:31` Event.parameters
+    - `src/gridflow/domain/cdl/experiment_metadata.py:29` ExperimentMetadata.parameters
+    - `src/gridflow/domain/scenario/scenario_pack.py:43` PackMetadata.parameters
+  - `metadata` / `properties` 系（CLAUDE.md §0 妥協なき原則に従い v0.x で追加）:
+    - Topology.metadata / TimeSeries.metadata / Metric.metadata / Edge.properties 該当箇所すべて
+  - `ExperimentResult.metrics: dict[str, float]` → `tuple[tuple[str, MetricValue], ...]` （5.5 と同時対応）
+  - テストの assertion も書き換え: `asset.parameters["key"]` → `dict(asset.parameters)["key"]` または `get_param()` ヘルパー経由
 - [ ] 5.3: StepResult クラスと ExperimentResult.steps 属性の実装（論点6.4: 03e_usecase_results.md 準拠。`gridflow.usecase.result` モジュール新設、StepStatus enum、step_id/timestamp/error 属性含む）
 - [ ] 5.4: ScenarioRegistry を Domain Protocol として `gridflow.domain.scenario.registry` に新設し、Infra 実装 (`FileScenarioRegistry`) を `gridflow.infra.scenario.file_registry` に配置する（論点6.3）
-- [ ] 5.5: ExperimentResult を `gridflow.domain.result` から `gridflow.usecase.result` に移設する（論点6.4）
-- [ ] 5.6: Orchestrator を責務分割（論点6.6）。`gridflow.usecase.orchestrator.Orchestrator` (ビジネスロジック) と `gridflow.infra.orchestrator.ContainerOrchestratorRunner` (Docker 実装) に分け、`OrchestratorRunner` Protocol を境界とする。OrchestratorDriven/HybridSync は UseCase 層に、FederationDriven は Infra 層に配置 |
+- [ ] 5.5: ExperimentResult を `gridflow.domain.result` から `gridflow.usecase.result` に移設する（論点6.4）。既存 `src/gridflow/domain/result/results.py:140` の ExperimentResult クラスを削除し、`usecase/result.py` に frozen=True で再定義。import パスの全置換が必要（テスト含む）
+- [ ] 5.6: Orchestrator を責務分割（論点6.6）。`gridflow.usecase.orchestrator.Orchestrator` (ビジネスロジック) と `gridflow.infra.orchestrator.ContainerOrchestratorRunner` (Docker 実装) に分け、`OrchestratorRunner` Protocol を境界とする。OrchestratorDriven/HybridSync は UseCase 層に、FederationDriven は Infra 層に配置。**Phase 0 で Orchestrator は未実装のため新設作業のみ（既存コードを壊す作業はない）**
+- [ ] 5.7: **ScenarioPack / PackMetadata の frozen 化**（論点6.2）
+  - 対象: `src/gridflow/domain/scenario/scenario_pack.py:21` PackMetadata, `:46` ScenarioPack
+  - `@dataclass` → `@dataclass(frozen=True)` に変更
+  - **状態遷移との整合が最大の論点**: ScenarioPack は `status: PackStatus` を持ち Draft → Validated → Registered → Running → Completed の状態遷移（05_state_transition.md）がある。frozen 後は `pack.status = ...` 直接代入が不可になるため、状態更新はすべて `dataclasses.replace(pack, status=...)` で **新インスタンス生成**する方式に統一する
+  - 呼び出し側（Registry / UseCase）が古い参照を持ち続けないよう、更新後のインスタンスを呼び出し側に返却する API 規約を決める（推奨: `ScenarioRegistry.update_status(pack_id, new_status) -> ScenarioPack` を追加）
+  - テスト側の `pack.status = ...` 直接代入があれば `replace()` ベースに書き換え
+- [ ] 5.8: **tuple-of-tuples エルゴノミクス対策**（論点6.1 運用ヘルパー）
+  - `tuple[tuple[str, object], ...]` は直接アクセスが不便（`asset.parameters["kW"]` が書けない）ため、運用ヘルパーを早期に整備する
+  - 配置候補: `src/gridflow/domain/util/params.py`（新設）
+  - 提供関数:
+    - `as_params(mapping: Mapping[str, object]) -> tuple[tuple[str, object], ...]`：dict 入力を tuple-of-tuples に変換
+    - `get_param(params: tuple[tuple[str, object], ...], key: str, default: object = None) -> object`：キー取得
+    - `params_to_dict(params: tuple[tuple[str, object], ...]) -> dict[str, object]`：dict 復元
+  - テスト・呼び出しコードは極力このヘルパー経由にし、`dict(self.parameters)` の散在を防ぐ
+  - **方針決定の論点**: computed property (`@property def params_dict(self)`) 方式にするか関数ヘルパー方式にするか。`@property` はハッシュ等価性には影響しないが、frozen dataclass では `__post_init__` で書き込めないためキャッシュ困難。関数ヘルパーで統一を推奨
 
 ---
 
