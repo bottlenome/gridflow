@@ -189,7 +189,7 @@ sequenceDiagram
 
 > **第3章との対応:**
 > - `BenchmarkCalculator` は第3章の MetricCalculator Protocol（Strategy パターン）に対する**内部実装の参照設計**である。各メソッドは個別の MetricCalculator 実装クラスに対応する（[03b 3.6.3](03b_usecase_classes.md#363-metriccalculatorprotocol)参照）。
-> - `SimulationResults` は第3章の `ExperimentResult`（[03a 3.4.13](03a_domain_classes.md#3413-experimentresult)）に相当する。
+> - `SimulationResults` は第3章の `ExperimentResult` に相当する。**v0.x で UseCase 層 ([03e_usecase_results.md §3.11.4](03e_usecase_results.md))** へ移設済み（旧 03a 3.4.13 はリダイレクトのみ）。配下の Result 型群（NodeResult/BranchResult 等）は Domain 層（03a §3.4.14〜3.4.19）に残置。詳細経緯は `review_record.md` §8.1 参照。
 
 ```mermaid
 classDiagram

@@ -259,12 +259,8 @@ classDiagram
         +from_canonical(data: CanonicalData) Any
     }
 
-    class StepResult {
-        <<dataclass>>
-        +str status
-        +dict~str, Any~ data
-        +float elapsed_ms
-    }
+    %% StepResult は v0.7 で 03e_usecase_results.md §3.11.3 へ移設済み
+    %% (StepStatus enum + step_id/timestamp/error 属性追加)
 
     class HealthStatus {
         <<dataclass>>
@@ -276,8 +272,8 @@ classDiagram
     ConnectorInterface <|.. OpenDSSConnector : implements
     DataTranslator <|.. OpenDSSTranslator : implements
     OpenDSSConnector --> DataTranslator : uses
-    OpenDSSConnector ..> StepResult : returns
     OpenDSSConnector ..> HealthStatus : returns
+    %% OpenDSSConnector ..> StepResult : returns  (StepResult は 03e へ移設)
 ```
 
 ### 3.5.2 ConnectorInterface（Protocol）

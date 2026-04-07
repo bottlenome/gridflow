@@ -9,6 +9,7 @@
 | 0.1 | 2026-04-03 | 初版作成（6.1〜6.4） |
 | 0.2 | 2026-04-03 | 6.5〜6.8追記 |
 | 0.5 | 2026-04-06 | X5レビュー対応: ID命名統一({entity}_id), Event.target_type追加, 属性欠落補完(name, source_bus, node_type, length_km, resolution_s, rated_power_kw), PackMetadata追加, seed型修正(int→int\|None) |
+| 0.6 | 2026-04-07 | parameters/params 属性を `dict` → `tuple[tuple[str, object], ...]` に変更（frozen 不変原則と整合）。Asset/Event/ExperimentMetadata/PackMetadata。詳細設計 論点6.1、`review_record.md` §8.2 参照 |
 
 ---
 
@@ -40,7 +41,7 @@ erDiagram
         datetime created_at
         string connector
         int_or_None seed
-        dict parameters
+        tuple_of_tuples parameters
     }
 
     ScenarioPack ||--|| PackMetadata : "has"
@@ -55,7 +56,7 @@ erDiagram
         string scenario_pack_id FK
         string connector
         int_or_None seed
-        dict parameters
+        tuple_of_tuples parameters
     }
 
     Topology ||--|{ Node : "has"
@@ -91,7 +92,7 @@ erDiagram
         AssetType asset_type
         string node_id FK
         float rated_power_kw
-        dict parameters
+        tuple_of_tuples parameters
     }
 
     TimeSeries {
@@ -110,7 +111,7 @@ erDiagram
         datetime timestamp
         string target_id FK
         string target_type
-        dict params
+        tuple_of_tuples params
     }
 
     Metric {
@@ -188,7 +189,7 @@ erDiagram
 | `asset_type` | `str` | 必須 | `"pv"` \| `"battery"` \| `"load"` \| `"generator"` \| `"transformer"` | アセット種別 |
 | `node_id` | `str` | 必須 | 有効な Node.node_id を参照 | 接続先ノード ID |
 | `rated_power_kw` | `float` | 必須 | 正の値 | 定格電力（kW） |
-| `parameters` | `dict[str, object]` | オプション | デフォルト `{}` | 定格出力、容量等のアセット固有パラメータ |
+| `parameters` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | 定格出力、容量等のアセット固有パラメータ（v0.x: dict→tuple、論点6.1） |
 
 ### 6.2.5 TimeSeries
 
@@ -211,7 +212,7 @@ erDiagram
 | `timestamp` | `datetime` | 必須 | シミュレーション時間範囲内 | 発生時刻 |
 | `target_id` | `str` | 必須 | 有効な Node.node_id, Edge.edge_id, または Asset.asset_id を参照 | 対象要素 ID |
 | `target_type` | `str` | 必須 | `"node"` \| `"edge"` \| `"asset"` | 対象要素の種別 |
-| `params` | `dict[str, object]` | オプション | デフォルト `{}` | イベント固有パラメータ（障害種別、変化量等） |
+| `params` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | イベント固有パラメータ（v0.x: dict→tuple、論点6.1） |
 
 ### 6.2.7 Metric
 
@@ -231,7 +232,7 @@ erDiagram
 | `created_at` | `datetime` | 必須 | ISO 8601 形式 | 実験作成日時 |
 | `scenario_pack_id` | `str` | 必須 | 有効な ScenarioPack 名を参照 | 元となる Scenario Pack の識別子 |
 | `connector` | `str` | 必須 | 登録済み Connector 名（例: `"opendss"`, `"pandapower"` ） | 使用した Connector |
-| `parameters` | `dict[str, object]` | オプション | デフォルト `{}` | 実験固有パラメータ（シミュレーション設定等） |
+| `parameters` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | 実験固有パラメータ（v0.x: dict→tuple、論点6.1） |
 | `seed` | `int \| None` | オプション | デフォルト `None`、指定時は非負整数 | 乱数シード（再現性担保）。未指定時はNone |
 
 ---
