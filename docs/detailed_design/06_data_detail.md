@@ -10,6 +10,7 @@
 | 0.2 | 2026-04-03 | 6.5〜6.8追記 |
 | 0.5 | 2026-04-06 | X5レビュー対応: ID命名統一({entity}_id), Event.target_type追加, 属性欠落補完(name, source_bus, node_type, length_km, resolution_s, rated_power_kw), PackMetadata追加, seed型修正(int→int\|None) |
 | 0.6 | 2026-04-07 | parameters/params 属性を `dict` → `tuple[tuple[str, object], ...]` に変更（frozen 不変原則と整合）。Asset/Event/ExperimentMetadata/PackMetadata。詳細設計 論点6.1、`review_record.md` §8.2 参照 |
+| 0.7 | 2026-04-07 | metadata/properties 属性も `tuple[tuple[str, object], ...]` に統一。Topology/Edge/TimeSeries/Metric。妥協なき不変原則徹底 |
 
 ---
 
@@ -66,7 +67,7 @@ erDiagram
         string topology_id PK
         string name
         string source_bus
-        dict metadata
+        tuple_of_tuples metadata
     }
 
     Node {
@@ -83,7 +84,7 @@ erDiagram
         string to_node FK
         string edge_type
         float length_km
-        dict properties
+        tuple_of_tuples properties
     }
 
     Asset {
@@ -102,7 +103,7 @@ erDiagram
         list_float values
         string unit
         float resolution_s
-        dict metadata
+        tuple_of_tuples metadata
     }
 
     Event {
@@ -119,7 +120,7 @@ erDiagram
         float value
         string unit
         float threshold
-        dict metadata
+        tuple_of_tuples metadata
     }
 
     Node ||--o{ Asset : "hosts"
@@ -157,7 +158,7 @@ erDiagram
 | `nodes` | `tuple[Node, ...]` | 必須 | 1 個以上 | 所属するノードの不変タプル |
 | `edges` | `tuple[Edge, ...]` | 必須 | 1 個以上 | 所属するエッジの不変タプル |
 | `source_bus` | `str` | 必須 | 有効な Node.node_id を参照 | 電源バスのノードID |
-| `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 座標系、基準電圧等の補助情報 |
+| `metadata` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | 座標系、基準電圧等の補助情報（v0.x: dict→tuple、論点6.1拡張） |
 
 ### 6.2.2 Node
 
@@ -178,7 +179,7 @@ erDiagram
 | `to_node` | `str` | 必須 | 有効な Node.node_id を参照 | 終点ノード ID |
 | `edge_type` | `str` | 必須 | `"line"` \| `"transformer"` \| `"switch"` | エッジ種別 |
 | `length_km` | `float \| None` | オプション | デフォルト `None` | 線路長（km）。該当しない場合はNone |
-| `properties` | `dict[str, object]` | オプション | デフォルト `{}` | インピーダンス、定格容量等の物理パラメータ |
+| `properties` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | インピーダンス、定格容量等の物理パラメータ（v0.x: dict→tuple、論点6.1拡張） |
 
 ### 6.2.4 Asset
 
@@ -201,7 +202,7 @@ erDiagram
 | `values` | `tuple[float, ...]` | 必須 | `timestamps` と同数 | 値列 |
 | `unit` | `str` | 必須 | 空文字不可（例: `"kW"`, `"kVar"`, `"V"` ） | 物理単位 |
 | `resolution_s` | `float` | 必須 | 正の値 | データ解像度（秒） |
-| `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 補間方式等の補助情報 |
+| `metadata` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | 補間方式等の補助情報（v0.x: dict→tuple、論点6.1拡張） |
 
 ### 6.2.6 Event
 
@@ -222,7 +223,7 @@ erDiagram
 | `value` | `float` | 必須 | 有限値 | 計算結果値 |
 | `unit` | `str` | 必須 | 空文字不可（例: `"%"`, `"hours"`, `"kWh"` ） | 物理単位 |
 | `threshold` | `float \| None` | オプション | デフォルト `None`、指定時は有限値 | 閾値（超過で警告） |
-| `metadata` | `dict[str, object]` | オプション | デフォルト `{}` | 算出条件等の補助情報 |
+| `metadata` | `tuple[tuple[str, object], ...]` | オプション | デフォルト `()` | 算出条件等の補助情報（v0.x: dict→tuple、論点6.1拡張） |
 
 ### 6.2.8 ExperimentMetadata
 
