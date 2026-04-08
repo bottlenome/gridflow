@@ -1,0 +1,17 @@
+! Minimal 2-bus test feeder used for gridflow smoke / E2E tests.
+! Single line from sourcebus to loadbus with one balanced load.
+
+Clear
+
+New Circuit.Minimal bus1=sourcebus basekv=12.47 phases=3 pu=1.0
+
+! One line, 1 km
+New Line.feeder bus1=sourcebus bus2=loadbus length=1 units=km linecode=default
+New Linecode.default nphases=3 r1=0.3 x1=0.5 r0=0.5 x0=0.7 c1=3.4 c0=1.6 units=km
+
+! One balanced load
+New Load.load1 bus1=loadbus kv=12.47 kw=500 pf=0.95 model=1 phases=3
+
+Set voltagebases=[12.47]
+Calcv
+Solve

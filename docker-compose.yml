@@ -1,5 +1,9 @@
 version: "3.9"
 
+# Production-style compose: builds the slim runtime images and exposes the
+# gridflow CLI container on port 8888. See docker-compose.dev.yml for the
+# developer variant that bind-mounts the source tree for hot reload.
+
 services:
   gridflow-core:
     build:
@@ -13,10 +17,12 @@ services:
       - gridflow-net
     volumes:
       - shared-data:/app/data
-      - ./scenario-packs:/app/scenarios:ro
+      - ./examples:/app/examples:ro
+      - gridflow-home:/home/gridflow/.gridflow
     environment:
-      - GRIDFLOW_ENV=development
+      - GRIDFLOW_ENV=production
       - GRIDFLOW_LOG_LEVEL=INFO
+      - GRIDFLOW_HOME=/home/gridflow/.gridflow
     depends_on:
       opendss-connector:
         condition: service_healthy
@@ -32,10 +38,16 @@ services:
       - gridflow-net
     volumes:
       - shared-data:/app/data
+      - ./examples:/app/examples:ro
     environment:
-      - GRIDFLOW_ENV=development
+      - GRIDFLOW_ENV=production
       - GRIDFLOW_LOG_LEVEL=INFO
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import opendssdirect"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 networks:
   gridflow-net:
@@ -43,4 +55,6 @@ networks:
 
 volumes:
   shared-data:
+    driver: local
+  gridflow-home:
     driver: local

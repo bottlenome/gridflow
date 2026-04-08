@@ -1,11 +1,7 @@
-"""Tests for simulation result domain models."""
+"""Tests for simulation result domain models (time-series value objects)."""
 
-from datetime import UTC, datetime
-
-from gridflow.domain.cdl import ExperimentMetadata
 from gridflow.domain.result import (
     BranchResult,
-    ExperimentResult,
     GeneratorResult,
     Interruption,
     LoadResult,
@@ -55,17 +51,3 @@ class TestInterruption:
         )
         assert intr.duration_min == 60.0
         assert intr.customers_affected == 100
-
-
-class TestExperimentResult:
-    def test_create_minimal(self) -> None:
-        meta = ExperimentMetadata(
-            experiment_id="exp-001",
-            created_at=datetime(2026, 1, 1, tzinfo=UTC),
-            scenario_pack_id="pack-001",
-            connector="opendss",
-        )
-        result = ExperimentResult(experiment_id="exp-001", metadata=meta)
-        assert result.node_results == ()
-        assert result.elapsed_s == 0.0
-        assert result.metrics == {}

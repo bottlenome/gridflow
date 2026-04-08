@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,8 @@ class ExperimentMetadata:
         scenario_pack_id: ID of the scenario pack used.
         connector: Connector name used.
         seed: Random seed. None if not specified.
-        parameters: Experiment parameters.
+        parameters: Experiment parameters as a frozen tuple-of-tuples
+            (see ``gridflow.domain.util.params``).
     """
 
     experiment_id: str
@@ -26,7 +28,7 @@ class ExperimentMetadata:
     scenario_pack_id: str
     connector: str
     seed: int | None = None
-    parameters: dict[str, object] = field(default_factory=dict)
+    parameters: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -36,7 +38,7 @@ class ExperimentMetadata:
             "scenario_pack_id": self.scenario_pack_id,
             "connector": self.connector,
             "seed": self.seed,
-            "parameters": dict(self.parameters),
+            "parameters": params_to_dict(self.parameters),
         }
 
     def validate(self) -> None:

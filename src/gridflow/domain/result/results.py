@@ -1,10 +1,12 @@
-"""Simulation result data models."""
+"""Simulation result domain models (time-series value objects).
+
+Aggregate container :class:`~gridflow.usecase.result.ExperimentResult` lives
+in the Use Case layer (phase0_result §7.2 5.5).
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
-from gridflow.domain.cdl.experiment_metadata import ExperimentMetadata
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -135,32 +137,3 @@ class Interruption:
     duration_min: float
     customers_affected: int
     cause: str
-
-
-@dataclass(frozen=True)
-class ExperimentResult:
-    """Aggregated experiment result.
-
-    Attributes:
-        experiment_id: Unique experiment identifier.
-        metadata: Experiment metadata.
-        node_results: Per-node results.
-        branch_results: Per-branch results.
-        load_results: Per-load results.
-        generator_results: Per-generator results.
-        renewable_results: Per-renewable results.
-        interruptions: Outage event list.
-        metrics: Computed metrics mapping.
-        elapsed_s: Total execution time (seconds).
-    """
-
-    experiment_id: str
-    metadata: ExperimentMetadata
-    node_results: tuple[NodeResult, ...] = ()
-    branch_results: tuple[BranchResult, ...] = ()
-    load_results: tuple[LoadResult, ...] = ()
-    generator_results: tuple[GeneratorResult, ...] = ()
-    renewable_results: tuple[RenewableResult, ...] = ()
-    interruptions: tuple[Interruption, ...] = ()
-    metrics: dict[str, float] = field(default_factory=dict)
-    elapsed_s: float = 0.0

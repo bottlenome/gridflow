@@ -12,6 +12,16 @@ build/
 *.egg-info/
 docs/
 tests/
+
+# Exclude Markdown by default, then re-include README.md because
+# pyproject.toml references it via `readme = "README.md"` — hatchling
+# fails to build the wheel otherwise during `uv sync --no-editable`.
 *.md
+!README.md
+
 .env
 .env.*
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

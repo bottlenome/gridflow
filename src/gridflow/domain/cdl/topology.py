@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,8 @@ class Edge:
         to_node: Destination node ID.
         edge_type: Edge type (e.g. "line", "transformer").
         length_km: Line length in km. None if not applicable.
+        properties: Edge-specific additional properties as a frozen
+            tuple-of-tuples (see ``gridflow.domain.util.params``).
     """
 
     edge_id: str
@@ -60,6 +63,7 @@ class Edge:
     to_node: str
     edge_type: str
     length_km: float | None = None
+    properties: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -69,6 +73,7 @@ class Edge:
             "to_node": self.to_node,
             "edge_type": self.edge_type,
             "length_km": self.length_km,
+            "properties": params_to_dict(self.properties),
         }
 
     def validate(self) -> None:
@@ -93,6 +98,8 @@ class Topology:
         nodes: Tuple of network nodes.
         edges: Tuple of network edges.
         source_bus: Source bus node ID.
+        metadata: Topology-level metadata as a frozen tuple-of-tuples
+            (see ``gridflow.domain.util.params``).
     """
 
     topology_id: str
@@ -100,6 +107,7 @@ class Topology:
     nodes: tuple[Node, ...]
     edges: tuple[Edge, ...]
     source_bus: str
+    metadata: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -109,6 +117,7 @@ class Topology:
             "nodes": [n.to_dict() for n in self.nodes],
             "edges": [e.to_dict() for e in self.edges],
             "source_bus": self.source_bus,
+            "metadata": params_to_dict(self.metadata),
         }
 
     def validate(self) -> None:

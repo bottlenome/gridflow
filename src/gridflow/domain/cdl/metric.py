@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from gridflow.domain.error import CDLValidationError
+from gridflow.domain.util.params import Params, params_to_dict
 
 
 @dataclass(frozen=True)
@@ -17,6 +18,8 @@ class Metric:
         unit: Unit string.
         step: Corresponding step number. None for aggregate metrics.
         threshold: Threshold value for warnings. None if not applicable.
+        metadata: Metric-level metadata as a frozen tuple-of-tuples
+            (see ``gridflow.domain.util.params``).
     """
 
     name: str
@@ -24,6 +27,7 @@ class Metric:
     unit: str
     step: int | None = None
     threshold: float | None = None
+    metadata: Params = ()
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -33,6 +37,7 @@ class Metric:
             "unit": self.unit,
             "step": self.step,
             "threshold": self.threshold,
+            "metadata": params_to_dict(self.metadata),
         }
 
     def validate(self) -> None:
