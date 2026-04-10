@@ -9,14 +9,24 @@ Error code scheme (per DD-ERR-001, section 8.2):
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
+
+from gridflow.domain.util.params import Params, as_params, params_to_dict
+
 
 class GridflowError(Exception):
     """Base exception for all gridflow errors.
 
+    The ``context`` attribute follows the project-wide immutable params
+    convention (CLAUDE.md §0.3): internally stored as a sorted
+    ``tuple[tuple[str, object], ...]``. Callers may pass a mapping or an
+    iterable of pairs for convenience and the tuple is constructed via
+    :func:`gridflow.domain.util.params.as_params`.
+
     Attributes:
         error_code: Error code string (e.g. "E-10001").
         message: Human-readable error message.
-        context: Additional context information.
+        context: Additional context information as an immutable params tuple.
         cause: Original exception for chaining (traceback preservation).
     """
 
@@ -26,11 +36,11 @@ class GridflowError(Exception):
         self,
         message: str,
         *,
-        context: dict[str, object] | None = None,
+        context: Mapping[str, object] | Iterable[tuple[str, object]] | None = None,
         cause: Exception | None = None,
     ) -> None:
         self.message = message
-        self.context: dict[str, object] = context or {}
+        self.context: Params = as_params(context)
         self.cause = cause
         super().__init__(message)
         if cause is not None:
@@ -41,7 +51,7 @@ class GridflowError(Exception):
         return {
             "error_code": self.error_code,
             "message": self.message,
-            "context": self.context,
+            "context": params_to_dict(self.context),
         }
 
     def __str__(self) -> str:

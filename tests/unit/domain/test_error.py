@@ -30,7 +30,8 @@ class TestGridflowErrorBase:
     def test_attributes(self) -> None:
         err = GridflowError("test error", context={"key": "value"})
         assert err.message == "test error"
-        assert err.context == {"key": "value"}
+        # context is stored as an immutable params tuple (CLAUDE.md §0.3)
+        assert err.context == (("key", "value"),)
         assert err.error_code == "E-00000"
         assert err.cause is None
 
@@ -41,6 +42,7 @@ class TestGridflowErrorBase:
     def test_to_dict(self) -> None:
         err = GridflowError("test", context={"k": "v"})
         d = err.to_dict()
+        # to_dict() rehydrates the tuple into a plain dict for serialisation
         assert d == {"error_code": "E-00000", "message": "test", "context": {"k": "v"}}
 
     def test_cause_chaining(self) -> None:
@@ -51,7 +53,19 @@ class TestGridflowErrorBase:
 
     def test_empty_context_by_default(self) -> None:
         err = GridflowError("test")
-        assert err.context == {}
+        assert err.context == ()
+
+    def test_context_is_hashable_tuple(self) -> None:
+        # Regression: CLAUDE.md §0.3 requires immutable params tuple, not dict
+        err = GridflowError("test", context={"b": 2, "a": 1})
+        assert isinstance(err.context, tuple)
+        # as_params sorts by key for deterministic equality
+        assert err.context == (("a", 1), ("b", 2))
+        hash(err.context)  # must not raise
+
+    def test_context_accepts_iterable_of_pairs(self) -> None:
+        err = GridflowError("test", context=[("x", 1), ("y", 2)])
+        assert err.context == (("x", 1), ("y", 2))
 
 
 class TestDomainErrors:
