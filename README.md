@@ -99,7 +99,7 @@ src/gridflow/
   adapter/     # CLI, connectors, benchmark harness
   infra/       # FileScenarioRegistry, ConfigManager, structured logging
 tests/
-  unit/        # Layer-scoped unit tests (121 cases)
+  unit/        # Layer-scoped unit tests
   e2e/         # CLI-level end-to-end pipeline + reproducibility
   spike/       # OpenDSS smoke tests (gated behind the `spike` marker)
 examples/
