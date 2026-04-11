@@ -7,6 +7,84 @@
 | 0.1 | 2026-04-11 | 初版作成。research_landscape.md §3.1 の C-1 / C-3 / C-7 / C-10 を end-to-end で実証するシナリオとして定義 | Claude |
 | 0.2 | 2026-04-11 | 実装成果物を `test/mvp_try1/` 配下に隔離する方針に変更。既存の `examples/` / `tools/` は触らない。§4.1 / §5 の保存先パスを更新 | Claude |
 | 0.3 | 2026-04-11 | §5 実装作業完了 + §6 DoD 全項目達成。実走 wall time 20.87 秒 (目標 < 600 秒)。3 runs bit 一致、voltage_deviation 40.5% 減少を確認。実走詳細は `test/mvp_try1/report.md` 参照 | Claude |
+| 0.4 | 2026-04-11 | **§0.5 追記**: 本シナリオは tool-developer 視点の engineering reproducibility 確認であって、**ユーザー視点での MVP 検証としては不十分**であることを明記。ユーザーが本シナリオで得られる成果は研究論文の題材にならず、MVP 検証として正しくない。後継シナリオは [mvp_scenario_v2.md](./mvp_scenario_v2.md) で定義 | Claude |
+
+---
+
+## 0.5 本シナリオの限界 (v0.4 追記)
+
+> ⚠️ **本シナリオは MVP 検証としては不十分です。**
+>
+> 本シナリオが検証したのは「gridflow を使うと IEEE 13 × DER 5 段階 sweep が
+> 20 秒で完了し、再現性が bit レベルで保証される」という**エンジニアリング
+> としての reproducibility** である。一方、gridflow の MVP としての
+> **本質的価値**は「gridflow を使う **ユーザー (研究者)** が、gridflow が
+> あるからこそ書ける研究論文を 1 本仕上げられること」であり、本シナリオは
+> その観点での検証を欠いている。
+
+### 0.5.1 本シナリオで生成される「研究結果」の限界
+
+`test/mvp_try1/report.md §6` で報告した主な観察:
+
+- "DER 浸透率が上がると voltage_deviation が減る"
+- "同一 seed で 3 runs が bit 一致する"
+- "20.87 秒で 15 実験が完了する"
+
+これらのうち **研究論文の新規性として主張できるものは 1 つもない**。
+
+| 観察 | 研究的新規性 | 理由 |
+|---|---|---|
+| voltage_deviation が DER で減少 | ❌ なし | HCA 文献で既知 (2020 MDPI Energies review 等) |
+| 3 runs bit 一致 | ❌ なし | OpenDSS の決定性が保証する既知の性質 |
+| 20 秒で sweep 完了 | ❌ なし | ツールの使い勝手、性能貢献ではない |
+| 100% 浸透でも violation 14.6% 残存 | ❌ なし | IEEE 13 元々の電圧問題、配置最適化の未実施結果 |
+
+ユーザーが本シナリオだけで論文を書こうとしても、査読で
+**「授業の宿題レベル」「既存手法の再実行」** と判定されて通らない。
+
+### 0.5.2 ユーザーが本当に書きたい研究論文と、そこに必要な機能
+
+電力系研究者が HCA 領域で書ける 2024-2025 年の論文類型と、各類型に
+必要な gridflow 機能を整理すると:
+
+| 論文類型 | 必要機能 | 現状 MVP (`test/mvp_try1`) |
+|---|---|---|
+| **Stochastic HCA**: IEEE 37 等で 500-1000 個のランダム PV 配置をサンプルし、voltage violation の分布を報告 | 大量変種の**自動 sweep** + 統計 aggregator | ❌ 手動で 500 pack を作るしかない |
+| **Cross-solver validation**: OpenDSS と pandapower で同じ回路を解き差分を報告 | **pandapower connector** + cross-solver benchmark | ❌ OpenDSS 専用 |
+| **Novel metric proposal**: voltage_violation_ratio に時間重み付けや confidence interval を加えた新指標を提案 | **プラグイン可能な custom metric** | ❌ core の voltage_deviation / runtime のみ |
+| **Real feeder case study**: CIGRE MV や実配電データで HCA | 大規模 network + 実データ import | ⚠️ 理論上可能、実証なし |
+
+**本シナリオが使う機能は、上記 4 類型のどれも直接サポートしていない**。
+これは本シナリオが MVP 検証として不十分であることを意味する。
+
+### 0.5.3 なぜ v0.1〜v0.3 でこの誤りに気付けなかったか
+
+元シナリオ (v0.1-v0.3) は「先行研究で認定された課題 (C-1 再現性 / C-3 プロビナンス
+/ C-7 electric power tracker / C-10 指標定義) に対して gridflow が
+✅ 直接対応する」ことを定量的に実証することに集中していた。確かにこの 4 課題は
+[research_landscape.md](./research_landscape.md) の重要な観点であり、本シナリオは
+それらの実証としては成功している。
+
+しかし **「課題に対応できる」と「ユーザーが論文を書ける」の間には距離がある**。
+課題対応は必要条件であって十分条件ではない。ユーザーが論文を書くには、
+課題対応に加えて **ユーザー自身の研究新規性を担う自動化機能** (sweep /
+cross-solver / custom metric) が必要であり、v0.1-v0.3 はこの観点を見落としていた。
+
+### 0.5.4 本シナリオの有効範囲
+
+本シナリオは以下の用途には**依然として有効**:
+
+- **Phase 1 Engineering reproducibility の smoke 検証** — CLI フロー全体が
+  正常動作し、seed 同一で bit 一致することの確認。
+- **research_landscape §3.1 C-1 / C-3 / C-7 / C-10 への必要条件の実証** —
+  これらの課題に gridflow が対応可能な**土台**を持つことの確認。
+- **回帰テスト用ベースライン** — `test/mvp_try1/results/*.json` は gridflow の
+  将来変更で壊れないかのベースラインとして残す。
+
+したがって本シナリオと `test/mvp_try1/` は削除せず、以下の区分で**残置**する:
+
+- `mvp_scenario.md` (本書): **Phase 1 基礎検証シナリオ** (engineering reproducibility の確認)
+- [mvp_scenario_v2.md](./mvp_scenario_v2.md): **MVP 本検証シナリオ** (ユーザー論文視点での検証)
 
 ---
 
