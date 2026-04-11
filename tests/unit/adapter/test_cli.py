@@ -157,3 +157,84 @@ class TestRunnerSelection:
                 connector="opendss",
                 connector_factory=lambda _: None,
             )
+
+
+class TestSweepCommand:
+    """Unit A-iii: ``gridflow sweep --plan ...`` end-to-end through CliRunner."""
+
+    def test_sweep_runs_with_yaml_plan(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        # 1. Register the base pack the sweep will derive children from.
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        reg = runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        assert reg.exit_code == 0, reg.output
+
+        # 2. Patch the default factory so the sweep uses an in-memory connector.
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+
+        # 3. Build a sweep plan against the registered pack.
+        plan_path = tmp_path / "sweep.yaml"
+        plan_path.write_text(
+            """
+sweep:
+  id: cli_smoke
+  base_pack_id: demo@1.0.0
+  aggregator: statistics
+  seed: 42
+axes:
+  - name: pv_kw
+    type: range
+    start: 100
+    stop: 400
+    step: 100
+""",
+            encoding="utf-8",
+        )
+
+        out_path = tmp_path / "sweep_result.json"
+        result = runner.invoke(
+            app,
+            [
+                "sweep",
+                "--plan",
+                str(plan_path),
+                "--connector",
+                "fake",
+                "--output",
+                str(out_path),
+                "--format",
+                "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert out_path.exists()
+        payload = json.loads(out_path.read_text())
+        assert payload["sweep_id"] == "cli_smoke"
+        assert payload["base_pack_id"] == "demo@1.0.0"
+        assert len(payload["experiment_ids"]) == 3  # 100, 200, 300
+        assert "voltage_deviation_mean" in payload["aggregated_metrics"]
+
+    def test_sweep_missing_plan_file_fails(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+    ) -> None:
+        result = runner.invoke(
+            app,
+            ["sweep", "--plan", str(tmp_path / "nope.yaml"), "--connector", "opendss"],
+        )
+        # exit_code != 0 (typer Argument with exists=True returns 2 for the
+        # missing file).
+        assert result.exit_code != 0
+
+
+# json import for the new test class
+import json  # noqa: E402  -- placed here to keep test_cli history-clean for pre-sweep tests

@@ -47,6 +47,8 @@ from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
 from gridflow.usecase.interfaces import ConnectorInterface, OrchestratorRunner
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
+from gridflow.usecase.sweep import build_default_sweep_orchestrator
+from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_from_yaml
 
 app = typer.Typer(
     name="gridflow",
@@ -74,6 +76,24 @@ _BENCH_BASE_OPT = typer.Option(..., "--baseline", help="Baseline experiment_id")
 _BENCH_CAND_OPT = typer.Option(..., "--candidate", help="Candidate experiment_id")
 _BENCH_OUTPUT_OPT = typer.Option(None, "--output", help="Write JSON report to path")
 _BENCH_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_SWEEP_PLAN_OPT = typer.Option(
+    ...,
+    "--plan",
+    exists=True,
+    readable=True,
+    help="Path to sweep_plan.yaml",
+)
+_SWEEP_CONNECTOR_OPT = typer.Option(
+    "opendss",
+    "--connector",
+    help="Connector name to drive every child experiment",
+)
+_SWEEP_OUTPUT_OPT = typer.Option(
+    None,
+    "--output",
+    help="Write SweepResult JSON to this path (default: stdout)",
+)
+_SWEEP_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
 
 
 # ---------------------------------------------------------------------- context
@@ -420,6 +440,90 @@ def benchmark_command(
         typer.echo(ctx.report_gen.render_comparison_text(report))
     else:
         typer.echo(ctx.formatter.render(report.to_dict()))
+
+
+@app.command("sweep")
+def sweep_command(
+    plan: Path = _SWEEP_PLAN_OPT,
+    connector: str = _SWEEP_CONNECTOR_OPT,
+    output: Path | None = _SWEEP_OUTPUT_OPT,
+    fmt: str = _SWEEP_FMT_OPT,
+) -> None:
+    """Run a parameter sweep defined by a sweep_plan.yaml file.
+
+    The plan describes a base ``ScenarioPack`` plus one or more parameter
+    axes (range / choice / random_uniform / random_choice). The sweep
+    expands the axes into N child experiments, drives each through the
+    same ``Orchestrator`` the ``run`` command uses, and aggregates the
+    per-experiment metrics into sweep-level statistics via the registered
+    aggregator.
+
+    The result is a ``SweepResult`` JSON containing every child
+    experiment ID, the plan content hash, and the aggregated metrics.
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.sweep")
+
+    sweep_plan = load_sweep_plan_from_yaml(plan)
+
+    try:
+        runner = build_runner_from_env(
+            connector=connector,
+            connector_factory=ctx.connector_factory,
+        )
+    except GridflowError as exc:
+        log.error("runner_selection_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
+    sweep_orchestrator = build_default_sweep_orchestrator(
+        registry=ctx.registry,
+        orchestrator=orchestrator,
+        connector_id=connector,
+    )
+    try:
+        result = sweep_orchestrator.run(sweep_plan)
+    except GridflowError as exc:
+        log.error(
+            "sweep_failed",
+            sweep_id=sweep_plan.sweep_id,
+            error_code=exc.error_code,
+            message=exc.message,
+        )
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = result.to_dict()
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(payload, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+
+    log.info(
+        "sweep_completed",
+        sweep_id=result.sweep_id,
+        n_experiments=len(result.experiment_ids),
+        elapsed_s=result.elapsed_s,
+    )
+
+    if ctx.formatter.format is OutputFormat.PLAIN:
+        typer.echo(
+            ctx.formatter.render(
+                {
+                    "sweep_id": result.sweep_id,
+                    "base_pack_id": result.base_pack_id,
+                    "n_experiments": len(result.experiment_ids),
+                    "elapsed_s": result.elapsed_s,
+                    "plan_hash": result.plan_hash,
+                }
+            )
+        )
+    else:
+        typer.echo(ctx.formatter.render(payload))
 
 
 # ---------------------------------------------------------------------- main
