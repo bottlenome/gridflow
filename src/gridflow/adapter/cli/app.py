@@ -140,6 +140,12 @@ def _build_context(fmt: OutputFormat = OutputFormat.PLAIN) -> CLIContext:
 def _default_connector_factory(name: str) -> ConnectorInterface:
     if name == "opendss":
         return OpenDSSConnector()
+    if name == "pandapower":
+        # Imported lazily so the CLI keeps working when the [pandapower]
+        # extra is not installed.
+        from gridflow.adapter.connector.pandapower import PandaPowerConnector
+
+        return PandaPowerConnector()
     raise GridflowError(f"Unknown connector: {name}")
 
 
