@@ -1,15 +1,22 @@
 """Use-case layer Orchestrator (business logic only).
 
-Responsibility split (phase0_result §7.2 5.6, CLAUDE.md §0.3):
-    * :class:`Orchestrator` — **UseCase** — decides *what* to run: resolves the
-      pack from the registry, drives the runner, assembles the ExperimentResult,
-      transitions lifecycle status. No Docker / subprocess / solver calls.
-    * :class:`~gridflow.infra.orchestrator.InProcessOrchestratorRunner` and
-      :class:`~gridflow.infra.orchestrator.ContainerOrchestratorRunner` — **Infra** —
-      know *how* to execute a connector (in-process vs. Docker).
+Spec: docs/detailed_design/03b_usecase_classes.md §3.3.2.
 
-The two halves communicate through
-:class:`~gridflow.usecase.interfaces.OrchestratorRunner`.
+Responsibility split (CLAUDE.md §0.3, spec 03b §3.3):
+    * :class:`Orchestrator` — **UseCase** — decides *what* to run: resolves
+      the pack, builds an :class:`ExecutionPlan`, drives the injected
+      :class:`OrchestratorRunner`, assembles an :class:`ExperimentResult`,
+      and manages pack lifecycle status. It knows nothing about Docker,
+      subprocess, or REST.
+    * :class:`InProcessOrchestratorRunner` / :class:`ContainerOrchestratorRunner`
+      — **Infra** — know *how* to physically execute connectors
+      (in-process vs. Docker Compose + REST).
+
+The two halves communicate through the
+:class:`gridflow.usecase.interfaces.OrchestratorRunner` Protocol which
+takes an :class:`ExecutionPlan` in ``prepare()`` and a
+``(connector_id, step, context)`` triple in ``run_connector()`` so the
+runner never sees a live :class:`ConnectorInterface` object.
 """
 
 from __future__ import annotations
@@ -20,50 +27,67 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from gridflow.domain.cdl import ExperimentMetadata
-from gridflow.domain.error import OrchestratorError, PackNotFoundError, SimulationError
+from gridflow.domain.error import OrchestratorError, PackNotFoundError
 from gridflow.domain.result import NodeResult
 from gridflow.domain.scenario import PackStatus, ScenarioRegistry
 from gridflow.domain.util.params import as_params
-from gridflow.usecase.interfaces import (
-    ConnectorInterface,
-    ConnectorStepOutput,
-    OrchestratorRunner,
-)
-from gridflow.usecase.result import ExperimentResult, StepResult, StepStatus
+from gridflow.usecase.execution_plan import ExecutionPlan, StepConfig
+from gridflow.usecase.interfaces import OrchestratorRunner
+from gridflow.usecase.result import ExperimentResult, StepResult
 
 
 @dataclass(frozen=True)
 class RunRequest:
-    """Inputs needed to start an experiment."""
+    """Inputs needed to start an experiment.
+
+    Attributes:
+        pack_id: Registered Scenario Pack identifier.
+        connector_id: Connector registered with the
+            :class:`OrchestratorRunner` (e.g. ``"opendss"``). The runner
+            resolves the ID to a physical backend.
+        total_steps: Number of solver steps to run (``> 0``).
+        seed: Optional override for the scenario seed.
+        experiment_id: Optional pre-assigned experiment identifier.
+            When ``None`` the orchestrator generates one.
+    """
 
     pack_id: str
-    connector: ConnectorInterface
+    connector_id: str = "opendss"
     total_steps: int = 1
     seed: int | None = None
     experiment_id: str | None = None
 
 
 class Orchestrator:
-    """High-level "run an experiment" use case."""
+    """High-level "run an experiment" use case.
+
+    Lifecycle (spec 03b §3.3.2):
+        1. Resolve the pack via the injected :class:`ScenarioRegistry`.
+           Fail fast with :class:`PackNotFoundError`.
+        2. Validate request (``total_steps > 0``).
+        3. Transition pack → ``RUNNING``.
+        4. Build an :class:`ExecutionPlan` and call ``runner.prepare``.
+        5. Loop over steps, calling ``runner.run_connector`` once per
+           ``(connector_id, step_config)`` pair.
+        6. Always call ``runner.teardown`` (best-effort) before exiting.
+        7. On success, transition pack → ``COMPLETED`` and build an
+           :class:`ExperimentResult`.
+
+    Runner errors surface to the caller unchanged so the caller can act
+    on the error code (e.g. retry vs. reconfigure).
+    """
 
     def __init__(self, *, registry: ScenarioRegistry, runner: OrchestratorRunner) -> None:
         self._registry = registry
         self._runner = runner
 
     def run(self, request: RunRequest) -> ExperimentResult:
-        """Drive a full experiment and return the aggregated result.
+        if request.total_steps <= 0:
+            raise OrchestratorError(
+                f"total_steps must be positive, got {request.total_steps}",
+                context={"pack_id": request.pack_id},
+            )
 
-        Lifecycle:
-            1. Fetch the pack; fail fast with ``PackNotFoundError``.
-            2. Transition pack → ``RUNNING``.
-            3. Invoke the runner.
-            4. Transition pack → ``COMPLETED`` on success.
-            5. Build an :class:`ExperimentResult`.
-
-        Failures during execution re-raise as ``SimulationError`` /
-        ``OrchestratorError`` with the pack lifecycle left at ``RUNNING`` so
-        operators can inspect and retry.
-        """
         try:
             pack = self._registry.get(request.pack_id)
         except PackNotFoundError:
@@ -75,44 +99,61 @@ class Orchestrator:
                 cause=exc,
             ) from exc
 
-        if request.total_steps <= 0:
-            raise OrchestratorError(
-                f"total_steps must be positive, got {request.total_steps}",
-                context={"pack_id": request.pack_id},
-            )
-
         pack = self._registry.update_status(pack.pack_id, PackStatus.RUNNING)
 
         experiment_id = request.experiment_id or f"exp-{uuid.uuid4().hex[:12]}"
+        plan = ExecutionPlan(
+            experiment_id=experiment_id,
+            pack=pack,
+            steps=tuple(StepConfig(step_id=i) for i in range(request.total_steps)),
+            connectors=(request.connector_id,),
+            parameters=as_params({"total_steps": request.total_steps}),
+        )
+
         start_wall = time.perf_counter()
+        step_results: list[StepResult] = []
         try:
-            outputs = self._runner.run_connector(request.connector, pack, request.total_steps)
+            self._runner.prepare(plan)
+            try:
+                for step_cfg in plan.steps:
+                    for connector_id in plan.connectors:
+                        step_result = self._runner.run_connector(connector_id, step_cfg.step_id, ())
+                        step_results.append(step_result)
+            finally:
+                self._runner.teardown()
+        except PackNotFoundError:
+            raise
         except OrchestratorError:
             raise
         except Exception as exc:
-            raise SimulationError(
-                f"Connector '{request.connector.name}' failed for pack '{pack.pack_id}'",
-                context={"pack_id": pack.pack_id, "connector": request.connector.name},
+            # Surface runner / connector errors as-is when they are already
+            # well-typed; wrap stray exceptions in OrchestratorError.
+            from gridflow.domain.error import GridflowError
+
+            if isinstance(exc, GridflowError):
+                raise
+            raise OrchestratorError(
+                f"Experiment '{experiment_id}' failed",
+                context={"pack_id": pack.pack_id, "experiment_id": experiment_id},
                 cause=exc,
             ) from exc
-        elapsed_s = time.perf_counter() - start_wall
 
+        elapsed_s = time.perf_counter() - start_wall
         self._registry.update_status(pack.pack_id, PackStatus.COMPLETED)
 
-        steps = tuple(_output_to_step_result(o) for o in outputs)
-        node_results = _aggregate_node_results(outputs)
+        node_results = _aggregate_node_results(tuple(step_results))
         metadata = ExperimentMetadata(
             experiment_id=experiment_id,
             created_at=datetime.now(tz=UTC),
             scenario_pack_id=pack.pack_id,
-            connector=request.connector.name,
+            connector=request.connector_id,
             seed=request.seed if request.seed is not None else pack.metadata.seed,
             parameters=as_params({"total_steps": request.total_steps}),
         )
         return ExperimentResult(
             experiment_id=experiment_id,
             metadata=metadata,
-            steps=steps,
+            steps=tuple(step_results),
             node_results=node_results,
             elapsed_s=elapsed_s,
         )
@@ -121,25 +162,14 @@ class Orchestrator:
 # ----------------------------------------------------------------- helpers
 
 
-def _output_to_step_result(output: ConnectorStepOutput) -> StepResult:
-    status = StepStatus.SUCCESS if output.converged else StepStatus.ERROR
-    return StepResult(
-        step_id=output.step,
-        timestamp=datetime.now(tz=UTC),
-        status=status,
-        elapsed_ms=0.0,
-        node_result=output.node_result,
-        error=None if output.converged else "solver did not converge",
-    )
+def _aggregate_node_results(steps: tuple[StepResult, ...]) -> tuple[NodeResult, ...]:
+    """Collapse per-step voltage snapshots into a single final NodeResult.
 
-
-def _aggregate_node_results(outputs: tuple[ConnectorStepOutput, ...]) -> tuple[NodeResult, ...]:
-    """Collapse per-step voltage vectors into a single ``NodeResult`` series."""
-    if not outputs:
+    Mirrors the pre-refactor aggregation: experiment results carry the
+    final step's bus voltages as an aggregate ``NodeResult``. Extending
+    to per-step time-series is a later-phase concern.
+    """
+    if not steps:
         return ()
-    # Every step emits a single __network__ NodeResult whose ``voltages`` is
-    # the full bus vector for that step. Stack them into one time-series.
-    # For MVP we materialise a single aggregate NodeResult with the bus vector
-    # for the FINAL step (most callers only need the converged snapshot).
-    final = outputs[-1].node_result
+    final = steps[-1].node_result
     return (final,) if final is not None else ()

@@ -77,6 +77,13 @@ class CLIContext:
 
     Exposed publicly so tests can build one with in-memory fakes and call
     command functions directly, skipping the typer layer.
+
+    Attributes:
+        connector_factory: ``(connector_id: str) → ConnectorInterface``.
+            Consumed to build the per-connector factory map passed to
+            :class:`InProcessOrchestratorRunner`; this keeps the
+            monkeypatch-friendly indirection that tests rely on while
+            giving the runner a clean ``{id: Callable}`` registry.
     """
 
     registry: ScenarioRegistry
@@ -232,10 +239,20 @@ def run_command(
     configure_logging(level="INFO")
     log = get_logger("gridflow.cli.run")
 
-    conn = ctx.connector_factory(connector)
-    orchestrator = Orchestrator(registry=ctx.registry, runner=InProcessOrchestratorRunner())
+    # Build a factory map for the single requested connector. The CLI
+    # stays Phase 1-scoped (one connector per run) while the runner is
+    # already multi-connector-capable per spec 03d §3.8.2.
+    runner = InProcessOrchestratorRunner(connector_factories={connector: lambda: ctx.connector_factory(connector)})
+    orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
     try:
-        result = orchestrator.run(RunRequest(pack_id=pack_id, connector=conn, total_steps=steps, seed=seed))
+        result = orchestrator.run(
+            RunRequest(
+                pack_id=pack_id,
+                connector_id=connector,
+                total_steps=steps,
+                seed=seed,
+            )
+        )
     except GridflowError as exc:
         log.error("run_failed", pack_id=pack_id, error_code=exc.error_code, message=exc.message)
         typer.echo(str(exc))
