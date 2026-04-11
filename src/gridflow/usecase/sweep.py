@@ -23,11 +23,13 @@ Design principles (CLAUDE.md §0.1):
 
 from __future__ import annotations
 
+import json
 import statistics
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from gridflow.adapter.benchmark.harness import BenchmarkHarness
@@ -164,12 +166,19 @@ class SweepOrchestrator:
         aggregator_registry: AggregatorRegistry,
         connector_id: str = "opendss",
         harness: BenchmarkHarness | None = None,
+        results_dir: Path | None = None,
     ) -> None:
         self._registry = registry
         self._orchestrator = orchestrator
         self._aggregator_registry = aggregator_registry
         self._connector_id = connector_id
         self._harness = harness or BenchmarkHarness()
+        # When set, every child ExperimentResult is persisted as
+        # ``<results_dir>/<experiment_id>.json``. Required for the
+        # user-paper use case where downstream tools (e.g.
+        # plot_stochastic_hca, custom analysis scripts) need to inspect
+        # individual placements.
+        self._results_dir = results_dir
 
     def run(self, plan: SweepPlan) -> SweepResult:
         # Fail fast if the aggregator name is bad — no point expanding 500
@@ -205,6 +214,7 @@ class SweepOrchestrator:
             experiment_ids.append(result.experiment_id)
             summary = self._harness.evaluate(result)
             per_experiment_metrics.append(dict(summary.values))
+            self._persist_child_result(result)
 
         aggregated = aggregator.aggregate(per_experiment_metrics)
         elapsed = time.perf_counter() - start_wall
@@ -259,6 +269,17 @@ class SweepOrchestrator:
         for k, v in overrides:
             merged[k] = v
         return as_params(merged)
+
+    def _persist_child_result(self, result: ExperimentResult) -> None:
+        """Save a child ExperimentResult JSON to ``results_dir`` (if set)."""
+        if self._results_dir is None:
+            return
+        self._results_dir.mkdir(parents=True, exist_ok=True)
+        path = self._results_dir / f"{result.experiment_id}.json"
+        path.write_text(
+            json.dumps(result.to_dict(), indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
 
 
 # ----------------------------------------------------------------- convenience

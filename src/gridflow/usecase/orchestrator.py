@@ -142,13 +142,21 @@ class Orchestrator:
         self._registry.update_status(pack.pack_id, PackStatus.COMPLETED)
 
         node_results = _aggregate_node_results(tuple(step_results))
+        # Preserve the pack's parameters in the experiment metadata so
+        # downstream metric calculators (e.g. hosting_capacity_mw plugin)
+        # can read sweep-overridden values like pv_kw / pv_bus directly
+        # from ``result.metadata.parameters``. ``total_steps`` is layered
+        # on top so the experiment carries both pack-level and run-level
+        # parameters.
+        merged_parameters: dict[str, object] = dict(pack.metadata.parameters)
+        merged_parameters["total_steps"] = request.total_steps
         metadata = ExperimentMetadata(
             experiment_id=experiment_id,
             created_at=datetime.now(tz=UTC),
             scenario_pack_id=pack.pack_id,
             connector=request.connector_id,
             seed=request.seed if request.seed is not None else pack.metadata.seed,
-            parameters=as_params({"total_steps": request.total_steps}),
+            parameters=as_params(merged_parameters),
         )
         return ExperimentResult(
             experiment_id=experiment_id,

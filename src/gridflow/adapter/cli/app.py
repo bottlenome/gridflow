@@ -25,6 +25,10 @@ from typing import Any
 import typer
 
 from gridflow.adapter.benchmark import BenchmarkHarness, ReportGenerator
+from gridflow.adapter.benchmark.metric_registry import (
+    build_default_metric_registry,
+    load_metric_plugin,
+)
 from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
 from gridflow.domain.error import (
@@ -47,7 +51,10 @@ from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
 from gridflow.usecase.interfaces import ConnectorInterface, OrchestratorRunner
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
-from gridflow.usecase.sweep import build_default_sweep_orchestrator
+from gridflow.usecase.sweep import (
+    SweepOrchestrator,
+    build_default_aggregator_registry,
+)
 from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_from_yaml
 
 app = typer.Typer(
@@ -94,6 +101,15 @@ _SWEEP_OUTPUT_OPT = typer.Option(
     help="Write SweepResult JSON to this path (default: stdout)",
 )
 _SWEEP_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
+_SWEEP_METRIC_PLUGIN_OPT = typer.Option(
+    None,
+    "--metric-plugin",
+    help=(
+        "Custom MetricCalculator plugin in 'module.path:ClassName' form. "
+        "Repeatable. Plugins are loaded into the sweep's BenchmarkHarness "
+        "and their values feed the aggregator."
+    ),
+)
 
 
 # ---------------------------------------------------------------------- context
@@ -454,6 +470,7 @@ def sweep_command(
     connector: str = _SWEEP_CONNECTOR_OPT,
     output: Path | None = _SWEEP_OUTPUT_OPT,
     fmt: str = _SWEEP_FMT_OPT,
+    metric_plugins: list[str] | None = _SWEEP_METRIC_PLUGIN_OPT,
 ) -> None:
     """Run a parameter sweep defined by a sweep_plan.yaml file.
 
@@ -464,6 +481,11 @@ def sweep_command(
     per-experiment metrics into sweep-level statistics via the registered
     aggregator.
 
+    Custom metrics can be loaded via ``--metric-plugin module:Class``
+    (repeatable). Each plugin is added to the BenchmarkHarness driving
+    the sweep so its per-experiment values flow into the aggregator
+    alongside the built-in voltage_deviation / runtime metrics.
+
     The result is a ``SweepResult`` JSON containing every child
     experiment ID, the plan content hash, and the aggregated metrics.
     """
@@ -472,6 +494,24 @@ def sweep_command(
     log = get_logger("gridflow.cli.sweep")
 
     sweep_plan = load_sweep_plan_from_yaml(plan)
+
+    # Build a metric registry: built-ins + any --metric-plugin specs.
+    metric_registry = build_default_metric_registry()
+    for spec in metric_plugins or []:
+        try:
+            metric = load_metric_plugin(spec)
+        except GridflowError as exc:
+            log.error(
+                "metric_plugin_load_failed",
+                error_code=exc.error_code,
+                message=exc.message,
+                spec=spec,
+            )
+            typer.echo(str(exc))
+            raise typer.Exit(code=1) from exc
+        metric_registry.register(metric)
+
+    harness = BenchmarkHarness(metrics=tuple(metric_registry.get(name) for name in metric_registry.names()))
 
     try:
         runner = build_runner_from_env(
@@ -484,10 +524,13 @@ def sweep_command(
         raise typer.Exit(code=1) from exc
 
     orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
-    sweep_orchestrator = build_default_sweep_orchestrator(
+    sweep_orchestrator = SweepOrchestrator(
         registry=ctx.registry,
         orchestrator=orchestrator,
+        aggregator_registry=build_default_aggregator_registry(),
         connector_id=connector,
+        harness=harness,
+        results_dir=ctx.results_dir,
     )
     try:
         result = sweep_orchestrator.run(sweep_plan)

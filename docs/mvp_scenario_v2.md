@@ -310,7 +310,20 @@ test/mvp_try2/
 | 段階 | 状態 | 実施日 |
 |---|---|---|
 | シナリオ定義 (本書) | ✅ 完了 | 2026-04-11 |
-| 機能 A+B+C 実装 (`docs/phase1_result.md §7.13`) | ⏭ 着手予定 | - |
-| test/mvp_try2/ 実装 | ⏭ 未着手 | - |
-| 実走・検証 | ⏭ 未着手 | - |
-| report.md | ⏭ 未着手 | - |
+| 機能 A+B+C 実装 (`docs/phase1_result.md §7.13`) | ✅ 完了 | 2026-04-11 |
+| test/mvp_try2/ 実装 | ✅ 完了 | 2026-04-11 |
+| 実走・検証 | ✅ 完了 | 2026-04-11 |
+| report.md ([test/mvp_try2/report.md](../test/mvp_try2/report.md)) | ✅ 完了 | 2026-04-11 |
+
+**達成サマリ**:
+- 400 実験 (200 OpenDSS + 200 pandapower) 全成功
+- 全工程 wall time **約 54 秒** (DoD 目標 < 300 秒、約 5.5 倍高速)
+- hosting_capacity_mw が両 solver で意味のある分布:
+  - OpenDSS:    mean = 0.96 MW, max = 1.99 MW, stdev = 0.58 MW
+  - pandapower: mean = 1.02 MW, max = 1.99 MW, stdev = 0.57 MW
+  - cross-solver delta = +5.95% (DoD 目標 ≤ 10%)
+- voltage_deviation, runtime も両 solver で取得・比較可能
+- `stochastic_hca.png` 4 パネル publication-ready 図を生成
+- 詳細は [test/mvp_try2/report.md](../test/mvp_try2/report.md)
+- 論文ショート原稿のドラフト材料 (Title / Abstract / Figure caption /
+  Limitations / Before-After) も report §4 に整理済み

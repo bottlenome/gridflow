@@ -1,0 +1,26 @@
+# MVP try 2 — Stochastic HCA sweep over the pandapower MV open-ring feeder
+#
+# Mirror of opendss_sweep.yaml but for the simple_mv_open_ring_net
+# 7-bus pandapower distribution feeder. Same sweep size (200 random
+# placements) and same seed-pair so the two sweeps produce comparable
+# per-experiment counts. The bus domain is the 7 buses of the
+# open-ring feeder (integer indices 0..6 in pandapower).
+
+sweep:
+  id: pp_mv_ring_stochastic_hca
+  base_pack_id: pp_mv_ring_sweep_base@1.0.0
+  aggregator: statistics
+  seed: 42
+
+axes:
+  - name: pv_bus
+    type: random_choice
+    values: [1, 2, 3, 4, 5, 6]
+    n_samples: 200
+    seed: 100
+  - name: pv_kw
+    type: random_uniform
+    low: 100.0
+    high: 2000.0
+    n_samples: 200
+    seed: 200
