@@ -47,10 +47,15 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 USER gridflow
 
+# Health check hitting the minimal /health endpoint served by
+# ``gridflow.connectors.opendss``. Detailed design §11.1.2 specifies this
+# exact form.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import opendssdirect" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# The opendss-connector image ships OpenDSS + the gridflow package so the
-# same entrypoint works as the main CLI — Phase 1 MVP uses in-process
-# execution (see infra.orchestrator.InProcessOrchestratorRunner).
-ENTRYPOINT ["python", "-m", "gridflow"]
+EXPOSE 8000
+
+# Long-running REST daemon entry point (detailed design §11.1.2). The
+# daemon wraps the in-process OpenDSSConnector and exposes the REST
+# contract from 03b §3.5.6 (/health, /initialize, /execute, /teardown).
+ENTRYPOINT ["python", "-m", "gridflow.connectors.opendss"]

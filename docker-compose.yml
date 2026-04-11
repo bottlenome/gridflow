@@ -36,6 +36,9 @@ services:
     container_name: opendss-connector
     networks:
       - gridflow-net
+    # Port 8000 is internal-only (REST API consumed by gridflow-core via
+    # the internal Docker network per detailed design §11.2). Not exposed
+    # to the host.
     volumes:
       - shared-data:/app/data
       - ./examples:/app/examples:ro
@@ -44,7 +47,11 @@ services:
       - GRIDFLOW_LOG_LEVEL=INFO
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import opendssdirect"]
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
       interval: 30s
       timeout: 5s
       retries: 3
