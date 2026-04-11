@@ -4,7 +4,6 @@
 | 版数 | 日付 | 変更内容 |
 |---|---|---|
 | 0.1 | 2026-04-03 | 初版作成 |
-| 0.2 | 2026-04-10 | 11.1.1 の HEALTHCHECK および ENTRYPOINT を Phase 1 MVP 実態に合わせて修正。HEALTHCHECK は Notebook Bridge 未実装のため HTTP 検査ではなく `import gridflow` ベースに変更。ENTRYPOINT は `python -m gridflow.main` から `python -m gridflow` (`[project.scripts]` 経由) に修正。EXPOSE 8888 は将来の Notebook Bridge (IF-07) 用 placeholder として維持 |
 
 ---
 
@@ -59,17 +58,13 @@ ENV PATH="/app/.venv/bin:$PATH"
 # 非rootユーザーで実行
 USER gridflow
 
-# ヘルスチェック: Phase 1 MVP では Notebook Bridge (IF-07) 未実装のため、
-# HTTP エンドポイント検査ではなく gridflow パッケージの import 可否で判定する。
-# Notebook Bridge 実装時に HTTP 検査へ差し替える予定。
+# ヘルスチェック用エンドポイント
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import gridflow" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8888/health')" || exit 1
 
-# Notebook Bridge (IF-07, REQ-F-005 補助) 用に 8888 を予約。Phase 1 MVP では
-# 未使用だが、docker-compose のポートマッピングと整合させるため EXPOSE を残す。
 EXPOSE 8888
 
-ENTRYPOINT ["python", "-m", "gridflow"]
+ENTRYPOINT ["python", "-m", "gridflow.main"]
 ```
 
 ### 11.1.2 opendss-connector
