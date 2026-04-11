@@ -1,0 +1,24 @@
+# MVP try 1 — IEEE 13 × DER 100%
+
+pack:
+  name: ieee13_der_100
+  version: "1.0.0"
+  description: >
+    IEEE 13-node test feeder, DER penetration 100% (3,466 kW total PV,
+    split equally across buses 671 / 675 / 634). At this level the PV
+    generation can, in aggregate, serve the full system load; reverse
+    power flow onto the substation is expected.
+  author: gridflow mvp_try1
+  connector: opendss
+  seed: 42
+
+network:
+  master_file: der_100.dss
+
+parameters:
+  master_file: der_100.dss
+  voltage_base_kv: 4.16
+  source_bus: "650"
+  max_iterations: 100
+  tolerance: 0.0001
+  der_penetration_pct: 100

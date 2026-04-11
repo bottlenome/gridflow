@@ -1,0 +1,16 @@
+! IEEE 13 × DER 25%
+! Total PV = 25% of 3,466 kW ≈ 867 kW, split equally across 3 buses (≈ 289 kW each)
+! Bus placement:
+!   671 (primary load 1,155 kW, 4.16 kV Delta): PV_671
+!   675 (primary load 843 kW, 4.16 kV Wye):     PV_675
+!   634 (secondary of XFM-1, 480 V Wye):        PV_634
+
+Redirect ieee13_der_base.dss
+
+New Generator.PV_671 phases=3 bus1=671.1.2.3 kv=4.16 conn=Delta kW=289 pf=1.0 Model=1
+New Generator.PV_675 phases=3 bus1=675.1.2.3 kv=4.16 conn=Wye   kW=289 pf=1.0 Model=1
+New Generator.PV_634 phases=3 bus1=634.1.2.3 kv=0.48 conn=Wye   kW=289 pf=1.0 Model=1
+
+Set Voltagebases=[115, 4.16, .48]
+Calcv
+Solve BaseFrequency=60

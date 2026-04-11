@@ -1,0 +1,23 @@
+# MVP try 1 — IEEE 13 × DER 0% (baseline)
+
+pack:
+  name: ieee13_der_00
+  version: "1.0.0"
+  description: >
+    IEEE 13-node test feeder, DER penetration 0% (baseline).
+    Standard feeder without any PV. Used as reference point for
+    hosting-capacity sweep.
+  author: gridflow mvp_try1
+  connector: opendss
+  seed: 42
+
+network:
+  master_file: der_00.dss
+
+parameters:
+  master_file: der_00.dss
+  voltage_base_kv: 4.16
+  source_bus: "650"
+  max_iterations: 100
+  tolerance: 0.0001
+  der_penetration_pct: 0

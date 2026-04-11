@@ -1,0 +1,18 @@
+{
+  "baseline": "exp-7f6fc876b76a",
+  "candidate": "exp-03a7e454995c",
+  "metrics": [
+    {
+      "baseline": 0.589652392000005,
+      "candidate": 0.5853618550000874,
+      "delta": -0.004290536999917549,
+      "name": "runtime"
+    },
+    {
+      "baseline": 0.05447036299820067,
+      "candidate": 0.032389512026357974,
+      "delta": -0.022080850971842696,
+      "name": "voltage_deviation"
+    }
+  ]
+}
