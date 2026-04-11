@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from gridflow.adapter.cli.app import app
+from gridflow.adapter.cli.app import app, build_runner_from_env
 
 runner = CliRunner()
 
@@ -86,3 +86,74 @@ class TestRunCommand:
 
         result = runner.invoke(app, ["run", "nope", "--connector", "fake"])
         assert result.exit_code == 1
+
+
+class TestRunnerSelection:
+    """Unit 5: ``GRIDFLOW_RUNNER`` env var selects in-process vs container."""
+
+    def test_default_runner_is_inprocess(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+
+        monkeypatch.delenv("GRIDFLOW_RUNNER", raising=False)
+
+        def _factory(name: str):
+            from tests.unit.usecase.test_orchestrator import FakeConnector
+
+            return FakeConnector()
+
+        chosen = build_runner_from_env(connector="fake", connector_factory=_factory)
+        assert isinstance(chosen, InProcessOrchestratorRunner)
+
+    def test_inprocess_selected_explicitly(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+
+        monkeypatch.setenv("GRIDFLOW_RUNNER", "inprocess")
+
+        def _factory(name: str):
+            from tests.unit.usecase.test_orchestrator import FakeConnector
+
+            return FakeConnector()
+
+        chosen = build_runner_from_env(connector="fake", connector_factory=_factory)
+        assert isinstance(chosen, InProcessOrchestratorRunner)
+
+    def test_container_runner_selected_by_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from gridflow.infra.container_manager import NoOpContainerManager
+        from gridflow.infra.orchestrator import ContainerOrchestratorRunner
+
+        monkeypatch.setenv("GRIDFLOW_RUNNER", "container")
+        monkeypatch.setenv(
+            "GRIDFLOW_CONNECTOR_ENDPOINTS",
+            "opendss=opendss-connector@http://opendss-connector:8000",
+        )
+
+        chosen = build_runner_from_env(
+            connector="opendss",
+            connector_factory=lambda _: None,  # unused for container mode
+        )
+        assert isinstance(chosen, ContainerOrchestratorRunner)
+        # Inside docker-compose the CLI should use NoOpContainerManager —
+        # services are managed externally by depends_on healthchecks.
+        assert isinstance(chosen._manager, NoOpContainerManager)  # type: ignore[attr-defined]
+
+    def test_container_runner_requires_endpoints_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from gridflow.domain.error import ConfigError
+
+        monkeypatch.setenv("GRIDFLOW_RUNNER", "container")
+        monkeypatch.delenv("GRIDFLOW_CONNECTOR_ENDPOINTS", raising=False)
+
+        with pytest.raises(ConfigError):
+            build_runner_from_env(
+                connector="opendss",
+                connector_factory=lambda _: None,
+            )
+
+    def test_unknown_runner_name_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from gridflow.domain.error import ConfigError
+
+        monkeypatch.setenv("GRIDFLOW_RUNNER", "martian")
+        with pytest.raises(ConfigError):
+            build_runner_from_env(
+                connector="opendss",
+                connector_factory=lambda _: None,
+            )

@@ -75,6 +75,39 @@ class ContainerManager(Protocol):
         ...
 
 
+# ----------------------------------------------------------------- no-op
+
+
+class NoOpContainerManager:
+    """``ContainerManager`` for environments where services are managed
+    externally (e.g. the ambient Docker Compose stack that already
+    started them via ``depends_on``).
+
+    This is the default for the CLI running **inside** a Docker Compose
+    service: the orchestrator does not need to (and in fact cannot)
+    invoke ``docker compose`` from inside a service container. It just
+    talks REST to sibling containers that the host-side ``docker compose
+    up`` already started.
+
+    ``start`` and ``stop`` are no-ops; ``health_check`` returns a
+    permissive ``HealthStatus`` because container health is already
+    enforced by ``docker-compose.yml``'s ``healthcheck`` + ``depends_on:
+    service_healthy`` wiring.
+    """
+
+    def start(self, services: tuple[str, ...]) -> None:
+        del services
+
+    def stop(self, services: tuple[str, ...]) -> None:
+        del services
+
+    def health_check(self, service: str) -> HealthStatus:
+        return HealthStatus(
+            healthy=True,
+            message=f"service '{service}' managed by ambient compose stack",
+        )
+
+
 # ----------------------------------------------------------------- concrete
 
 

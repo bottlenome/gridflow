@@ -23,6 +23,12 @@ services:
       - GRIDFLOW_ENV=production
       - GRIDFLOW_LOG_LEVEL=INFO
       - GRIDFLOW_HOME=/home/gridflow/.gridflow
+      # Runner selection: the CLI talks REST to sibling containers via
+      # the in-cluster network. NoOpContainerManager is used inside
+      # docker-compose because services are already brought up by the
+      # depends_on: service_healthy wiring (spec 03d §3.8.2 + §11.2).
+      - GRIDFLOW_RUNNER=container
+      - GRIDFLOW_CONNECTOR_ENDPOINTS=opendss=opendss-connector@http://opendss-connector:8000
     depends_on:
       opendss-connector:
         condition: service_healthy

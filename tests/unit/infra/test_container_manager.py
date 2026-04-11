@@ -20,7 +20,10 @@ from gridflow.domain.error import (
     ContainerStopError,
     ServiceNotFoundError,
 )
-from gridflow.infra.container_manager import DockerComposeContainerManager
+from gridflow.infra.container_manager import (
+    DockerComposeContainerManager,
+    NoOpContainerManager,
+)
 
 
 def _fake_runner(
@@ -167,3 +170,19 @@ class TestDockerComposeContainerManagerHealth:
         with pytest.raises(ServiceNotFoundError) as exc_info:
             manager.health_check("ghost")
         assert exc_info.value.error_code == "E-40010"
+
+
+class TestNoOpContainerManager:
+    """Smoke tests for the no-op manager used by the in-container CLI."""
+
+    def test_start_and_stop_are_noops(self) -> None:
+        manager = NoOpContainerManager()
+        # Must not raise and must not depend on Docker.
+        manager.start(("opendss-connector",))
+        manager.stop(("opendss-connector",))
+
+    def test_health_check_always_healthy(self) -> None:
+        manager = NoOpContainerManager()
+        status = manager.health_check("any-service")
+        assert status.healthy is True
+        assert "any-service" in status.message

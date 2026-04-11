@@ -28,15 +28,23 @@ from gridflow.adapter.benchmark import BenchmarkHarness, ReportGenerator
 from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
 from gridflow.domain.error import (
+    ConfigError,
     ExperimentNotFoundError,
     GridflowError,
     PackNotFoundError,
 )
 from gridflow.domain.scenario.registry import ScenarioRegistry
+from gridflow.infra.container_manager import (
+    ContainerEndpoint,
+    NoOpContainerManager,
+)
 from gridflow.infra.logging import configure_logging, get_logger
-from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+from gridflow.infra.orchestrator import (
+    ContainerOrchestratorRunner,
+    InProcessOrchestratorRunner,
+)
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
-from gridflow.usecase.interfaces import ConnectorInterface
+from gridflow.usecase.interfaces import ConnectorInterface, OrchestratorRunner
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
 
@@ -113,6 +121,102 @@ def _default_connector_factory(name: str) -> ConnectorInterface:
     if name == "opendss":
         return OpenDSSConnector()
     raise GridflowError(f"Unknown connector: {name}")
+
+
+# ---------------------------------------------------------------------- runner selection
+
+
+def build_runner_from_env(
+    *,
+    connector: str,
+    connector_factory: Callable[[str], ConnectorInterface],
+) -> OrchestratorRunner:
+    """Pick an :class:`OrchestratorRunner` based on process environment.
+
+    The selection is driven by the ``GRIDFLOW_RUNNER`` environment
+    variable so that the same CLI works identically from a developer
+    shell (``inprocess`` default) and from inside the ``gridflow-core``
+    Docker Compose service (``container`` set by the compose file).
+
+    Supported values:
+        * ``inprocess`` (default): instantiate
+          :class:`InProcessOrchestratorRunner` with a factory that
+          delegates to the caller-provided ``connector_factory``.
+        * ``container``: instantiate :class:`ContainerOrchestratorRunner`
+          backed by :class:`NoOpContainerManager`. The CLI always runs
+          *inside* a docker-compose service, so sibling containers are
+          already live via ``depends_on: service_healthy``; the runner
+          only needs to speak REST. Host-side scripts that want full
+          docker-compose lifecycle control should construct
+          :class:`DockerComposeContainerManager` directly.
+
+    Container mode environment variables:
+        * ``GRIDFLOW_CONNECTOR_ENDPOINTS``: comma-separated list of
+          ``connector_id=service_name@base_url`` triples, e.g.
+          ``opendss=opendss-connector@http://opendss-connector:8000``.
+          At least one endpoint is required.
+
+    Raises:
+        ConfigError: On invalid / missing env vars.
+    """
+    runner_name = os.environ.get("GRIDFLOW_RUNNER", "inprocess").strip().lower()
+    if runner_name in {"", "inprocess", "in-process", "local"}:
+        return InProcessOrchestratorRunner(
+            connector_factories={connector: lambda: connector_factory(connector)},
+        )
+    if runner_name in {"container", "docker", "compose"}:
+        endpoints = _parse_container_endpoints()
+        # The CLI lives inside a docker-compose service; sibling
+        # containers are already started via ``depends_on: service_healthy``
+        # so the runner only needs to speak REST, not control Docker.
+        # Host-side scripts that want full lifecycle control can build
+        # ``ContainerOrchestratorRunner`` with ``DockerComposeContainerManager``
+        # directly (Phase 2).
+        manager = NoOpContainerManager()
+        return ContainerOrchestratorRunner(
+            container_manager=manager,
+            endpoints=endpoints,
+        )
+    raise ConfigError(
+        f"Unknown GRIDFLOW_RUNNER value: {runner_name!r}. Expected 'inprocess' or 'container'.",
+        context={"GRIDFLOW_RUNNER": runner_name},
+    )
+
+
+def _parse_container_endpoints() -> dict[str, ContainerEndpoint]:
+    """Parse ``GRIDFLOW_CONNECTOR_ENDPOINTS`` into a runner endpoint map.
+
+    Format: ``id=service@url[,id2=service2@url2...]``.
+    """
+    raw = os.environ.get("GRIDFLOW_CONNECTOR_ENDPOINTS", "").strip()
+    if not raw:
+        raise ConfigError(
+            "GRIDFLOW_CONNECTOR_ENDPOINTS is required when GRIDFLOW_RUNNER=container",
+            context={"expected_format": "id=service@url[,...]"},
+        )
+    endpoints: dict[str, ContainerEndpoint] = {}
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "=" not in entry or "@" not in entry:
+            raise ConfigError(
+                f"invalid endpoint entry: {entry!r}",
+                context={"expected_format": "id=service@url"},
+            )
+        connector_id, service_and_url = entry.split("=", 1)
+        service_name, base_url = service_and_url.split("@", 1)
+        endpoints[connector_id.strip()] = ContainerEndpoint(
+            connector_id=connector_id.strip(),
+            service_name=service_name.strip(),
+            base_url=base_url.strip(),
+        )
+    if not endpoints:
+        raise ConfigError(
+            "GRIDFLOW_CONNECTOR_ENDPOINTS parsed to empty map",
+            context={"raw": raw},
+        )
+    return endpoints
 
 
 # ---------------------------------------------------------------------- helpers
@@ -239,10 +343,19 @@ def run_command(
     configure_logging(level="INFO")
     log = get_logger("gridflow.cli.run")
 
-    # Build a factory map for the single requested connector. The CLI
-    # stays Phase 1-scoped (one connector per run) while the runner is
-    # already multi-connector-capable per spec 03d §3.8.2.
-    runner = InProcessOrchestratorRunner(connector_factories={connector: lambda: ctx.connector_factory(connector)})
+    # Pick in-process vs container runner from the environment
+    # (GRIDFLOW_RUNNER). The CLI stays Phase 1-scoped (one connector per
+    # run) while the runner is already multi-connector-capable per spec
+    # 03d §3.8.2.
+    try:
+        runner = build_runner_from_env(
+            connector=connector,
+            connector_factory=ctx.connector_factory,
+        )
+    except GridflowError as exc:
+        log.error("runner_selection_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
     orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
     try:
         result = orchestrator.run(
