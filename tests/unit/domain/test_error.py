@@ -6,10 +6,14 @@ from gridflow.domain.error import (
     CDLValidationError,
     CLIError,
     ConfigError,
+    ConnectorCommunicationError,
     ConnectorError,
+    ConnectorNotFoundError,
     ConnectorRequestError,
     ConnectorStateError,
     ContainerError,
+    ContainerStartError,
+    ContainerStopError,
     DomainError,
     ExperimentNotFoundError,
     GridflowError,
@@ -21,7 +25,9 @@ from gridflow.domain.error import (
     PackValidationError,
     PluginError,
     RegistryError,
+    RunnerStartError,
     ScenarioPackError,
+    ServiceNotFoundError,
     SimulationError,
     UnsupportedFormatError,
     UseCaseError,
@@ -176,3 +182,45 @@ class TestInfraErrors:
         err = ConfigError("missing key")
         assert isinstance(err, InfraError)
         assert err.error_code == "E-40004"
+
+    def test_runner_start_error(self) -> None:
+        """Spec 03d §3.8.2: prepare() failure."""
+        err = RunnerStartError("prepare failed", context={"pack_id": "x@1"})
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40005"
+
+    def test_connector_communication_error(self) -> None:
+        """Spec 03d §3.8.2: run_connector() REST communication failure."""
+        err = ConnectorCommunicationError(
+            "HTTP POST /execute timed out",
+            context={"connector_id": "opendss"},
+        )
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40006"
+
+    def test_connector_not_found_error(self) -> None:
+        """Spec 03d §3.8.2: connector_id not registered with runner."""
+        err = ConnectorNotFoundError(
+            "unknown connector_id 'ghost'",
+            context={"connector_id": "ghost"},
+        )
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40007"
+
+    def test_container_start_error(self) -> None:
+        """Spec 03d §3.8.3: ContainerManager.start() failure."""
+        err = ContainerStartError("docker compose up failed")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40008"
+
+    def test_container_stop_error(self) -> None:
+        """Spec 03d §3.8.3: ContainerManager.stop() failure."""
+        err = ContainerStopError("docker compose down failed")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40009"
+
+    def test_service_not_found_error(self) -> None:
+        """Spec 03d §3.8.3: container/service not found."""
+        err = ServiceNotFoundError("no such service 'ghost-connector'")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40010"

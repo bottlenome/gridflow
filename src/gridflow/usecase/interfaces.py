@@ -33,6 +33,21 @@ class ConnectorStepOutput:
     metadata: tuple[tuple[str, object], ...] = ()
 
 
+@dataclass(frozen=True)
+class HealthStatus:
+    """Connector / runner health probe result.
+
+    Spec: docs/detailed_design/03b_usecase_classes.md §3.5.5.
+
+    Attributes:
+        healthy: ``True`` when the probed component is operational.
+        message: Human-readable status detail (empty string allowed).
+    """
+
+    healthy: bool
+    message: str
+
+
 @runtime_checkable
 class ConnectorInterface(Protocol):
     """Contract for simulation connectors (OpenDSS, pandapower, …).
