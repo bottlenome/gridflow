@@ -6,6 +6,7 @@
 |---|---|---|---|
 | 0.1 | 2026-04-07 | 初版作成。Phase 1 全スプリント (1〜4) と Phase 0 持ち越し項目 (5.1〜5.8) を実装 | Claude |
 | 0.2 | 2026-04-11 | §7 追記: Phase 1 事後監査で発見された設計 ⇔ 実装の乖離 (運用環境方針 / domain 不変性 / Docker HEALTHCHECK / REST connector architecture) を TDD で是正。CLAUDE.md §0.5 追加・詳細設計 03b §3.5.6 深化・ContainerOrchestratorRunner 本実装までを記録 | Claude |
+| 0.3 | 2026-04-11 | §7.11 追記: MVP 研究シナリオ (IEEE 13 × DER 浸透率 sweep, `test/mvp_try1/`) で end-to-end 実証。先行研究課題 C-1 / C-3 / C-7 / C-10 に対する定量的な達成を記録。§7.12 で論文化可能性を正直に評価 | Claude |
 
 ---
 
@@ -365,3 +366,190 @@ v0.2 時点で以下の実動作を検証済み:
 | `docs/detailed_design/11_build_deploy.md §11.1.1` | §7.1(C), `docker/gridflow-core/Dockerfile`, `src/gridflow/main.py` |
 | `docs/detailed_design/11_build_deploy.md §11.1.2` | §7.5 Unit 1, `docker/opendss-connector/Dockerfile` |
 | `docs/detailed_design/11_build_deploy.md §11.2` | `docker-compose.yml` (v0.2 で `GRIDFLOW_RUNNER` 環境変数追加) |
+
+### 7.11 MVP 研究シナリオによる end-to-end 実証 (v0.3)
+
+Phase 1 事後監査 (§7.1〜§7.10) で設計・実装の整合を回復した後、
+**gridflow が研究ツールとして先行研究の未解決課題を実際に解決できているか**
+を end-to-end で定量検証する段階に移った。
+
+#### 7.11.1 先行研究調査
+
+まず既存 OSS / 査読文献の調査を実施し、2 つの新規文書を作成:
+
+- [`docs/research_landscape.md`](./research_landscape.md): solver / co-sim
+  framework / RL env / experiment tracker / HCA tool / open data の
+  6 カテゴリで関連ツールを棚卸。2024-2025 の arxiv / ScienceDirect /
+  MDPI Energies 等から未解決課題を抽出し **C-1 〜 C-10** として通し番号化
+- [`docs/mvp_scenario.md`](./mvp_scenario.md): 上記 landscape から
+  gridflow が「✅ 直接対応」できると判定した 4 課題 (C-1 再現性 /
+  C-3 プロビナンス / C-7 電力系 tracker 不在 / C-10 指標定義ばらつき)
+  を end-to-end で実証する具体シナリオを定義
+
+#### 7.11.2 選定したシナリオ: IEEE 13 × DER 浸透率 sweep
+
+`gridtwin_lab_plan.md` §4 Track 2 (DER hosting capacity) に沿い、
+IEEE 13 ノード標準フィーダー上で PV 浸透率を **0% / 25% / 50% / 75% / 100%**
+の 5 段階に振り、各パターンを **seed=42 で 3 回実行** (計 15 experiment)
+して再現性・プロビナンス・指標定義を一度に検証できるシナリオを選んだ。
+
+- PV 総容量は系統総負荷 3,466 kW に対する比 (均等配置、3 バス 671/675/634)
+- PV モデルは `Generator` (定電流、力率 1.0、Model=1) で簡素化
+- 指標: `voltage_deviation` (RMSE) + `voltage_violation_ratio`
+  (ANSI C84.1 Range A `0.95 ≤ V ≤ 1.05 pu` 基準)
+
+#### 7.11.3 隔離スクラッチ領域の採用
+
+ユーザー指示により **`test/mvp_try1/`** というスクラッチ領域を新設し、
+core (`src/gridflow/`) / `examples/` / `tools/` / `tests/` には一切
+触らず全成果物を隔離した。`test/` (単数) は pytest の
+`testpaths = ["tests"]` 設定外なので自動収集されない。
+
+```
+test/mvp_try1/
+├── README.md              本スクラッチの目的と再現手順
+├── packs/                 5 DSS + 5 pack.yaml + 共通 base DSS
+├── tools/                 run_der_sweep.sh, verify_reproducibility.py, plot_hosting_capacity.py
+├── results/               15 experiment JSON + benchmark JSON + matplotlib 図
+└── report.md              実走結果の正式レポート
+```
+
+#### 7.11.4 実走結果
+
+コミット `8ef204f` で一式を投入し、`test/mvp_try1/tools/run_der_sweep.sh`
+を実走。全工程 (5 pack 登録 → 15 実験実行 → 再現性検証 → benchmark →
+可視化) の wall time は **20.87 秒**。
+
+| DoD 項目 (mvp_scenario.md §6) | 目標 | 実測 | 結果 |
+|---|---|---|---|
+| 15 実験が exit code 0 で完了 | 15/15 | 15/15 | ✅ |
+| 各 pack 内 3 runs が `numpy.array_equal` で一致 | 5/5 | 5/5 | ✅ |
+| voltage_deviation が DER 100% < DER 0% | 単調減少 | 0.0545 → 0.0324 (**-40.5%**) | ✅ |
+| Sweep wall time | < 600 秒 (10 分) | **20.87 秒** | ✅ (約 30 倍高速) |
+| hosting_capacity.png 生成 | 4 パネル図 | ✅ `test/mvp_try1/results/hosting_capacity.png` | ✅ |
+| report.md 記録 | 実走結果付き | ✅ `test/mvp_try1/report.md` | ✅ |
+
+詳細: [`test/mvp_try1/report.md`](../test/mvp_try1/report.md) §4〜§7。
+
+#### 7.11.5 物理的な妥当性 (研究結果としての意味)
+
+5 段階の voltage metrics (全 41 バス、full run は `results/der_*_run1.json`):
+
+| DER pct | voltage_deviation | violation_ratio | max_over | min_under |
+|---:|---:|---:|---:|---:|
+|   0 | 0.054470 | 48.78% | 0.0000 | 0.0446 |
+|  25 | 0.048351 | 39.02% | 0.0000 | 0.0365 |
+|  50 | 0.042708 | 31.71% | 0.0000 | 0.0290 |
+|  75 | 0.037473 | 19.51% | 0.0000 | 0.0218 |
+| 100 | 0.032390 | 14.63% | 0.0000 | 0.0150 |
+
+- `max_over = 0` が全レベルで成立 → **均等配置では過電圧が発生しない**
+  (PV 出力が下流に分散されるため)
+- `min_under > 0` が 100% でも残存 → **標準 IEEE 13 の元々の低電圧問題は
+  均等配置 PV 単独では完全解消しない**
+- 0% → 100% で violation_ratio が 48.78% → 14.63% に低下。解消率 70%
+- この傾向は HCA 文献 [MDPI Energies 2020](https://www.mdpi.com/1996-1073/13/11/2758) の
+  定性予測と一致する (uncoordinated PV は電圧問題を緩和するが完全解消には
+  配置最適化 / 電圧調整 / 無効電力補助が必要)
+
+#### 7.11.6 gridflow が実証できた「新しい効果」
+
+| 課題 (landscape §2) | 実証手段 | 結果 |
+|---|---|---|
+| **C-1 再現性危機** | 5 DER レベル × 3 runs で `numpy.array_equal` | **全 bit レベル一致** |
+| **C-3 プロビナンス欠落** | 全 experiment JSON に `scenario_pack_id` が埋込、pack 側は `FileScenarioRegistry` で一意参照 | 15 実験すべて事後追跡可能 |
+| **C-7 電力系 experiment tracker 不在** | Scenario Pack + ExperimentResult + Benchmark で 15 実験を 1 パイプライン管理 | MLflow/Kedro のような ML 特化層ではなく、Topology/NodeResult 等を 1 級データ型として扱える |
+| **C-10 指標定義ばらつき** | `voltage_deviation` (RMSE) / `violation_ratio` (ANSI C84.1 Range A) を `test/mvp_try1/tools/plot_hosting_capacity.py` に Python コードとして commit | 指標の再現可能な定義を git 履歴で追跡可能 |
+
+研究者の Before/After:
+
+| 観点 | 従来 (手作業) | gridflow |
+|---|---|---|
+| 所要時間 | 半日〜2 日 (5 DSS 書換 + 5 回実行 + Excel 集計 + 図化) | **20.87 秒** |
+| 再現性検証 | 通常やらない (意識すらない) | `verify_reproducibility.py` で自動 |
+| プロビナンス | ファイル命名規則頼み | `pack_id` で自動管理 |
+| 指標定義の再現性 | Excel 式に埋もれる | Python コード commit |
+
+### 7.12 論文化可能性の正直な評価 (v0.3)
+
+> ユーザーからの問い:「研究として論文に出せそうな効果ありましたか？」
+
+本セッションで得た成果が**査読論文として出版可能かを正直に評価する**。
+「出せそう」と「すぐ出せる」は別物なので、分けて扱う。
+
+#### 7.12.1 現時点で「新規性がある」と言える/言えないもの
+
+| 成果 | 研究的新規性 | 判定根拠 |
+|---|---|---|
+| IEEE 13 × DER sweep で voltage_deviation が減少する | ❌ **なし** | HCA 文献で既知。OpenDSS の物理計算結果そのもの |
+| 同一 seed で 3 runs bit 一致 | ❌ **なし** | OpenDSS は決定的なので既知の期待挙動。ソフトウェア工学的には健全な確認だが研究貢献ではない |
+| 20.87 秒 で sweep 完了 | ❌ **なし** | ツールの使い勝手の話で「性能」ではない (単一 IEEE 13 で 15 実験の CLI オーバーヘッド計測にすぎない) |
+| **Scenario Pack を 1 級データ型として設計、Benchmark Harness で差分管理** | ⚠️ **方法論として新規性あり** | MLflow / Kedro が電力系に未踏。ただし **方法論論文 (methodology paper)** としての新規性で、**発明** ではない |
+| **設計書と実装の契約テストによる整合化 (Unit 1-5)** | ❌ **なし** | ソフトウェア工学で既知。ベストプラクティスの適用例 |
+| **research_landscape.md の課題分類 C-1〜C-10** | ⚠️ **survey としての価値あり** | 2024-2025 の電力系 ワークフロー領域の未解決課題を一箇所にまとめた資料は少ない。ただし既存 review papers の再整理であり独自調査ではない |
+
+#### 7.12.2 現状で**出せる可能性がある**論文タイプと条件
+
+| 論文タイプ | 推定 venue | バー | 現状からの不足分 | 現実性 |
+|---|---|---|---|---|
+| **(A) Software tool paper** | [SoftwareX](https://www.sciencedirect.com/journal/softwarex), [Journal of Open Research Software](https://openresearchsoftware.metajnl.com/) | 低 (有用な OSS 紹介) | (1) 2-3 個の case study (IEEE 13 + もう 1-2 個)、(2) ドキュメント整備、(3) OSS 公開 + DOI 取得、(4) ベンチマーク結果のアーカイブ | **最短 1-2 ヶ月**、現状の延長で可 |
+| **(B) Methodology paper**: "FAIR-compliant Scenario Pack for power systems experiment reproducibility" | [Energy Informatics](https://energyinformatics.springeropen.com/), IEEE Access, [MDPI Energies](https://www.mdpi.com/journal/energies) | 中 (方法論提案 + 実証) | (1) Scenario Pack のフォーマル定義 (スキーマ + hash モデル)、(2) 既存 workflow との定量比較 (所要時間、LOC、再現成功率の計測)、(3) 小規模ユーザースタディ (3-5 人で再現実験)、(4) FAIR 原則との対応表 | **3-6 ヶ月**、本 MVP を土台に拡張 |
+| **(C) Application paper**: "Reducing operational overhead of DER hosting capacity studies" | [Electric Power Systems Research](https://www.sciencedirect.com/journal/electric-power-systems-research), [Applied Energy](https://www.sciencedirect.com/journal/applied-energy) | 高 (電力系の実問題解決) | (1) より大規模な fixture (CIGRE MV / 実ユーティリティ)、(2) 実際の運用者との協業 / 導入実績、(3) ケーススタディ 3 件以上、(4) 対照群との RCT | **6-12 ヶ月**、共同研究ないと難しい |
+| **(D) Empirical study**: "Reproducibility of open-source power systems simulation results" | 上記同類 + [Reproducibility focus journals](https://journal-buildingscities.org/) | 中 | (1) 複数マシン / 複数 OS / 複数 Python 版での実験、(2) OpenDSS 以外の solver (pandapower, PyPSA) での同実験、(3) bit レベル一致 / 許容誤差 一致の 2 段階評価 | **3-6 ヶ月** |
+
+#### 7.12.3 実装者としての推奨
+
+**短期 (1-2 ヶ月) で投稿できる筋**: **(A) Software tool paper**。
+
+理由:
+1. 現状の gridflow が既に動いている (本 Phase 1)
+2. `research_landscape.md` がそのまま Related Work 節の下書きになる
+3. `test/mvp_try1/` がそのまま Case Study 節の下書きになる
+4. 査読で求められる典型要求 (OSS 公開 / ライセンス / ドキュメント /
+   テスト / 再現手順) は既に満たしている
+5. SoftwareX / JORS は novelty の閾値が「**既存ツールが埋めていない gap**」
+   で、本 research_landscape §1.4 がまさにその gap (電力系 native な
+   experiment tracker 不在) を指摘している
+
+不足分を埋めるための作業は:
+
+- **追加ケーススタディ 1-2 件**: `test/mvp_try2/` (Track 1 マイクログリッド運用)
+  と `test/mvp_try3/` (Track 3 逐次運用 or pandapower vs OpenDSS 比較) を追加
+- **スキーマのフォーマル化**: `docs/scenario_pack_schema.md` で pack.yaml の
+  JSON Schema を正式定義
+- **再現性検証の拡張**: 同一 Docker image で異なるホスト OS (Linux / macOS /
+  Windows WSL2) での bit 一致を確認、異なる Python パッチバージョン間の
+  許容誤差一致も確認
+- **OSS 公開の formalization**: GitHub の public release + DOI (Zenodo)
+
+**中長期 (3-6 ヶ月) に投稿できる筋**: **(B) Methodology paper**。Software tool
+paper で出した後、利用実績が溜まったら方法論として再整理する。
+
+#### 7.12.4 「出せない」と評価する筋
+
+以下は現状の成果では論文として弱いため、推奨しない:
+
+- 「gridflow が IEEE 13 で DER hosting capacity を計算した」→ 物理は既知、
+  solver は OpenDSS そのもの
+- 「gridflow で再現性 100% を達成した」→ OpenDSS の決定性が保証しているだけ
+- 「gridflow で 20 秒で sweep した」→ ワークフローの話で性能貢献ではない
+
+これらを単体で主張する論文は査読で「既存手法の再実装」と判定される可能性が高い。
+
+#### 7.12.5 結論
+
+**現状で「論文に直結する研究成果」は出ていない**。出ているのは
+**論文の素材 (research landscape + working prototype + case study 1 本)** で、
+これを **software tool paper (SoftwareX / JORS)** に整形すれば 1-2 ヶ月で
+投稿可能、というのが正直な評価。
+
+新規性の主張軸:
+
+> 電力系ネイティブな 1 級データ型 (Topology / Asset / TimeSeries / Event /
+> Metric) を扱う experiment tracker は、ML 特化の MLflow / Kedro には
+> 存在しない。gridflow はこの gap を埋めた最初の OSS 実装であり、
+> Scenario Pack モデルにより再現性・プロビナンス・指標定義のばらつきを
+> 同時に解決する。
+
+この主張は [research_landscape.md](./research_landscape.md) §1.4 と §3.1 の
+**✅ 直接対応 4 課題** が裏付けになる。
