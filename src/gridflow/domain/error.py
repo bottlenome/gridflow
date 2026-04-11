@@ -163,6 +163,28 @@ class UnsupportedFormatError(AdapterError):
     error_code = "E-30005"
 
 
+class ConnectorStateError(ConnectorError):
+    """REST API call is invalid for the current connector session state.
+
+    Raised when the caller violates the session lifecycle defined in
+    detailed design 03b §3.5.6, e.g. ``/execute`` before ``/initialize``
+    (``UNINITIALIZED`` state) or ``/initialize`` while a session is
+    already ``READY`` (session collision).
+    """
+
+    error_code = "E-30006"
+
+
+class ConnectorRequestError(ConnectorError):
+    """REST API request body is malformed.
+
+    Covers JSON parse failure, missing required fields, wrong types, and
+    other client-side schema violations per detailed design 03b §3.5.6.
+    """
+
+    error_code = "E-30007"
+
+
 # === Infrastructure layer errors (E-40xxx) ===
 
 

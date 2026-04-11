@@ -7,6 +7,8 @@ from gridflow.domain.error import (
     CLIError,
     ConfigError,
     ConnectorError,
+    ConnectorRequestError,
+    ConnectorStateError,
     ContainerError,
     DomainError,
     ExperimentNotFoundError,
@@ -140,6 +142,18 @@ class TestAdapterErrors:
         err = UnsupportedFormatError("parquet not supported")
         assert isinstance(err, AdapterError)
         assert err.error_code == "E-30005"
+
+    def test_connector_state_error_under_connector(self) -> None:
+        err = ConnectorStateError("session already active")
+        assert isinstance(err, ConnectorError)
+        assert isinstance(err, AdapterError)
+        assert err.error_code == "E-30006"
+
+    def test_connector_request_error_under_connector(self) -> None:
+        err = ConnectorRequestError("missing field 'pack_id'")
+        assert isinstance(err, ConnectorError)
+        assert isinstance(err, AdapterError)
+        assert err.error_code == "E-30007"
 
 
 class TestInfraErrors:

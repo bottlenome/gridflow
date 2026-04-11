@@ -11,6 +11,7 @@
 | 0.6 | 2026-04-06 | X6レビュー対応: TimeSyncStrategy(Protocol)+3実装追加, FederatedConnectorInterface追加, SimulationTask/TaskResult追加 | Claude |
 | 0.7 | 2026-04-07 | Phase0結果レビュー対応: (1) Orchestrator関連（3.3節 Orchestrator/ExecutionPlan/ContainerManager/TimeSync/OrchestratorDriven 等）を Infra 層 [03d](03d_infra_classes.md) へ移設（論点6.2: ファイル名と内容のレイヤー整合化）。(2) StepResult を [03e](03e_usecase_results.md) へ移設し、enum 化＋属性拡張（論点6.4）。本ファイルは純粋な UseCase クラスのみを収録 | Claude |
 | 0.8 | 2026-04-07 | 論点6.6 Orchestrator 責務分割: §3.3 を UseCase 層として復活。Orchestrator (UseCase, ビジネスロジック)、OrchestratorRunner Protocol (UseCase 境界)、ExecutionPlan/TimeSync/OrchestratorDriven/HybridSync (UseCase) を本ファイルへ。Container 系・FederationDriven (Infra 技術詳細) は 03d §3.8 に残置。アーキテクチャ doc (03_static_view.md L301) との整合を回復 | Claude |
+| 0.9 | 2026-04-11 | §3.5.6 REST API 仕様を深化: (1) セッションモデル (1 container = 1 session) と状態遷移を明示、(2) `/initialize` は `{"pack_id": str}` を受け取り shared volume 経由でパックを解決する方式に変更、(3) `/execute` の `context` は params tuple 形式 (CLAUDE.md §0.1 準拠) に統一、(4) エラーレスポンスを `GridflowError.to_dict()` と互換な JSON にし HTTP ステータスとエラーコード範囲の対応表を追加、(5) 状態衝突は 409 Conflict で明示的に拒否、(6) 新規エラークラス `ConnectorStateError` (E-30006) / `ConnectorRequestError` (E-30007) を追加。CLAUDE.md §0.5 (割り切り禁止原則) 下での深度不足解消 | Claude |
 
 ---
 
@@ -457,14 +458,106 @@ py-dss-interface経由でOpenDSSエンジンを操作する具象コネクタ。
 
 ### 3.5.6 REST APIエンドポイント
 
-Connector間通信はRESTで行う。各コネクタは以下のエンドポイントを公開する。
+Connector間通信はRESTで行う。各コネクタコンテナは以下のエンドポイントを公開する。
 
-| メソッド | パス | リクエストボディ | レスポンス | 説明 |
+#### セッションモデル
+
+**1 connector コンテナ = 1 アクティブセッション**。並行実験は Orchestrator が
+複数のコンテナインスタンスを起動して実現する（03d §3.8.2 `ContainerOrchestratorRunner`）。
+コンテナ内でセッション ID を管理しないのは、セッション単位の独立性（メモリ空間、
+ソルバー状態、クラッシュ時の局所化）をコンテナ境界と一致させるためである。
+これにより、セッションの並行性は Docker のプロセス境界で物理的に保証される。
+
+**セッションライフサイクル:**
+
+```
+[UNINITIALIZED] --/initialize--> [READY] --/execute--> [READY] --/teardown--> [UNINITIALIZED]
+                                    |                                              ^
+                                    +------ /execute 内で例外発生 --[AUTO_RESET]---+
+```
+
+- `/initialize` 成功: `UNINITIALIZED → READY`
+- `/execute`: `READY → READY`（ステップ進行）
+- `/teardown`: `READY → UNINITIALIZED`（明示的リソース解放）
+- `/execute` 中に `OpenDSSError` 等の内部例外: 自動 `teardown` を実行し `READY → UNINITIALIZED` に遷移（リソースリーク防止）
+
+#### エンドポイント一覧
+
+| メソッド | パス | リクエストボディ | 成功レスポンス | 許容状態 |
 |---|---|---|---|---|
-| POST | /initialize | `{"config": dict}` | `{"status": "ok"}` | Connector初期化 |
-| POST | /execute | `{"step": int, "context": dict}` | `StepResult（JSON）` | 1ステップ実行 |
-| GET | /health | なし | `HealthStatus（JSON）` | ヘルスチェック |
-| POST | /teardown | なし | `{"status": "ok"}` | 終了・リソース解放 |
+| GET | /health | なし | 200 `HealthStatus (JSON)` | 常に |
+| POST | /initialize | `{"pack_id": str}` | 200 `{"status": "ok"}` | UNINITIALIZED のみ |
+| POST | /execute | `{"step": int, "context": tuple[tuple[str, object], ...]}` | 200 `StepResult (JSON)` | READY のみ |
+| POST | /teardown | なし | 200 `{"status": "ok"}` | READY のみ |
+
+**`/initialize` のリクエスト仕様:**
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| pack_id | str | 事前に `FileScenarioRegistry` に登録済みの Scenario Pack ID |
+
+パックの実体（network ファイル等）は `docker-compose` の shared volume
+（`~/.gridflow/packs` + `./examples:/app/examples:ro`）経由で参照する。パック全体を
+JSON 転送しない理由は、network ファイル（`.dss` / `.raw` / `.json` 等）の
+サイズとフォーマット多様性、および再現性のためにファイルハッシュで実体を
+参照したいためである（03b §3.5 ScenarioPack 設計、`docker-compose` §11.2）。
+
+**`/execute` のリクエスト仕様:**
+
+| フィールド | 型 | 説明 |
+|---|---|---|
+| step | int | ステップインデックス（0-based, 単調増加を呼び出し側が保証） |
+| context | `list[list[str, object]]` (JSON) → `tuple[tuple[str, object], ...]` | params tuple 形式。CLAUDE.md §0.1 準拠。サーバー側で `as_params()` により正規化 |
+
+**`/execute` のレスポンス仕様 (`StepResult`):**
+
+03e §3.11.3 `StepResult` を JSON シリアライズしたもの。`node_result` の
+voltages は `list[float]`、`timestamp` は ISO-8601 UTC 文字列、`status` は
+Enum 値文字列（`"success"` / `"error"`）。
+
+#### エラーレスポンス
+
+すべてのエラーは以下の JSON 形式で返す（`GridflowError.to_dict()` と互換）：
+
+```json
+{
+  "error_code": "E-30002",
+  "message": "<human readable>",
+  "context": {"key": "value"}
+}
+```
+
+HTTP ステータスとエラーコードの対応：
+
+| HTTP | エラーコード範囲 | 原因 | 典型的な `error_code` |
+|---|---|---|---|
+| 400 Bad Request | E-30xxx | リクエストボディ形式不正（JSON パース失敗、必須フィールド欠損、型不一致） | `E-30003` |
+| 404 Not Found | - | 未定義パス | - |
+| 405 Method Not Allowed | - | メソッド不一致 | - |
+| 409 Conflict | E-30xxx | 状態不整合：UNINITIALIZED 状態で `/execute` / `/teardown`、または READY 状態で `/initialize`（セッション衝突） | `E-30006`（新規: `ConnectorStateError`） |
+| 422 Unprocessable Entity | E-10xxx | ビジネスバリデーション失敗（例: pack_id が registry に存在しない） | `E-10002` |
+| 500 Internal Server Error | E-30xxx | コネクタ内部エラー（例: OpenDSS 非収束、driver クラッシュ） | `E-30002` |
+
+**`/initialize` 呼び出し時の状態衝突**は **409 Conflict** を返す。呼び出し側が前の
+セッションを `/teardown` してから再試行する責務を負う。「前セッションを黙って閉じて
+新規作成する」動作は行わない（状態遷移を明示的にし、誤使用を早期検知するため）。
+
+#### 新規エラークラス
+
+本節のエラー仕様に伴い、以下を `gridflow.domain.error` に追加する：
+
+| クラス | error_code | 親 | 説明 |
+|---|---|---|---|
+| `ConnectorStateError` | E-30006 | `ConnectorError` | REST API 呼び出しが現在の connector セッション状態に対して無効（例: READY 状態で /initialize、UNINITIALIZED 状態で /execute） |
+| `ConnectorRequestError` | E-30007 | `ConnectorError` | REST API のリクエストボディが不正（JSON パース失敗、型不一致、必須フィールド欠損） |
+
+#### サーバー実装モジュール
+
+本 REST API は `gridflow.connectors.<name>` モジュール
+（例: `gridflow.connectors.opendss`）として実装し、対応する connector Docker
+イメージの ENTRYPOINT が `python -m gridflow.connectors.<name>` でこれを起動する
+（詳細設計 §11.1.2）。サーバー実装は `gridflow.adapter.connector.<name>` の
+`ConnectorInterface` 実装を内部で使い回し、HTTP 層だけを薄くかぶせる。
 
 ---
 
