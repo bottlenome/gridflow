@@ -21,6 +21,9 @@ dependencies = [
 opendss = [
     "OpenDSSDirect.py>=0.9,<1.0",
 ]
+pandapower = [
+    "pandapower>=2.13,<4.0",
+]
 
 [project.scripts]
 gridflow = "gridflow.adapter.cli.app:main"
