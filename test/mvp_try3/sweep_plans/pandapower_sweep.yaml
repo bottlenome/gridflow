@@ -1,0 +1,32 @@
+# MVP try 3 — Stochastic HCA sweep over the pandapower MV open-ring feeder
+#
+# Cross-topology counterpart of opendss_sweep.yaml, using the
+# simple_mv_open_ring_net 7-bus pandapower distribution feeder (20 kV).
+# Same sweep size (200 random placements) and same pv_kw seed so the
+# PV capacity distribution is identical. The bus domain differs because
+# the networks have different topologies (6 candidate buses vs 10).
+#
+# IMPORTANT: This is a different physical network from IEEE 13.
+# The pv_kw axis shares seed=200 with the OpenDSS sweep, so the
+# 200 pv_kw values are identical. hosting_capacity_mw_max identity
+# between the two sweeps is therefore a shared-seed artifact, not
+# evidence of cross-solver agreement.
+
+sweep:
+  id: pp_mv_ring_stochastic_hca
+  base_pack_id: pp_mv_ring_sweep_base@1.0.0
+  aggregator: statistics
+  seed: 42
+
+axes:
+  - name: pv_bus
+    type: random_choice
+    values: [1, 2, 3, 4, 5, 6]
+    n_samples: 200
+    seed: 100
+  - name: pv_kw
+    type: random_uniform
+    low: 100.0
+    high: 2000.0
+    n_samples: 200
+    seed: 200

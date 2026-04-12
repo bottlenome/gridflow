@@ -1,0 +1,131 @@
+{
+  "metrics": [
+    {
+      "baseline": "opendss",
+      "delta": 0.0,
+      "metric": "hosting_capacity_mw_max",
+      "opendss": 1.9900994293629632,
+      "pandapower": 1.9900994293629632,
+      "relative_delta": 0.0
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.06041931839002579,
+      "metric": "hosting_capacity_mw_mean",
+      "opendss": 0.9554591625533196,
+      "pandapower": 1.0158784809433454,
+      "relative_delta": 0.0632358982549964
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.03523889941903935,
+      "metric": "hosting_capacity_mw_median",
+      "opendss": 0.9445010398232558,
+      "pandapower": 0.9797399392422952,
+      "relative_delta": 0.03730954009921852
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.10367087771524422,
+      "metric": "hosting_capacity_mw_min",
+      "opendss": 0.0,
+      "pandapower": 0.10367087771524422,
+      "relative_delta": 1.0
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.011078915855714189,
+      "metric": "hosting_capacity_mw_stdev",
+      "opendss": 0.583628626745952,
+      "pandapower": 0.5725497108902378,
+      "relative_delta": -0.018982817750878997
+    },
+    {
+      "baseline": "opendss",
+      "delta": 2.262596433999988,
+      "metric": "runtime_max",
+      "opendss": 1.0750012030000562,
+      "pandapower": 3.3375976370000444,
+      "relative_delta": 2.1047385134878493
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.23423128108000354,
+      "metric": "runtime_mean",
+      "opendss": 0.012845914924999419,
+      "pandapower": 0.24707719600500297,
+      "relative_delta": 18.233911904878518
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.2191237725000974,
+      "metric": "runtime_median",
+      "opendss": 0.0074398964999318196,
+      "pandapower": 0.22656366900002922,
+      "relative_delta": 29.452529682651566
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.20622548799997276,
+      "metric": "runtime_min",
+      "opendss": 0.006880149000039637,
+      "pandapower": 0.2131056370000124,
+      "relative_delta": 29.973985737632233
+    },
+    {
+      "baseline": "opendss",
+      "delta": 0.1443414956105998,
+      "metric": "runtime_stdev",
+      "opendss": 0.07529544674928762,
+      "pandapower": 0.21963694235988743,
+      "relative_delta": 1.9170016493987458
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.04976927840434098,
+      "metric": "voltage_deviation_max",
+      "opendss": 0.05576345731256905,
+      "pandapower": 0.005994178908228071,
+      "relative_delta": -0.8925070431944508
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.04440383508450621,
+      "metric": "voltage_deviation_mean",
+      "opendss": 0.04997893233006222,
+      "pandapower": 0.005575097245556009,
+      "relative_delta": -0.8884510535611703
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.04447101970733268,
+      "metric": "voltage_deviation_median",
+      "opendss": 0.05007275582124704,
+      "pandapower": 0.005601736113914363,
+      "relative_delta": -0.8881280644126758
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.03648039438059546,
+      "metric": "voltage_deviation_min",
+      "opendss": 0.04128126973714491,
+      "pandapower": 0.004800875356549454,
+      "relative_delta": -0.8837033020757687
+    },
+    {
+      "baseline": "opendss",
+      "delta": -0.0035828514832459777,
+      "metric": "voltage_deviation_stdev",
+      "opendss": 0.003868573256229828,
+      "pandapower": 0.00028572177298385006,
+      "relative_delta": -0.9261428557611691
+    }
+  ],
+  "opendss_elapsed_s": 3.6541652899999235,
+  "opendss_n_experiments": 200,
+  "opendss_sweep_id": "ieee13_stochastic_hca_opendss",
+  "pandapower_elapsed_s": 50.64711261299999,
+  "pandapower_n_experiments": 200,
+  "pandapower_sweep_id": "pp_mv_ring_stochastic_hca",
+  "relative_delta_method": "baseline (OpenDSS denominator)"
+}
