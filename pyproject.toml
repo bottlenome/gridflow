@@ -89,6 +89,12 @@ ignore_missing_imports = true
 module = ["typer", "typer.*"]
 ignore_missing_imports = true
 
+# typer's @app.command() decorator is untyped — suppress for the CLI
+# module that uses it (all other modules are strict).
+[[tool.mypy.overrides]]
+module = ["gridflow.adapter.cli.app"]
+disallow_untyped_decorators = false
+
 # httpx is a core dep but may not have stubs in all environments.
 [[tool.mypy.overrides]]
 module = ["httpx", "httpx.*"]
