@@ -90,8 +90,8 @@ class PandaPowerConnector(ConnectorInterface):
                     context={"pack_id": pack.pack_id},
                 )
             try:
-                bus_idx = int(pv_bus)  # type: ignore[arg-type]
-                kw_value = float(pv_kw)  # type: ignore[arg-type]
+                bus_idx = int(str(pv_bus))
+                kw_value = float(str(pv_kw))
             except (TypeError, ValueError) as exc:
                 raise ConnectorError(
                     f"invalid pv_bus / pv_kw types: {exc}",

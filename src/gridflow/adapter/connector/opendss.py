@@ -175,9 +175,12 @@ class OpenDSSConnector(ConnectorInterface):
                 context={"pack_id": pack.pack_id},
             )
         bus_str = str(pv_bus)
-        kv = float(get_param(pack.metadata.parameters, "pv_kv") or 4.16)  # type: ignore[arg-type]
-        phases = int(get_param(pack.metadata.parameters, "pv_phases") or 3)  # type: ignore[arg-type]
-        conn = str(get_param(pack.metadata.parameters, "pv_conn") or "Wye")
+        kv_raw = get_param(pack.metadata.parameters, "pv_kv")
+        kv = float(str(kv_raw)) if kv_raw is not None else 4.16
+        phases_raw = get_param(pack.metadata.parameters, "pv_phases")
+        phases = int(str(phases_raw)) if phases_raw is not None else 3
+        conn_raw = get_param(pack.metadata.parameters, "pv_conn")
+        conn = str(conn_raw) if conn_raw is not None else "Wye"
         cmd = (
             f"New Generator.PV_runtime bus1={bus_str} phases={phases} kv={kv} conn={conn} kW={kw_value} pf=1.0 Model=1"
         )

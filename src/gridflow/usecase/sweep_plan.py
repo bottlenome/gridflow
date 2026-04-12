@@ -55,10 +55,17 @@ class ParamAxis(Protocol):
           matters). For random axes, the seed must make this reproducible.
         * ``is_random`` — whether this axis participates in the zipped-random
           group inside :meth:`SweepPlan.expand`.
+
+    ``name`` and ``is_random`` are declared as read-only properties so
+    that frozen ``@dataclass`` implementations satisfy mypy --strict
+    without needing settable attributes.
     """
 
-    name: str
-    is_random: bool
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def is_random(self) -> bool: ...
 
     def sample(self) -> tuple[object, ...]: ...
 
