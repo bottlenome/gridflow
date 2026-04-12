@@ -6,8 +6,14 @@ from gridflow.domain.error import (
     CDLValidationError,
     CLIError,
     ConfigError,
+    ConnectorCommunicationError,
     ConnectorError,
+    ConnectorNotFoundError,
+    ConnectorRequestError,
+    ConnectorStateError,
     ContainerError,
+    ContainerStartError,
+    ContainerStopError,
     DomainError,
     ExperimentNotFoundError,
     GridflowError,
@@ -19,7 +25,9 @@ from gridflow.domain.error import (
     PackValidationError,
     PluginError,
     RegistryError,
+    RunnerStartError,
     ScenarioPackError,
+    ServiceNotFoundError,
     SimulationError,
     UnsupportedFormatError,
     UseCaseError,
@@ -30,7 +38,8 @@ class TestGridflowErrorBase:
     def test_attributes(self) -> None:
         err = GridflowError("test error", context={"key": "value"})
         assert err.message == "test error"
-        assert err.context == {"key": "value"}
+        # context is stored as an immutable params tuple (CLAUDE.md §0.3)
+        assert err.context == (("key", "value"),)
         assert err.error_code == "E-00000"
         assert err.cause is None
 
@@ -41,6 +50,7 @@ class TestGridflowErrorBase:
     def test_to_dict(self) -> None:
         err = GridflowError("test", context={"k": "v"})
         d = err.to_dict()
+        # to_dict() rehydrates the tuple into a plain dict for serialisation
         assert d == {"error_code": "E-00000", "message": "test", "context": {"k": "v"}}
 
     def test_cause_chaining(self) -> None:
@@ -51,7 +61,19 @@ class TestGridflowErrorBase:
 
     def test_empty_context_by_default(self) -> None:
         err = GridflowError("test")
-        assert err.context == {}
+        assert err.context == ()
+
+    def test_context_is_hashable_tuple(self) -> None:
+        # Regression: CLAUDE.md §0.3 requires immutable params tuple, not dict
+        err = GridflowError("test", context={"b": 2, "a": 1})
+        assert isinstance(err.context, tuple)
+        # as_params sorts by key for deterministic equality
+        assert err.context == (("a", 1), ("b", 2))
+        hash(err.context)  # must not raise
+
+    def test_context_accepts_iterable_of_pairs(self) -> None:
+        err = GridflowError("test", context=[("x", 1), ("y", 2)])
+        assert err.context == (("x", 1), ("y", 2))
 
 
 class TestDomainErrors:
@@ -127,6 +149,18 @@ class TestAdapterErrors:
         assert isinstance(err, AdapterError)
         assert err.error_code == "E-30005"
 
+    def test_connector_state_error_under_connector(self) -> None:
+        err = ConnectorStateError("session already active")
+        assert isinstance(err, ConnectorError)
+        assert isinstance(err, AdapterError)
+        assert err.error_code == "E-30006"
+
+    def test_connector_request_error_under_connector(self) -> None:
+        err = ConnectorRequestError("missing field 'pack_id'")
+        assert isinstance(err, ConnectorError)
+        assert isinstance(err, AdapterError)
+        assert err.error_code == "E-30007"
+
 
 class TestInfraErrors:
     def test_orchestrator_error(self) -> None:
@@ -148,3 +182,45 @@ class TestInfraErrors:
         err = ConfigError("missing key")
         assert isinstance(err, InfraError)
         assert err.error_code == "E-40004"
+
+    def test_runner_start_error(self) -> None:
+        """Spec 03d §3.8.2: prepare() failure."""
+        err = RunnerStartError("prepare failed", context={"pack_id": "x@1"})
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40005"
+
+    def test_connector_communication_error(self) -> None:
+        """Spec 03d §3.8.2: run_connector() REST communication failure."""
+        err = ConnectorCommunicationError(
+            "HTTP POST /execute timed out",
+            context={"connector_id": "opendss"},
+        )
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40006"
+
+    def test_connector_not_found_error(self) -> None:
+        """Spec 03d §3.8.2: connector_id not registered with runner."""
+        err = ConnectorNotFoundError(
+            "unknown connector_id 'ghost'",
+            context={"connector_id": "ghost"},
+        )
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40007"
+
+    def test_container_start_error(self) -> None:
+        """Spec 03d §3.8.3: ContainerManager.start() failure."""
+        err = ContainerStartError("docker compose up failed")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40008"
+
+    def test_container_stop_error(self) -> None:
+        """Spec 03d §3.8.3: ContainerManager.stop() failure."""
+        err = ContainerStopError("docker compose down failed")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40009"
+
+    def test_service_not_found_error(self) -> None:
+        """Spec 03d §3.8.3: container/service not found."""
+        err = ServiceNotFoundError("no such service 'ghost-connector'")
+        assert isinstance(err, InfraError)
+        assert err.error_code == "E-40010"

@@ -65,6 +65,7 @@ class OpenDSSConnector(ConnectorInterface):
         try:
             driver.Basic.ClearAll()
             driver.Command(f"Redirect [{master_path}]")
+            self._inject_runtime_pv(driver, pack)
             driver.Command("Solve")
             if not driver.Solution.Converged():
                 raise OpenDSSError(
@@ -138,6 +139,52 @@ class OpenDSSConnector(ConnectorInterface):
         if self._state is None:
             raise OpenDSSError("OpenDSSConnector.step called before initialize")
         return self._state
+
+    @staticmethod
+    def _inject_runtime_pv(driver: ModuleType | Any, pack: ScenarioPack) -> None:
+        """If the pack carries ``pv_bus`` + ``pv_kw`` parameters, attach a
+        runtime ``Generator.PV_runtime`` element to the loaded circuit.
+
+        This is the OpenDSS analogue of pandapower's ``create_sgen`` and
+        lets stochastic HCA sweeps reuse a single base ``.dss`` file
+        while varying placement / capacity through pack parameters.
+
+        Parameters consumed:
+            pv_bus : str   — bus name (OpenDSS uses string identifiers)
+            pv_kw  : float — PV active power, kW
+            pv_kv  : float — line-to-line nominal voltage, kV (default 4.16)
+            pv_phases : int — phase count (default 3)
+            pv_conn : str  — "Wye" | "Delta" (default Wye)
+
+        If ``pv_kw`` is missing or 0, no element is created.
+        """
+        pv_kw_raw = get_param(pack.metadata.parameters, "pv_kw")
+        if pv_kw_raw is None:
+            return
+        try:
+            kw_value = float(pv_kw_raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return
+        if kw_value <= 0:
+            return
+
+        pv_bus = get_param(pack.metadata.parameters, "pv_bus")
+        if pv_bus is None:
+            raise OpenDSSError(
+                "pv_kw is set but pv_bus is missing — OpenDSS needs a target bus name to attach the runtime PV",
+                context={"pack_id": pack.pack_id},
+            )
+        bus_str = str(pv_bus)
+        kv_raw = get_param(pack.metadata.parameters, "pv_kv")
+        kv = float(str(kv_raw)) if kv_raw is not None else 4.16
+        phases_raw = get_param(pack.metadata.parameters, "pv_phases")
+        phases = int(str(phases_raw)) if phases_raw is not None else 3
+        conn_raw = get_param(pack.metadata.parameters, "pv_conn")
+        conn = str(conn_raw) if conn_raw is not None else "Wye"
+        cmd = (
+            f"New Generator.PV_runtime bus1={bus_str} phases={phases} kv={kv} conn={conn} kW={kw_value} pf=1.0 Model=1"
+        )
+        driver.Command(cmd)
 
     def _load_driver(self) -> ModuleType | Any:
         try:

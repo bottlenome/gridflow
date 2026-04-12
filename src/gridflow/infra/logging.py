@@ -66,4 +66,4 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     """Return a structlog BoundLogger, configuring lazily if needed."""
     if not _configured:
         configure_logging()
-    return structlog.get_logger(name)  # type: ignore[no-any-return]
+    return structlog.get_logger(name)  # type: ignore[no-any-return,unused-ignore]

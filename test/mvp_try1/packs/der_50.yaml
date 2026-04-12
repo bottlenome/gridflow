@@ -1,0 +1,22 @@
+# MVP try 1 — IEEE 13 × DER 50%
+
+pack:
+  name: ieee13_der_50
+  version: "1.0.0"
+  description: >
+    IEEE 13-node test feeder, DER penetration 50% (1,733 kW total PV,
+    split equally across buses 671 / 675 / 634).
+  author: gridflow mvp_try1
+  connector: opendss
+  seed: 42
+
+network:
+  master_file: der_50.dss
+
+parameters:
+  master_file: der_50.dss
+  voltage_base_kv: 4.16
+  source_bus: "650"
+  max_iterations: 100
+  tolerance: 0.0001
+  der_penetration_pct: 50

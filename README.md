@@ -3,39 +3,44 @@
 Grid simulation and power flow analysis framework. Phase 1 MVP: register a
 Scenario Pack, run an OpenDSS experiment, benchmark the result.
 
+## Runtime environment
+
+gridflow の**エンドユーザー向け配布標準は Docker Compose** です
+（アーキテクチャ ADR-002、制約 CON-2）。再現性 (QA-3) と移植性 (QA-7) を
+保証できるのは Docker 経由の実行のみです。ネイティブ（ローカル）インストール
+は OS 差分で再現性が崩れるため、エンドユーザー向け実行環境としては
+採用していません。
+
+ローカル環境は **gridflow 自身の開発・テスト用** に限り許容されます
+（アーキテクチャ M-3 の例外条項）。研究成果の再現性を保証したい場面では
+必ず Docker を使ってください。
+
 ## Requirements
 
-- Python 3.11+
-- [uv](https://docs.astral.sh/uv/) for dependency management
-- Docker (optional, for containerised runs)
-
-## Quick start (local, no Docker)
-
-```bash
-# 1. Install dependencies (dev + OpenDSS extras)
-uv sync --frozen --dev --extra opendss
-
-# 2. Register a sample Scenario Pack
-uv run gridflow scenario register examples/ieee13/pack.yaml
-
-# 3. Run a 2-step power flow
-uv run gridflow run ieee13@1.0.0 --steps 2 --format json
-
-# 4. Inspect the saved result
-uv run gridflow results <experiment_id> --format json
-```
-
-The result goes to `~/.gridflow/results/<experiment_id>.json`. Set
-`GRIDFLOW_HOME` to override the root directory.
+- Docker Desktop 4.x+ / Docker Engine 24+ + Docker Compose v2 以降
 
 ## Quick start (Docker)
 
 ```bash
-docker compose up --build
+# 1. Build and start both containers
+docker compose up --build -d
+
+# 2. Register a sample Scenario Pack
+docker compose exec gridflow-core gridflow scenario register /app/examples/ieee13/pack.yaml
+
+# 3. Run a 2-step power flow
+docker compose exec gridflow-core gridflow run ieee13@1.0.0 --steps 2 --format json
+
+# 4. Inspect the saved result
+docker compose exec gridflow-core gridflow results <experiment_id> --format json
 ```
 
-The `gridflow-core` container exposes port `8888`. Use the developer overlay
-for live-mounted source:
+結果は `gridflow-home` ボリューム上の `~/.gridflow/results/<experiment_id>.json`
+に保存されます。`GRIDFLOW_HOME` 環境変数でルートディレクトリを上書きできます。
+
+### 開発者向けオーバーレイ
+
+ソースをホットマウントして開発する場合:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
@@ -54,6 +59,32 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 All commands accept `--format plain|json|table`.
 
+## For contributors (local development)
+
+**This section is for gridflow maintainers only.** End users should use
+Docker (above). Local execution is permitted only for developing / testing
+gridflow itself, and does not guarantee bit-level reproducibility with the
+Docker runtime.
+
+Requirements for local development:
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/)
+
+```bash
+# Install dependencies (dev + OpenDSS extras)
+uv sync --frozen --dev --extra opendss
+
+# Run the test suite
+uv run pytest -m "not spike"   # unit + e2e (no OpenDSS interaction)
+uv run pytest                   # include OpenDSS smoke + integration
+
+# Static analysis
+uv run ruff check src/ tests/
+uv run ruff format --check src/ tests/
+uv run mypy --strict src/
+```
+
 ## Repository layout
 
 ```
@@ -68,7 +99,7 @@ src/gridflow/
   adapter/     # CLI, connectors, benchmark harness
   infra/       # FileScenarioRegistry, ConfigManager, structured logging
 tests/
-  unit/        # Layer-scoped unit tests (121 cases)
+  unit/        # Layer-scoped unit tests
   e2e/         # CLI-level end-to-end pipeline + reproducibility
   spike/       # OpenDSS smoke tests (gated behind the `spike` marker)
 examples/
@@ -83,21 +114,3 @@ See `CLAUDE.md` §0 — in short: frozen dataclasses, hashable value objects,
 no exceptions to the immutability rule. Every ``parameters``-style attribute
 uses the sorted ``tuple[tuple[str, object], ...]`` convention from
 ``gridflow.domain.util.params``.
-
-## Testing
-
-```bash
-# Unit + e2e (no OpenDSS required)
-uv run pytest -m "not spike"
-
-# Include OpenDSS smoke + integration tests
-uv run pytest
-```
-
-Static analysis:
-
-```bash
-uv run ruff check src/ tests/
-uv run ruff format --check src/ tests/
-uv run mypy --strict src/
-```

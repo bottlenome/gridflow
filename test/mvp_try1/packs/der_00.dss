@@ -1,0 +1,10 @@
+! IEEE 13 × DER 0% (baseline)
+! DER 浸透率 0% = PV なし。voltage deviation の基準値を与える。
+
+Redirect ieee13_der_base.dss
+
+! No PV — baseline case
+
+Set Voltagebases=[115, 4.16, .48]
+Calcv
+Solve BaseFrequency=60

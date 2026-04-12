@@ -1,0 +1,12 @@
+! IEEE 13 × DER 75%
+! Total PV = 75% of 3,466 kW ≈ 2,600 kW, split equally across 3 buses (≈ 867 kW each)
+
+Redirect ieee13_der_base.dss
+
+New Generator.PV_671 phases=3 bus1=671.1.2.3 kv=4.16 conn=Delta kW=867 pf=1.0 Model=1
+New Generator.PV_675 phases=3 bus1=675.1.2.3 kv=4.16 conn=Wye   kW=867 pf=1.0 Model=1
+New Generator.PV_634 phases=3 bus1=634.1.2.3 kv=0.48 conn=Wye   kW=867 pf=1.0 Model=1
+
+Set Voltagebases=[115, 4.16, .48]
+Calcv
+Solve BaseFrequency=60

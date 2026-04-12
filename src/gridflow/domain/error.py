@@ -9,14 +9,24 @@ Error code scheme (per DD-ERR-001, section 8.2):
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
+
+from gridflow.domain.util.params import Params, as_params, params_to_dict
+
 
 class GridflowError(Exception):
     """Base exception for all gridflow errors.
 
+    The ``context`` attribute follows the project-wide immutable params
+    convention (CLAUDE.md §0.3): internally stored as a sorted
+    ``tuple[tuple[str, object], ...]``. Callers may pass a mapping or an
+    iterable of pairs for convenience and the tuple is constructed via
+    :func:`gridflow.domain.util.params.as_params`.
+
     Attributes:
         error_code: Error code string (e.g. "E-10001").
         message: Human-readable error message.
-        context: Additional context information.
+        context: Additional context information as an immutable params tuple.
         cause: Original exception for chaining (traceback preservation).
     """
 
@@ -26,11 +36,11 @@ class GridflowError(Exception):
         self,
         message: str,
         *,
-        context: dict[str, object] | None = None,
+        context: Mapping[str, object] | Iterable[tuple[str, object]] | None = None,
         cause: Exception | None = None,
     ) -> None:
         self.message = message
-        self.context: dict[str, object] = context or {}
+        self.context: Params = as_params(context)
         self.cause = cause
         super().__init__(message)
         if cause is not None:
@@ -41,7 +51,7 @@ class GridflowError(Exception):
         return {
             "error_code": self.error_code,
             "message": self.message,
-            "context": self.context,
+            "context": params_to_dict(self.context),
         }
 
     def __str__(self) -> str:
@@ -153,6 +163,28 @@ class UnsupportedFormatError(AdapterError):
     error_code = "E-30005"
 
 
+class ConnectorStateError(ConnectorError):
+    """REST API call is invalid for the current connector session state.
+
+    Raised when the caller violates the session lifecycle defined in
+    detailed design 03b §3.5.6, e.g. ``/execute`` before ``/initialize``
+    (``UNINITIALIZED`` state) or ``/initialize`` while a session is
+    already ``READY`` (session collision).
+    """
+
+    error_code = "E-30006"
+
+
+class ConnectorRequestError(ConnectorError):
+    """REST API request body is malformed.
+
+    Covers JSON parse failure, missing required fields, wrong types, and
+    other client-side schema violations per detailed design 03b §3.5.6.
+    """
+
+    error_code = "E-30007"
+
+
 # === Infrastructure layer errors (E-40xxx) ===
 
 
@@ -184,3 +216,56 @@ class ConfigError(InfraError):
     """Configuration error."""
 
     error_code = "E-40004"
+
+
+class RunnerStartError(InfraError):
+    """``OrchestratorRunner.prepare()`` failure (spec 03d §3.8.2).
+
+    Raised when the runner cannot bring up its execution backend — e.g.
+    a required Docker service fails to become healthy within the
+    configured timeout, or an in-process connector factory raises during
+    instantiation.
+    """
+
+    error_code = "E-40005"
+
+
+class ConnectorCommunicationError(InfraError):
+    """Runner ↔ Connector communication failure (spec 03d §3.8.2).
+
+    Raised by ``ContainerOrchestratorRunner.run_connector()`` when a REST
+    call to the connector daemon fails (timeout, connection refused,
+    unexpected HTTP status not already represented by a more specific
+    error).
+    """
+
+    error_code = "E-40006"
+
+
+class ConnectorNotFoundError(InfraError):
+    """Runner received a ``connector_id`` that is not registered (spec 03d §3.8.2).
+
+    Distinct from ``ServiceNotFoundError`` (which is about Docker services
+    unknown to ``ContainerManager``). Used at the runner boundary so the
+    caller always sees an Infra-layer error regardless of backend.
+    """
+
+    error_code = "E-40007"
+
+
+class ContainerStartError(InfraError):
+    """``ContainerManager.start()`` failure (spec 03d §3.8.3)."""
+
+    error_code = "E-40008"
+
+
+class ContainerStopError(InfraError):
+    """``ContainerManager.stop()`` failure (spec 03d §3.8.3)."""
+
+    error_code = "E-40009"
+
+
+class ServiceNotFoundError(InfraError):
+    """``ContainerManager`` cannot find the named Docker service (spec 03d §3.8.3)."""
+
+    error_code = "E-40010"

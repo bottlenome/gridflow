@@ -39,9 +39,15 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 USER gridflow
 
+# Health check hitting the minimal /health endpoint served by
+# ``gridflow.main``. Detailed design §11.1.1 specifies this exact form.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import gridflow" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8888/health')" || exit 1
 
 EXPOSE 8888
 
-ENTRYPOINT ["python", "-m", "gridflow"]
+# Long-running container entry point (detailed design §11.1.1). Starts the
+# /health HTTP server and blocks. CLI subcommands are invoked separately via
+# ``docker compose exec gridflow-core gridflow ...`` which goes through the
+# ``gridflow`` console script (see pyproject.toml [project.scripts]).
+ENTRYPOINT ["python", "-m", "gridflow.main"]

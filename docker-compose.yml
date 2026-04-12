@@ -23,8 +23,16 @@ services:
       - GRIDFLOW_ENV=production
       - GRIDFLOW_LOG_LEVEL=INFO
       - GRIDFLOW_HOME=/home/gridflow/.gridflow
+      # Runner selection: the CLI talks REST to sibling containers via
+      # the in-cluster network. NoOpContainerManager is used inside
+      # docker-compose because services are already brought up by the
+      # depends_on: service_healthy wiring (spec 03d §3.8.2 + §11.2).
+      - GRIDFLOW_RUNNER=container
+      - GRIDFLOW_CONNECTOR_ENDPOINTS=opendss=opendss-connector@http://opendss-connector:8000,pandapower=pandapower-connector@http://pandapower-connector:8001
     depends_on:
       opendss-connector:
+        condition: service_healthy
+      pandapower-connector:
         condition: service_healthy
     restart: unless-stopped
 
@@ -36,6 +44,9 @@ services:
     container_name: opendss-connector
     networks:
       - gridflow-net
+    # Port 8000 is internal-only (REST API consumed by gridflow-core via
+    # the internal Docker network per detailed design §11.2). Not exposed
+    # to the host.
     volumes:
       - shared-data:/app/data
       - ./examples:/app/examples:ro
@@ -44,7 +55,38 @@ services:
       - GRIDFLOW_LOG_LEVEL=INFO
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import opendssdirect"]
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  pandapower-connector:
+    build:
+      context: .
+      dockerfile: docker/pandapower-connector/Dockerfile
+    image: gridflow/pandapower-connector:latest
+    container_name: pandapower-connector
+    networks:
+      - gridflow-net
+    # Port 8001 is internal-only (mirrors opendss-connector but +1 to
+    # avoid host-port collision when both daemons coexist).
+    volumes:
+      - shared-data:/app/data
+      - ./examples:/app/examples:ro
+    environment:
+      - GRIDFLOW_ENV=production
+      - GRIDFLOW_LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"
       interval: 30s
       timeout: 5s
       retries: 3
