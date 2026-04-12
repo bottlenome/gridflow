@@ -1,5 +1,15 @@
 # MVP try2 report.md — 査読レビュー記録
 
+## 論文主張のリフレーズ
+
+- **課題**: DER の Hosting Capacity Analysis (HCA) は研究者ごとにソルバー・指標定義・掃引手法がバラバラで、再現・比較ができない
+- **先行研究**: 既存 HCA 研究はソルバー固有スクリプトで完結。FAIR データ原則はあるが計算ワークフロー層の再現性は未保証。OpenDSS と pandapower を横断した系統的 HCA 比較フレームワークは存在しない
+- **方法（提案手法の価値）**: OSS フレームワーク gridflow を提案。SweepPlan + Connector Protocol でソルバーと実験を分離し、カスタム指標 Plugin・plan_hash プロビナンス・deterministic seed による再現性を実現 → **gridflow 自体が contribution になっており §3.1 違反**
+- **実験結果**: 200 random PV 配置 x 2 solver (IEEE 13 / OpenDSS + 7-bus MV ring / pandapower) で 400 実験を 54 秒で完走。hosting_capacity_mw_mean 差 ~6%
+- **考察**: workflow-level 再現性が HCA 研究の missing ingredient だと主張。ただし異トポロジ比較であり physics-level の cross-validation ではないと自認
+
+---
+
 ## 総合判定: 不合格
 
 **理由: MVP 検証方針への根本的違反**
