@@ -337,7 +337,7 @@ def _rehydrate_experiment_result(data: dict[str, Any]) -> ExperimentResult:
 # ---------------------------------------------------------------------- commands
 
 
-@scenario_app.command("register")
+@scenario_app.command("register")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def scenario_register(
     yaml_path: Path = _YAML_ARG,
     pack_id: str | None = _PACK_ID_OPT,
@@ -349,7 +349,7 @@ def scenario_register(
     typer.echo(ctx.formatter.render({"pack_id": registered.pack_id, "status": registered.status.value}))
 
 
-@scenario_app.command("list")
+@scenario_app.command("list")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def scenario_list() -> None:
     """List all registered Scenario Packs."""
     ctx = _build_context()
@@ -360,7 +360,7 @@ def scenario_list() -> None:
     typer.echo(ctx.formatter.render(rows))
 
 
-@scenario_app.command("get")
+@scenario_app.command("get")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def scenario_get(pack_id: str = _PACK_ID_ARG) -> None:
     """Show a single registered pack."""
     ctx = _build_context()
@@ -372,7 +372,7 @@ def scenario_get(pack_id: str = _PACK_ID_ARG) -> None:
     typer.echo(ctx.formatter.render(pack.to_dict()))
 
 
-@app.command("run")
+@app.command("run")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def run_command(
     pack_id: str = _RUN_PACK_ARG,
     steps: int = _RUN_STEPS_OPT,
@@ -433,7 +433,7 @@ def run_command(
     )
 
 
-@app.command("results")
+@app.command("results")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def results_command(
     experiment_id: str = _RESULTS_ID_ARG,
     fmt: str = _RESULTS_FMT_OPT,
@@ -444,7 +444,7 @@ def results_command(
     typer.echo(ctx.formatter.render(result.to_dict()))
 
 
-@app.command("benchmark")
+@app.command("benchmark")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def benchmark_command(
     baseline: str = _BENCH_BASE_OPT,
     candidate: str = _BENCH_CAND_OPT,
@@ -464,7 +464,7 @@ def benchmark_command(
         typer.echo(ctx.formatter.render(report.to_dict()))
 
 
-@app.command("sweep")
+@app.command("sweep")  # type: ignore[untyped-decorator]  # typer lacks type stubs
 def sweep_command(
     plan: Path = _SWEEP_PLAN_OPT,
     connector: str = _SWEEP_CONNECTOR_OPT,
