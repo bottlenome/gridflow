@@ -1,11 +1,30 @@
 # MVP try2 report.md — 査読レビュー記録
 
+## 総合判定: 不合格
+
+**理由: MVP 検証方針への根本的違反**
+
+本レポートの論文ドラフト (§4.2 Abstract) は gridflow 自体を提案手法として主張している:
+
+> "We propose a workflow-level cross-solver approach ... via the open-source **gridflow** framework."
+
+MVP 検証の目的は「gridflow を使った研究者が、gridflow に言及せずとも成立する
+ドメイン論文を書けるか」を確認することである（`docs/mvp_review_policy.md` 参照）。
+ツール自体を論文の contribution に含めることは検証方針に違反しており、
+**レポートの内容品質に関わらず不合格**とする。
+
+仮にこの方針違反がなかったとしても、以下の個別指摘（CRITICAL x2, MAJOR x2,
+MODERATE x3, MINOR x2）により現状では論文材料として使用不可。
+
+---
+
 | 項目 | 値 |
 |---|---|
 | レビュー実施日 | 2026-04-12 |
 | 対象ファイル | `test/mvp_try2/report.md` |
 | レビュー方式 | 全成果物（JSON, PNG, スクリプト, sweep plan YAML, ソースコード）との照合 |
-| 総合判定 | **要修正** — エンジニアリングは良好、レポートの科学的主張が over-stated |
+| 総合判定 | **不合格** — MVP 検証方針違反 + 複数の CRITICAL/MAJOR 指摘 |
+| レビュー方針 | `docs/mvp_review_policy.md` |
 
 ---
 
