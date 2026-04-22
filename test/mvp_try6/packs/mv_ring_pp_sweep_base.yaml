@@ -1,0 +1,24 @@
+# MVP try 6 — pandapower MV open-ring 7-bus sweep base pack
+#
+# Second feeder for HCA-R 2-feeder comparison.
+# Uses pandapower's simple_mv_open_ring_net (20 kV, 7-bus).
+# Baseline voltages ~0.99-1.00 pu: much better voltage headroom
+# than IEEE 13 (~0.95 pu), expected to have HCA-RR > 0.
+
+pack:
+  name: pp_mv_ring_sweep_base
+  version: "1.0.0"
+  description: >
+    pandapower simple MV open-ring distribution feeder (7-bus, 20 kV)
+    for stochastic HCA sweeps with HCA-R metric computation.
+  author: gridflow mvp_try6
+  connector: pandapower
+  seed: 42
+
+network:
+  master_file: mv_ring_pp_sweep_base.yaml
+
+parameters:
+  pp_network: simple_mv_open_ring_net
+  pv_bus: 3
+  pv_kw: 0.0

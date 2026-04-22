@@ -1,0 +1,22 @@
+# MVP try 6 — MV ring 7-bus sweep for 2-feeder HCA-R comparison.
+# Same pv_kw seed (200) as IEEE 13 so PV capacity distribution is identical.
+# pv_bus candidates are the 6 non-slack buses of the MV ring.
+
+sweep:
+  id: mv_ring_hcar_t6
+  base_pack_id: pp_mv_ring_sweep_base@1.0.0
+  aggregator: statistics
+  seed: 42
+
+axes:
+  - name: pv_bus
+    type: random_choice
+    values: [1, 2, 3, 4, 5, 6]
+    n_samples: 1000
+    seed: 100
+  - name: pv_kw
+    type: random_uniform
+    low: 100.0
+    high: 2000.0
+    n_samples: 1000
+    seed: 200
