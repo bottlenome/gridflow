@@ -48,6 +48,11 @@ from gridflow.infra.orchestrator import (
     InProcessOrchestratorRunner,
 )
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
+from gridflow.usecase.evaluation import (
+    Evaluator,
+    FilesystemResultLoader,
+)
+from gridflow.usecase.evaluation_yaml_loader import load_evaluation_plan_from_yaml
 from gridflow.usecase.interfaces import ConnectorInterface, OrchestratorRunner
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
@@ -55,7 +60,7 @@ from gridflow.usecase.sweep import (
     SweepOrchestrator,
     build_default_aggregator_registry,
 )
-from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_from_yaml
+from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_bundle_from_yaml
 
 app = typer.Typer(
     name="gridflow",
@@ -110,6 +115,19 @@ _SWEEP_METRIC_PLUGIN_OPT = typer.Option(
         "and their values feed the aggregator."
     ),
 )
+_EVAL_PLAN_OPT = typer.Option(
+    ...,
+    "--plan",
+    exists=True,
+    readable=True,
+    help="Path to evaluation.yaml",
+)
+_EVAL_OUTPUT_OPT = typer.Option(
+    None,
+    "--output",
+    help="Write EvaluationResult JSON to this path (default: stdout)",
+)
+_EVAL_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
 
 
 # ---------------------------------------------------------------------- context
@@ -493,7 +511,8 @@ def sweep_command(
     configure_logging(level="INFO")
     log = get_logger("gridflow.cli.sweep")
 
-    sweep_plan = load_sweep_plan_from_yaml(plan)
+    bundle = load_sweep_plan_bundle_from_yaml(plan)
+    sweep_plan = bundle.plan
 
     # Build a metric registry: built-ins + any --metric-plugin specs.
     metric_registry = build_default_metric_registry()
@@ -530,6 +549,10 @@ def sweep_command(
         aggregator_registry=build_default_aggregator_registry(),
         connector_id=connector,
         harness=harness,
+        # Metric specs declared in the sweep YAML ('metrics:' section)
+        # feed the per-child re-instantiation path used when an axis
+        # targets 'metric:<name>' (§5.1.1 Option A).
+        metric_specs=bundle.metric_specs,
         results_dir=ctx.results_dir,
     )
     try:
@@ -565,6 +588,77 @@ def sweep_command(
                 {
                     "sweep_id": result.sweep_id,
                     "base_pack_id": result.base_pack_id,
+                    "n_experiments": len(result.experiment_ids),
+                    "elapsed_s": result.elapsed_s,
+                    "plan_hash": result.plan_hash,
+                }
+            )
+        )
+    else:
+        typer.echo(ctx.formatter.render(payload))
+
+
+@app.command("evaluate")
+def evaluate_command(
+    plan: Path = _EVAL_PLAN_OPT,
+    output: Path | None = _EVAL_OUTPUT_OPT,
+    fmt: str = _EVAL_FMT_OPT,
+) -> None:
+    """Re-apply metrics to already-simulated experiment results.
+
+    Reads an ``evaluation.yaml`` that references a set of ExperimentResult
+    JSON files (or a SweepResult) plus a list of metrics (built-in or
+    plugin, with per-spec kwargs). Each metric is applied to every
+    referenced experiment and the results are emitted as a single
+    :class:`EvaluationResult` JSON.
+
+    Unlike ``gridflow sweep`` this command runs **no simulation** — it is
+    a pure post-processing step so researchers can re-compute metrics
+    with different kwargs (e.g. an 11-point voltage-threshold sweep)
+    without re-running the underlying N simulations. See
+    ``docs/phase1_result.md`` §5.1.1 (Option B).
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.evaluate")
+
+    try:
+        eval_plan = load_evaluation_plan_from_yaml(plan)
+    except Exception as exc:
+        log.error("evaluation_plan_load_failed", plan=str(plan), message=str(exc))
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    evaluator = Evaluator(result_loader=FilesystemResultLoader())
+    try:
+        result = evaluator.run(eval_plan)
+    except GridflowError as exc:
+        log.error(
+            "evaluation_failed",
+            evaluation_id=eval_plan.evaluation_id,
+            error_code=exc.error_code,
+            message=exc.message,
+        )
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    payload = result.to_dict()
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+    log.info(
+        "evaluation_completed",
+        evaluation_id=result.evaluation_id,
+        n_experiments=len(result.experiment_ids),
+        elapsed_s=result.elapsed_s,
+    )
+
+    if ctx.formatter.format is OutputFormat.PLAIN:
+        typer.echo(
+            ctx.formatter.render(
+                {
+                    "evaluation_id": result.evaluation_id,
                     "n_experiments": len(result.experiment_ids),
                     "elapsed_s": result.elapsed_s,
                     "plan_hash": result.plan_hash,

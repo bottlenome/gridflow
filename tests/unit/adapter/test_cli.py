@@ -236,5 +236,72 @@ axes:
         assert result.exit_code != 0
 
 
+class TestEvaluateCommand:
+    """Phase 2 §5.1.1 Option B: ``gridflow evaluate --plan ...``."""
+
+    def test_evaluate_runs_builtin_metric(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """End-to-end: register pack, run experiment, then re-evaluate
+        the persisted JSON with a built-in metric."""
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        # 1. Register pack and run one experiment end-to-end so a real
+        #    ExperimentResult JSON lands on disk.
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        reg = runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        assert reg.exit_code == 0
+
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+        run_result = runner.invoke(app, ["run", "demo@1.0.0", "--connector", "fake", "--format", "plain"])
+        assert run_result.exit_code == 0, run_result.output
+        # Fish the experiment ID out of the one ExperimentResult JSON
+        # the run just persisted under ``$GRIDFLOW_HOME/results/``.
+        result_jsons = list((gridflow_home / "results").glob("*.json"))
+        assert len(result_jsons) == 1
+        result_path = result_jsons[0]
+        experiment_id = result_path.stem
+
+        # 2. Build an evaluation plan referring to the result JSON.
+        eval_plan = tmp_path / "eval.yaml"
+        eval_plan.write_text(
+            f"""
+evaluation:
+  id: smoke_eval
+  results:
+    - {result_path}
+
+metrics:
+  - name: voltage_deviation
+""",
+            encoding="utf-8",
+        )
+
+        out_path = tmp_path / "eval_result.json"
+        result = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--plan",
+                str(eval_plan),
+                "--output",
+                str(out_path),
+                "--format",
+                "json",
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        assert out_path.exists()
+        payload = json.loads(out_path.read_text())
+        assert payload["evaluation_id"] == "smoke_eval"
+        assert payload["experiment_ids"] == [experiment_id]
+        assert "voltage_deviation" in payload["per_experiment_metrics"][0]
+
+
 # json import for the new test class
 import json  # noqa: E402  -- placed here to keep test_cli history-clean for pre-sweep tests

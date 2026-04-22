@@ -33,12 +33,14 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from gridflow.adapter.benchmark.harness import BenchmarkHarness
+from gridflow.adapter.benchmark.metrics import BUILTIN_METRICS, MetricCalculator
 from gridflow.domain.error import OrchestratorError, PackNotFoundError
 from gridflow.domain.scenario import PackMetadata, ScenarioPack, ScenarioRegistry
 from gridflow.domain.util.params import Params, as_params
+from gridflow.usecase.evaluation import MetricSpec, _NamedMetric
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult
-from gridflow.usecase.sweep_plan import SweepPlan, SweepResult
+from gridflow.usecase.sweep_plan import ChildAssignment, SweepPlan, SweepResult
 
 # ----------------------------------------------------------------- Aggregator
 
@@ -166,6 +168,7 @@ class SweepOrchestrator:
         aggregator_registry: AggregatorRegistry,
         connector_id: str = "opendss",
         harness: BenchmarkHarness | None = None,
+        metric_specs: tuple[MetricSpec, ...] = (),
         results_dir: Path | None = None,
     ) -> None:
         self._registry = registry
@@ -173,6 +176,12 @@ class SweepOrchestrator:
         self._aggregator_registry = aggregator_registry
         self._connector_id = connector_id
         self._harness = harness or BenchmarkHarness()
+        # metric_specs is the declarative source of truth for metric
+        # instantiation when an axis targets a metric kwarg (§5.1.1
+        # Option A). If empty, the orchestrator falls back to the
+        # pre-built ``harness`` for every child — identical to Phase 1
+        # behaviour.
+        self._metric_specs = metric_specs
         # When set, every child ExperimentResult is persisted as
         # ``<results_dir>/<experiment_id>.json``. Required for the
         # user-paper use case where downstream tools (e.g.
@@ -197,9 +206,15 @@ class SweepOrchestrator:
                 context={"sweep_id": plan.sweep_id},
             )
 
+        # Validate up-front that every axis-targeted metric has a MetricSpec
+        # so we can re-instantiate it per child. Failing fast here beats
+        # blowing up on child N.
+        self._validate_metric_targets(plan)
+
         start_wall = time.perf_counter()
         experiment_ids: list[str] = []
-        per_experiment_metrics: list[dict[str, float]] = []
+        per_experiment_metrics_dicts: list[dict[str, float]] = []
+        per_experiment_metrics_tuples: list[tuple[tuple[str, float], ...]] = []
 
         for idx, assignment in enumerate(assignments):
             child_pack = self._derive_child_pack(base_pack, plan, idx, assignment)
@@ -212,11 +227,17 @@ class SweepOrchestrator:
             )
             result: ExperimentResult = self._orchestrator.run(run_request)
             experiment_ids.append(result.experiment_id)
-            summary = self._harness.evaluate(result)
-            per_experiment_metrics.append(dict(summary.values))
+            # Build a per-child harness if any axis targets a metric;
+            # otherwise reuse the shared harness (cheap common path).
+            harness = self._harness_for_assignment(assignment)
+            summary = harness.evaluate(result)
+            per_experiment_metrics_dicts.append(dict(summary.values))
+            # Canonical sorted tuple form for the SweepResult field; the dict
+            # form is kept solely for the Aggregator Protocol input.
+            per_experiment_metrics_tuples.append(tuple(sorted(summary.values, key=lambda kv: kv[0])))
             self._persist_child_result(result)
 
-        aggregated = aggregator.aggregate(per_experiment_metrics)
+        aggregated = aggregator.aggregate(per_experiment_metrics_dicts)
         elapsed = time.perf_counter() - start_wall
         return SweepResult(
             sweep_id=plan.sweep_id,
@@ -224,9 +245,60 @@ class SweepOrchestrator:
             plan_hash=plan.plan_hash(),
             experiment_ids=tuple(experiment_ids),
             aggregated_metrics=aggregated,
+            per_experiment_metrics=tuple(per_experiment_metrics_tuples),
+            assignments=tuple(assignments),
             created_at=datetime.now(tz=UTC),
             elapsed_s=elapsed,
         )
+
+    # ------------------------------------------------------- per-child harness
+
+    def _validate_metric_targets(self, plan: SweepPlan) -> None:
+        """Every metric-targeted axis must name a metric we know how to build."""
+        spec_names = {spec.name for spec in self._metric_specs}
+        for axis in plan.axes:
+            from gridflow.usecase.sweep_plan import parse_metric_target
+
+            metric_name = parse_metric_target(axis.target)
+            if metric_name is None:
+                continue
+            if metric_name not in spec_names:
+                raise OrchestratorError(
+                    f"SweepPlan '{plan.sweep_id}': axis '{axis.name}' targets metric "
+                    f"'{metric_name}' but no MetricSpec was provided for it",
+                    context={
+                        "sweep_id": plan.sweep_id,
+                        "axis": axis.name,
+                        "target_metric": metric_name,
+                        "known_metrics": tuple(sorted(spec_names)),
+                    },
+                )
+
+    def _harness_for_assignment(self, assignment: ChildAssignment) -> BenchmarkHarness:
+        """Return a harness whose metrics reflect this child's kwarg overrides.
+
+        Fast path: if the assignment has no metric_params *and* the
+        sweep was wired without metric_specs, the shared harness is
+        returned unchanged. Otherwise a per-child harness is built from
+        ``self._metric_specs`` with the per-child kwargs merged in.
+        """
+        if not assignment.metric_params and not self._metric_specs:
+            return self._harness
+
+        overrides = dict(assignment.metric_params)
+        metrics: list[MetricCalculator] = []
+        for spec in self._metric_specs:
+            kwargs = dict(spec.kwargs)
+            if spec.name in overrides:
+                for k, v in overrides[spec.name]:
+                    kwargs[k] = v
+            metrics.append(_instantiate_metric(spec, kwargs))
+        if not metrics:
+            # No explicit specs given but overrides present — this is
+            # caught earlier by _validate_metric_targets, but we keep
+            # this guard to satisfy type narrowing.
+            return self._harness
+        return BenchmarkHarness(metrics=tuple(metrics))
 
     # ------------------------------------------------------- helpers
 
@@ -235,15 +307,17 @@ class SweepOrchestrator:
         base: ScenarioPack,
         plan: SweepPlan,
         index: int,
-        assignment: Params,
+        assignment: ChildAssignment,
     ) -> ScenarioPack:
         """Build an ephemeral child pack from ``base`` + ``assignment``.
 
         The child pack carries the base pack's file layout (network_dir,
         timeseries_dir, config_dir) verbatim; only ``PackMetadata.parameters``
-        is rewritten to include the assigned overrides.
+        is rewritten to include the per-child pack_params. Per-metric
+        kwarg overrides are *not* written into the pack — they are
+        applied to the harness in :meth:`_harness_for_assignment`.
         """
-        merged = self._merge_parameters(base.metadata.parameters, assignment)
+        merged = self._merge_parameters(base.metadata.parameters, assignment.pack_params)
         child_pack_id = f"{base.name}-sweep{plan.sweep_id[:16]}-{index:05d}@{base.version}"
         child_name = f"{base.name}-sweep{plan.sweep_id[:16]}-{index:05d}"
         new_metadata = PackMetadata(
@@ -298,6 +372,48 @@ def build_default_sweep_orchestrator(
         aggregator_registry=build_default_aggregator_registry(),
         connector_id=connector_id,
     )
+
+
+# ----------------------------------------------------------------- helpers
+
+
+def _builtin_metric_by_name(name: str) -> MetricCalculator | None:
+    """Return a BUILTIN_METRICS instance by its ``name`` attribute, or ``None``."""
+    for metric in BUILTIN_METRICS:
+        if metric.name == name:
+            return metric
+    return None
+
+
+def _instantiate_metric(spec: MetricSpec, kwargs: dict[str, object]) -> MetricCalculator:
+    """Build a :class:`MetricCalculator` instance from ``spec`` + live ``kwargs``.
+
+    Shared by :meth:`SweepOrchestrator._harness_for_assignment` and
+    :class:`gridflow.usecase.evaluation.Evaluator` so metric instantiation
+    semantics stay in one place. If the spec has no plugin path the
+    name must resolve to a built-in metric.
+    """
+    from gridflow.adapter.benchmark.metric_registry import load_metric_plugin
+
+    if spec.plugin is None:
+        builtin = _builtin_metric_by_name(spec.name)
+        if builtin is None:
+            raise OrchestratorError(
+                f"MetricSpec '{spec.name}' has no plugin and is not a built-in metric",
+                context={"name": spec.name},
+            )
+        # Built-ins do not take kwargs today; reject silent drop.
+        if kwargs:
+            raise OrchestratorError(
+                f"MetricSpec '{spec.name}' is a built-in metric and does not accept kwargs, "
+                f"got {sorted(kwargs.keys())}",
+                context={"name": spec.name, "kwargs": sorted(kwargs.keys())},
+            )
+        return builtin
+    instance = load_metric_plugin(spec.plugin, kwargs=kwargs)
+    if instance.name != spec.name:
+        return _NamedMetric(inner=instance, name=spec.name)
+    return instance
 
 
 # Public re-exports

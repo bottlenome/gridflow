@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 import pytest
 
 from gridflow.usecase.sweep_plan import (
+    ChildAssignment,
     ChoiceAxis,
     RandomSampleAxis,
     RangeAxis,
@@ -213,7 +214,7 @@ class TestSweepPlanExpand:
         assignments = plan.expand()
         # 2 buses * 3 kw = 6 combinations
         assert len(assignments) == 6
-        bus_kw = {(a["bus"], a["kw"]) for a in (dict(p) for p in assignments)}
+        bus_kw = {(dict(a.pack_params)["bus"], dict(a.pack_params)["kw"]) for a in assignments}
         assert bus_kw == {
             ("671", 100.0),
             ("671", 200.0),
@@ -274,11 +275,22 @@ class TestSweepResult:
             plan_hash="abc123",
             experiment_ids=("exp-1", "exp-2"),
             aggregated_metrics=(("voltage_deviation_mean", 0.05),),
+            per_experiment_metrics=(
+                (("voltage_deviation", 0.04),),
+                (("voltage_deviation", 0.06),),
+            ),
+            assignments=(
+                ChildAssignment(pack_params=(("pv_kw", 100.0),)),
+                ChildAssignment(pack_params=(("pv_kw", 200.0),)),
+            ),
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             elapsed_s=1.23,
         )
         assert result.sweep_id == "s"
         assert result.experiment_ids == ("exp-1", "exp-2")
+        assert len(result.per_experiment_metrics) == 2
+        assert result.per_experiment_metrics[0] == (("voltage_deviation", 0.04),)
+        assert result.assignments[1].pack_params == (("pv_kw", 200.0),)
 
     def test_is_frozen(self) -> None:
         r = SweepResult(
@@ -287,6 +299,8 @@ class TestSweepResult:
             plan_hash="h",
             experiment_ids=(),
             aggregated_metrics=(),
+            per_experiment_metrics=(),
+            assignments=(),
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             elapsed_s=0.0,
         )
@@ -300,6 +314,8 @@ class TestSweepResult:
             plan_hash="h",
             experiment_ids=("e1",),
             aggregated_metrics=(("m1", 1.0),),
+            per_experiment_metrics=((("m1", 1.0),),),
+            assignments=(ChildAssignment(pack_params=(("pv_kw", 100.0),)),),
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             elapsed_s=1.0,
         )
@@ -308,4 +324,35 @@ class TestSweepResult:
         assert d["base_pack_id"] == "p@1"
         assert d["experiment_ids"] == ["e1"]
         assert d["aggregated_metrics"] == {"m1": 1.0}
+        assert d["per_experiment_metrics"] == [{"m1": 1.0}]
+        assert d["assignments"] == [{"pack_params": {"pv_kw": 100.0}, "metric_params": {}}]
         assert d["elapsed_s"] == 1.0
+
+    def test_length_mismatch_raises(self) -> None:
+        with pytest.raises(ValueError, match="per_experiment_metrics length"):
+            SweepResult(
+                sweep_id="s",
+                base_pack_id="p@1",
+                plan_hash="h",
+                experiment_ids=("e1", "e2"),
+                aggregated_metrics=(),
+                per_experiment_metrics=((("m", 1.0),),),
+                assignments=(
+                    ChildAssignment(pack_params=(("pv_kw", 1.0),)),
+                    ChildAssignment(pack_params=(("pv_kw", 2.0),)),
+                ),
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                elapsed_s=0.0,
+            )
+        with pytest.raises(ValueError, match="assignments length"):
+            SweepResult(
+                sweep_id="s",
+                base_pack_id="p@1",
+                plan_hash="h",
+                experiment_ids=("e1",),
+                aggregated_metrics=(),
+                per_experiment_metrics=((("m", 1.0),),),
+                assignments=(),
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                elapsed_s=0.0,
+            )

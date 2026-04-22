@@ -21,9 +21,117 @@ from gridflow.usecase.sweep_plan import (
 )
 from gridflow.usecase.sweep_yaml_loader import (
     SweepPlanLoadError,
+    load_sweep_plan_bundle_from_dict,
     load_sweep_plan_from_dict,
     load_sweep_plan_from_yaml,
 )
+
+
+class TestAxisTarget:
+    """Phase 2 §5.1.1 Option A — the optional ``target`` axis field."""
+
+    def test_default_target_is_pack(self) -> None:
+        plan = load_sweep_plan_from_dict(
+            {
+                "sweep": {
+                    "id": "demo",
+                    "base_pack_id": "p@1",
+                    "aggregator": "statistics",
+                },
+                "axes": [
+                    {"name": "pv_kw", "type": "range", "start": 100, "stop": 500, "step": 100},
+                ],
+            }
+        )
+        assert plan.axes[0].target == "pack"
+
+    def test_metric_target_parsed(self) -> None:
+        plan = load_sweep_plan_from_dict(
+            {
+                "sweep": {
+                    "id": "demo",
+                    "base_pack_id": "p@1",
+                    "aggregator": "statistics",
+                },
+                "axes": [
+                    {
+                        "name": "threshold",
+                        "type": "range",
+                        "start": 0.90,
+                        "stop": 1.00,
+                        "step": 0.01,
+                        "target": "metric:hc_metric",
+                    },
+                ],
+            }
+        )
+        assert plan.axes[0].target == "metric:hc_metric"
+
+    def test_invalid_target_rejected(self) -> None:
+        with pytest.raises(SweepPlanLoadError, match="target"):
+            load_sweep_plan_from_dict(
+                {
+                    "sweep": {
+                        "id": "demo",
+                        "base_pack_id": "p@1",
+                        "aggregator": "statistics",
+                    },
+                    "axes": [
+                        {
+                            "name": "x",
+                            "type": "range",
+                            "start": 0.0,
+                            "stop": 1.0,
+                            "step": 0.1,
+                            "target": "not_a_real_target",
+                        },
+                    ],
+                }
+            )
+
+
+class TestBundleLoader:
+    """Verifies that the bundle loader surfaces ``metrics:`` specs too."""
+
+    def test_bundle_carries_metric_specs(self) -> None:
+        bundle = load_sweep_plan_bundle_from_dict(
+            {
+                "sweep": {
+                    "id": "demo",
+                    "base_pack_id": "p@1",
+                    "aggregator": "statistics",
+                },
+                "axes": [
+                    {"name": "pv_kw", "type": "range", "start": 100, "stop": 500, "step": 100},
+                ],
+                "metrics": [
+                    {"name": "voltage_deviation"},
+                    {
+                        "name": "hc",
+                        "plugin": "mod:C",
+                        "kwargs": {"voltage_low": 0.95},
+                    },
+                ],
+            }
+        )
+        assert len(bundle.metric_specs) == 2
+        assert bundle.metric_specs[1].plugin == "mod:C"
+        assert dict(bundle.metric_specs[1].kwargs) == {"voltage_low": 0.95}
+
+    def test_bundle_without_metrics_section_ok(self) -> None:
+        bundle = load_sweep_plan_bundle_from_dict(
+            {
+                "sweep": {
+                    "id": "demo",
+                    "base_pack_id": "p@1",
+                    "aggregator": "statistics",
+                },
+                "axes": [
+                    {"name": "pv_kw", "type": "range", "start": 100, "stop": 500, "step": 100},
+                ],
+            }
+        )
+        assert bundle.metric_specs == ()
 
 
 class TestLoadFromDict:
