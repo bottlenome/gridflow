@@ -364,13 +364,18 @@ graph TB
 
 ### 3.2.1 核心のインターフェース境界
 
-gridflow のアーキテクチャを特徴づけるインターフェースは 3 つある:
+gridflow のアーキテクチャを特徴づけるインターフェースは 4 つある:
 
 ```
-① ConnectorInterface  — Orchestrator と外部ツールの境界（AS-4 の要）
-② CanonicalDataLayer  — 実行結果の格納・取得の境界（データフローの中心）
-③ MetricCalculator    — 評価指標算出の拡張点（L2 Plugin の要）
+① ConnectorInterface     — Orchestrator と外部ツールの境界（AS-4 の要）
+② CanonicalDataLayer     — 実行結果の格納・取得の境界（データフローの中心）
+③ MetricCalculator       — 評価指標算出の拡張点（L2 Plugin の要）
+⑤ SensitivityAnalyzer    — 感度分析の post-processing（REQ-F-016, Phase 2 追加）
 ```
+
+> ⑤ は Phase 2 で追加。Connector の再実行を伴わず、ExperimentResult 群に対して
+> metric パラメータを変えて再評価する UseCase。MetricCalculator を Strategy として
+> 利用する。MVP try4-7 で判明した「1 sweep = 1 metric パラメータ」の制約を解消する。
 
 ```mermaid
 classDiagram
@@ -480,6 +485,16 @@ classDiagram
     BenchmarkHarness ..> MetricCalculator : evaluates ③
     Installer ..> ScenarioRegistry : registers samples
     ConnectorLifecycleManager ..> ConnectorInterface : manages
+
+    class SensitivityAnalyzer {
+        <<UseCase>>
+        +analyze(experiments: list, parameter_name: str, parameter_grid: list, metric: MetricCalculator) SensitivityResult
+        +analyze_voltage_matrix(experiments: list) VoltageSensitivityMatrix
+    }
+
+    SensitivityAnalyzer ..> CanonicalDataLayer : reads experiments ②
+    SensitivityAnalyzer ..> MetricCalculator : re-evaluates ③⑤
+    note for SensitivityAnalyzer "REQ-F-016 (Phase 2)\nPost-processing only\nNo Connector re-execution"
 ```
 
 > **4つのインターフェース境界:**
@@ -491,6 +506,8 @@ classDiagram
 > **③ MetricCalculator** — Strategy パターン。L2 Plugin の拡張点。
 >
 > **④ DataTranslator** — Anti-Corruption Layer を明示化。各 Connector が外部データ → CDL 変換を DataTranslator に委譲。変換ロジックが Connector のプロトコル通信ロジックと分離され、個別にテスト可能。
+>
+> **⑤ SensitivityAnalyzer** — Phase 2 追加 (REQ-F-016)。Connector を再実行せず、ExperimentResult 群に対して metric パラメータを sweep する post-processing UseCase。MetricCalculator (③) を Strategy として再利用する。MVP try4-7 の教訓から「simulation と analysis の責務分離」を明示化。
 
 **Orchestrator の分解（設計レビュー #4 対応）:**
 

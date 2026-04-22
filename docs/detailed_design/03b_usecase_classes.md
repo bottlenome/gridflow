@@ -721,4 +721,117 @@ Strategyパターンを適用し、指標計算ロジックを交換可能にす
 
 ---
 
+## 3.7 SensitivityAnalyzer 関連クラス設計（REQ-F-016）
+
+### 3.7.1 設計方針
+
+MVP 検証 (try4-try7) で「同一 simulation 結果に対して metric パラメータを変えて再評価したい」という研究ワークフロー要件が判明した。現在の MetricCalculator は 1 プラグイン = 1 固定パラメータであり、閾値 sweep に対応できない。
+
+SensitivityAnalyzer は **Connector の再実行を伴わない post-processing** として UseCase 層に配置する。Connector は step 実行のみを担い、感度分析は Connector の出力 (ExperimentResult 群) を入力とする別 UseCase が担う。
+
+```
+Connector.step()
+    → ExperimentResult (voltage data)
+        → SensitivityAnalyzer.analyze() ← NEW
+            → SensitivityResult (metric vs parameter curve)
+```
+
+この設計は以下の原則に従う:
+- **Connector の責務不変**: step 実行 + フォーマット変換のみ（§3.5.2 と整合）
+- **層境界の維持**: 分析は UseCase 層、Connector は Adapter 層（CLAUDE.md §0.1）
+- **MetricCalculator との一貫性**: Strategy pattern で評価ロジックを注入
+
+### 3.7.2 クラス図
+
+```mermaid
+classDiagram
+    class SensitivityAnalyzer {
+        <<UseCase>>
+        +analyze(experiments: list[ExperimentResult], parameter_name: str, parameter_grid: list[float], metric: MetricCalculator) SensitivityResult
+        +analyze_voltage_matrix(experiments: list[ExperimentResult]) VoltageSensitivityMatrix
+    }
+
+    class SensitivityResult {
+        <<dataclass(frozen=True)>>
+        +feeder_id: str
+        +parameter_name: str
+        +parameter_values: tuple[float, ...]
+        +metric_name: str
+        +metric_values: tuple[float, ...]
+    }
+
+    class VoltageSensitivityMatrix {
+        <<dataclass(frozen=True)>>
+        +bus_ids: tuple[str, ...]
+        +matrix: tuple[tuple[float, ...], ...]
+        +max_singular_value: float
+    }
+
+    SensitivityAnalyzer ..> ExperimentResult : reads
+    SensitivityAnalyzer ..> MetricCalculator : uses
+    SensitivityAnalyzer ..> SensitivityResult : produces
+    SensitivityAnalyzer ..> VoltageSensitivityMatrix : produces
+```
+
+### 3.7.3 SensitivityAnalyzer
+
+**モジュール:** `gridflow.usecase.sensitivity`
+**レイヤー:** UseCase
+
+同一 Monte Carlo sweep の ExperimentResult 群を入力とし、metric パラメータを sweep した感度曲線、または bus 間電圧感度行列を算出する。
+
+#### メソッド
+
+**analyze**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `experiments: list[ExperimentResult]` — 同一 sweep の全実験結果。`parameter_name: str` — sweep 対象の metric パラメータ名 (e.g. "voltage_low")。`parameter_grid: list[float]` — 評価するパラメータ値の grid。`metric: MetricCalculator` — パラメータ変更可能な MetricCalculator インスタンス。`bootstrap_n: int = 0` — bootstrap リサンプル数 (0 なら CI なし) |
+| **Process** | 1. 各実験から voltage data を抽出。2. parameter_grid の各値で MetricCalculator を再初期化し、全実験の metric を再計算。3. 各パラメータ値で mean metric を算出。4. bootstrap_n > 0 なら bootstrap CI を算出。5. SensitivityResult を構築して返却 |
+| **Output** | `SensitivityResult`。parameter_grid 外の値を要求された場合は `ValueError`。experiments が空なら `ValueError` |
+
+**analyze_voltage_matrix**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `experiments: list[ExperimentResult]` — 各実験は異なる bus への PV 注入を含む。注入 bus は `ExperimentMetadata.parameters` の `pv_bus` から取得。注入量は `pv_kw` から取得 |
+| **Process** | 1. 各実験の (pv_bus, pv_kw, voltage_vector) を抽出。2. baseline (PV なし) の voltage vector を特定または推定。3. ΔV = V(with PV) - V(baseline) を計算。4. bus ごとに ΔV / ΔP の統計量を集約し感度行列 S を構築。5. S の SVD を計算し、最大特異値と対応する bus を特定 |
+| **Output** | `VoltageSensitivityMatrix`。PV 注入情報が不足する場合は `ValueError` |
+
+### 3.7.4 ツール固有の感度行列取得（Protocol 外拡張）
+
+OpenDSS や pandapower は solver 内部で Jacobian / Y-bus 行列を保持しており、数値微分より精度が高い。これらのツール固有機能は **ConnectorInterface Protocol には追加せず**、具象 Connector クラスのメソッドとして提供する。
+
+```python
+# Adapter 層 (Protocol 外)
+class OpenDSSConnector(ConnectorInterface):
+    # Protocol メソッド (§3.5.2 で定義済み)
+    def initialize(self, pack: ScenarioPack) -> None: ...
+    def step(self, step_index: int) -> ConnectorStepOutput: ...
+    def teardown(self) -> None: ...
+
+    # Protocol 外のツール固有拡張
+    def extract_system_y(self) -> tuple[tuple[complex, ...], ...]:
+        """OpenDSS 固有: SystemY (system admittance matrix) を取得."""
+        ...
+```
+
+SensitivityAnalyzer は `isinstance` による型絞りで利用する:
+
+```python
+# UseCase 層
+if isinstance(connector, OpenDSSConnector):
+    y_matrix = connector.extract_system_y()
+    # Y-bus から電圧感度行列を解析的に導出
+else:
+    # 数値微分 (複数 ExperimentResult の差分) にフォールバック
+```
+
+この設計により:
+- ConnectorInterface の統一性は維持される（Grid2Op / HELICS にも適用可能）
+- ツール固有の高精度手法も利用可能
+- フォールバック (数値微分) が常に存在し、graceful degradation
+
+---
+
 > **関連文書:** ドメインクラス（ScenarioPack, CDL）は → [03a ドメイン層](03a_domain_classes.md) / CLI・Plugin は → [03c アダプタ層](03c_adapter_classes.md) / 共通基盤・トレースは → [03d インフラ層](03d_infra_classes.md)
