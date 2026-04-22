@@ -1,0 +1,32 @@
+# MVP try 5 — n=1000 base sweep for HCA-R metric computation.
+# Voltage data from this sweep is post-processed at multiple
+# threshold levels to compute the threshold-robust HCA (HCA-R) metric.
+
+sweep:
+  id: ieee13_hcar_base
+  base_pack_id: ieee13_sweep_base@1.0.0
+  aggregator: statistics
+  seed: 42
+
+axes:
+  - name: pv_bus
+    type: random_choice
+    values:
+      - "671.1.2.3"
+      - "675.1.2.3"
+      - "634.1.2.3"
+      - "680.1.2.3"
+      - "684.1.3"
+      - "611.3"
+      - "646.2.3"
+      - "645.2"
+      - "632.1.2.3"
+      - "633.1.2.3"
+    n_samples: 1000
+    seed: 100
+  - name: pv_kw
+    type: random_uniform
+    low: 100.0
+    high: 2000.0
+    n_samples: 1000
+    seed: 200
