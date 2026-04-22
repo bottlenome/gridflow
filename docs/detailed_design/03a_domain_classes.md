@@ -72,6 +72,13 @@
 | DD-CLS-050 | SensitivityAnalyzer | gridflow.usecase.sensitivity | UseCase | 感度分析 (post-processing)。同一 simulation 結果に対して metric パラメータを変えて再評価 | REQ-F-016 |
 | DD-CLS-051 | SensitivityResult | gridflow.domain.result | Domain | 感度分析結果。パラメータ軸上の metric 値曲線 + 特徴点 | REQ-F-016 |
 | DD-CLS-052 | VoltageSensitivityMatrix | gridflow.domain.result | Domain | bus 間電圧感度行列。dV_j/dP_i を格納 | REQ-F-016 |
+| DD-CLS-053 | SweepPlan | gridflow.usecase.sweep_plan | UseCase | パラメータ sweep 計画 (軸 + aggregator)。既存実装を設計書に正式化 | REQ-F-016 |
+| DD-CLS-054 | ParamAxis | gridflow.usecase.sweep_plan | UseCase (Protocol) | sweep の 1 軸。RangeAxis/ChoiceAxis/RandomSampleAxis が実装 | REQ-F-016 |
+| DD-CLS-055 | SweepResult | gridflow.usecase.sweep_plan | UseCase | Monte Carlo sweep の結果。per_experiment_metrics を含む (Phase 2 拡張) | REQ-F-016 |
+| DD-CLS-056 | Aggregator | gridflow.usecase.sweep | UseCase (Protocol) | per-experiment metric から aggregated metric への集約戦略 | REQ-F-016 |
+| DD-CLS-057 | EvaluateCommandHandler | gridflow.adapter.cli.commands | Adapter | `gridflow evaluate` CLI ハンドラー (既存結果への metric 再適用) | REQ-F-016 |
+| DD-CLS-058 | PandaPowerConnector | gridflow.adapter.connector.pandapower | Adapter | pandapower 接続実装 (ConnectorInterface 実装) | REQ-F-007 |
+| DD-CLS-059 | PandapowerTranslator | gridflow.adapter.connector.pandapower_translator | Adapter | pandapower ⇔ CDL 変換。cross-solver 検証の基盤 | REQ-F-003, REQ-F-007 |
 
 ---
 

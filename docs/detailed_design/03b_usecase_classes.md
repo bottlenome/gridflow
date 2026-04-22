@@ -443,6 +443,52 @@ py-dss-interface経由でOpenDSSエンジンを操作する具象コネクタ。
 
 **OpenDSSTranslator** はOpenDSS固有のデータ構造（ノード電圧配列、線路電流配列等）とCDLクラス（Topology, Asset, TimeSeries, Metric）間の変換を担う。
 
+### 3.5.4a PandaPowerConnector / PandapowerTranslator（Phase 2 拡張）
+
+**モジュール:** `gridflow.adapter.connector.pandapower`
+**レイヤー:** Adapter
+
+pandapower は Python native の電力系統解析ライブラリ。OpenDSS と比較して以下の特性がある:
+
+| 特性 | OpenDSS | pandapower |
+|---|---|---|
+| 主要入力形式 | `.dss` テキスト | Python object (pandapower network) |
+| 三相 | 詳細 (phase-by-phase) | 対称近似が中心 (三相非対称は拡張) |
+| Jacobian 取得 | SystemY からの計算 | `net._ppc['internal']['J']` 直接取得 |
+| 組込フィーダー | なし | `pandapower.networks.*` で豊富 |
+
+#### 設計の焦点
+
+pandapower は OpenDSSConnector と同じ `ConnectorInterface` Protocol を実装する。違いはすべて連携のいインターフェース内部で吸収する:
+
+1. **ネットワーク構築**: `pp.networks.<factory_name>()` を動的に呼び出す。pack.parameters の `pp_network` 属性に factory 名を指定
+2. **PV 注入**: `pp.create_sgen(net, bus=..., p_mw=...)` で静止型 generator として実装
+3. **潮流解**: `pp.runpp(net)` で実行。結果は `net.res_bus.vm_pu` で取得
+4. **bus 名マッピング**: pandapower は integer index を使うため、bus 名は `str(index)` で表現
+
+#### PandapowerTranslator
+
+**モジュール:** `gridflow.adapter.connector.pandapower_translator`
+
+pandapower network object と CDL (Topology / Asset / TimeSeries / Metric) 間の双方向変換。
+
+| メソッド | 説明 |
+|---|---|
+| `to_canonical(net)` | pandapower network → CDL Topology + Asset 群 |
+| `from_canonical(topology, assets)` | CDL → pandapower network (cross-solver 検証の基盤, REQ-F-003 拡張) |
+
+#### Cross-solver 検証への寄与
+
+`from_canonical()` を OpenDSSTranslator と PandapowerTranslator の両方が実装すると、CDL が**第三の中間表現**として機能し、以下が可能になる:
+
+```
+.dss (OpenDSS)  ─┐
+                 ├→ to_canonical → CDL → from_canonical ─┬→ OpenDSS network
+.yaml (pp)      ─┘                                       └→ pandapower network
+```
+
+MVP try6 で判明した「solver と topology が交絡する」問題 (§5.1.3) を、同一 CDL を両 solver に流し込むことで解消できる。
+
 ### 3.5.5 HealthStatus（StepResult は 03e へ移設）
 
 **モジュール:** `gridflow.usecase.interfaces`
@@ -718,6 +764,125 @@ Strategyパターンを適用し、指標計算ロジックを交換可能にす
 | name | str | 指標名 |
 | value | float | 指標値 |
 | unit | str | 単位 |
+
+---
+
+## 3.6a Sweep 関連クラス設計（REQ-F-016）
+
+### 3.6a.1 設計方針
+
+`SweepPlan` と `SweepOrchestrator` は Phase 1 MVP で先行実装されたが (`gridflow.usecase.sweep_plan`, `gridflow.usecase.sweep`)、正式な設計書記述が欠落していた。Phase 2 で以下を確定する:
+
+1. 既存実装を設計書に正式化
+2. `SweepResult` に `per_experiment_metrics` を追加 (MVP try5-7 の教訓。§5.1.2)
+3. `Aggregator` Protocol の拡張点を明文化
+
+### 3.6a.2 SweepPlan
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+**レイヤー:** UseCase (`@dataclass(frozen=True)`)
+
+パラメータ sweep 計画。`base_pack_id` を起点とし、`axes` で指定したパラメータ軸の組合せを展開して子実験を生成する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| sweep_id | str | sweep の一意識別子 |
+| base_pack_id | str | 全子実験が派生する ScenarioPack ID |
+| axes | tuple[ParamAxis, ...] | パラメータ軸のタプル |
+| aggregator_name | str | 集約戦略名 (AggregatorRegistry で解決) |
+| seed | int | 乱数 seed (再現性保証) |
+
+#### 展開セマンティクス
+
+- 非ランダム軸 (`RangeAxis`, `ChoiceAxis`) → **cartesian 積**
+- ランダム軸 (`RandomSampleAxis`) → **zipped draws** (全ランダム軸は同一 n_samples)
+- 最終展開 = cartesian(non-random) × zipped(random)
+
+#### メソッド
+
+**expand**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし (self の axes を使用) |
+| **Process** | 各軸から sample を取得し、上記セマンティクスで展開。各子実験の params-tuple を生成 |
+| **Output** | `tuple[Params, ...]` — 各子実験のパラメータ割当 |
+
+**plan_hash**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | sweep_id + base_pack_id + axes の正規化表現を SHA256 し先頭 16 文字を返す |
+| **Output** | `str` (16 chars) — 結果の provenance 追跡用 |
+
+### 3.6a.3 ParamAxis（Protocol）
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+
+sweep の 1 軸を表す Protocol。具象実装は `RangeAxis`, `ChoiceAxis`, `RandomSampleAxis`。
+
+| プロパティ/メソッド | 型 | 説明 |
+|---|---|---|
+| name (property) | str | `pack.parameters` のキー |
+| is_random (property) | bool | zipped-random グループに属するか |
+| sample() | `tuple[object, ...]` | 決定的な値タプル。ランダム軸は seed で再現可能 |
+
+### 3.6a.4 SweepResult
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+**レイヤー:** UseCase (`@dataclass(frozen=True)`)
+
+Monte Carlo sweep の結果を格納する。**Phase 2 で `per_experiment_metrics` を追加**し、下流の post-processing (SensitivityAnalyzer 等) が child experiment JSON を個別に再読み込みせずに済むようにする。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| sweep_id | str | plan.sweep_id |
+| base_pack_id | str | plan.base_pack_id |
+| plan_hash | str | SweepPlan のハッシュ (provenance) |
+| experiment_ids | tuple[str, ...] | 全子実験 ID (順序保証) |
+| aggregated_metrics | tuple[tuple[str, float], ...] | sweep レベルの集約 metric (mean/max/min/stdev 等) |
+| **per_experiment_metrics** | tuple[tuple[str, tuple[float, ...]], ...] | **Phase 2 追加**: metric 名 → 各実験での値のタプル |
+| elapsed_s | float | 実行時間（秒） |
+| created_at | str | ISO 8601 作成時刻 |
+
+#### Phase 2 追加の根拠
+
+MVP try5-7 では `hcar_metric.py:load_placements_from_sweep()` が n=1000 件の child JSON を個別に open() しており、I/O コストが大きかった。`per_experiment_metrics` を SweepResult に含めることで、SensitivityAnalyzer や CVaR 系 metric が 1 ファイル読むだけで全 per-experiment 値を取得できる。
+
+**互換性**: 既存の `aggregated_metrics` は不変。新フィールドの追加のみ。
+
+### 3.6a.5 Aggregator（Protocol）
+
+**モジュール:** `gridflow.usecase.sweep`
+
+per-experiment の metric 値群から sweep レベルの集約 metric を生成する Strategy。
+
+| メソッド | 型 | 説明 |
+|---|---|---|
+| aggregate(results) | `dict[str, float]` | `list[ExperimentResult]` → 集約 metric dict |
+
+標準実装:
+- `StatisticsAggregator`: mean / median / min / max / stdev
+- `ExtremaAggregator`: min / max のみ
+- 追加実装 (Phase 2): `QuantileAggregator` (25th/75th/95th percentile), `CVaRAggregator` (下位 5% の期待値)
+
+### 3.6a.6 SweepOrchestrator
+
+**モジュール:** `gridflow.usecase.sweep`
+**レイヤー:** UseCase
+
+`SweepPlan` を入力とし、`Orchestrator` を N 回駆動して全子実験を実行、`Aggregator` で集約して `SweepResult` を返す。
+
+#### メソッド
+
+**run**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `plan: SweepPlan` |
+| **Process** | 1. plan.expand() で全子実験パラメータを生成。2. 各子実験用に ScenarioPack を派生 (base_pack_id のコピー + パラメータ上書き)。3. Orchestrator.run() で実行、各 ExperimentResult から metric を抽出。4. **per_experiment_metrics を収集**。5. Aggregator.aggregate() で集約。6. SweepResult を構築 |
+| **Output** | `SweepResult`。plan が axes を持たない場合 `ValueError` |
 
 ---
 

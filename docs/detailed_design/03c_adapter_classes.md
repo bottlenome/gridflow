@@ -119,6 +119,7 @@ clickまたはtyperを使用したCLIエントリポイント。
 |---|---|---|---|
 | `gridflow run` | RunCommandHandler | 実験実行（複数pack指定で逐次バッチ） | UC-01 |
 | `gridflow sweep` | SweepCommandHandler | パラメータスイープ実行 | UC-01 |
+| `gridflow evaluate` | EvaluateCommandHandler | 既存結果への metric 再適用 (Phase 2, REQ-F-016) | UC-03 |
 | `gridflow scenario` | ScenarioCommandHandler | Scenario Pack管理 | UC-02 |
 | `gridflow benchmark` | BenchmarkCommandHandler | ベンチマーク評価 | UC-03 |
 | `gridflow status` | StatusCommandHandler | 実行状態確認 | UC-04 |
@@ -216,6 +217,48 @@ exp-002 running - -
 ### 3.7.8 CLIサブコマンドハンドラー
 
 第4章のシーケンス図に登場するCLIサブコマンドのハンドラーを、CommandHandler（3.7.3）の具象クラスとして定義する。
+
+#### EvaluateCommandHandler (Phase 2, REQ-F-016)
+
+**モジュール:** `gridflow.adapter.cli.commands`
+
+`gridflow evaluate` コマンドを処理する。**既存の sweep 結果に対して metric を再適用する post-processing** を提供する。同一 simulation 結果から異なる metric パラメータ（電圧閾値等）での評価を得たい研究ワークフロー（MVP try4-7 で要件判明）を支える。
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `ctx: Context` — CLI コンテキスト。`args`: `--results <sweep.json>` — 既存 SweepResult または child experiments ディレクトリ。`--metric <spec>` — metric プラグイン指定 (e.g. `"hc:HC(voltage_low=0.90)"`)。複数 `--metric` を指定可能。`--parameter-sweep <name>:<start>:<stop>:<n>` — metric パラメータの sweep (optional, SensitivityAnalyzer を起動)。`--output <path>` — 出力 JSON |
+| **Process** | 1. `--results` から SweepResult + child experiment data を読込。2. 単一 metric モード: 各 metric プラグインを全 experiment に適用、per_experiment_metrics と aggregated_metrics を算出。3. `--parameter-sweep` モード: SensitivityAnalyzer.analyze() で parameter_grid 上の metric 曲線を生成。4. 結果を JSON に出力 |
+| **Output** | `int` — 終了コード（0: 成功、1: 成果物欠損、2: metric プラグイン解決失敗） |
+
+**使用例**:
+
+```bash
+# 単一 metric 再適用
+gridflow evaluate \
+  --results sweep_base.json \
+  --metric "hc:HC(voltage_low=0.95)" \
+  --output hc_range_a.json
+
+# 複数 metric 一括
+gridflow evaluate \
+  --results sweep_base.json \
+  --metric "hc_a:HC(voltage_low=0.95)" \
+  --metric "hc_b:HC(voltage_low=0.90)" \
+  --output hc_both.json
+
+# metric パラメータ sweep (SensitivityAnalyzer 起動)
+gridflow evaluate \
+  --results sweep_base.json \
+  --metric "hc:HC" \
+  --parameter-sweep "voltage_low:0.90:0.95:11" \
+  --output hc_sensitivity.json
+```
+
+**`gridflow benchmark` との違い**:
+
+- `benchmark` は 2 実験間の差分比較（baseline vs target）
+- `evaluate` は同一 sweep への metric 再適用（post-processing）
+- 両者は異なる UseCase を持ち、分離する
 
 #### DebugCommandHandler
 
