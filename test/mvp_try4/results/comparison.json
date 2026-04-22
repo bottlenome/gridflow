@@ -1,0 +1,47 @@
+{
+  "range_a": {
+    "threshold_low": 0.95,
+    "threshold_high": 1.05,
+    "n_experiments": 1000,
+    "hosting_capacity_mw_mean": 0.0,
+    "hosting_capacity_mw_median": 0.0,
+    "hosting_capacity_mw_max": 0.0,
+    "hosting_capacity_mw_min": 0.0,
+    "hosting_capacity_mw_stdev": 0.0,
+    "hosting_capacity_mw_ci95_low": 0.0,
+    "hosting_capacity_mw_ci95_high": 0.0,
+    "rejection_rate": 1.0,
+    "n_rejected": 1000,
+    "n_accepted": 0
+  },
+  "range_b": {
+    "threshold_low": 0.9,
+    "threshold_high": 1.06,
+    "n_experiments": 1000,
+    "hosting_capacity_mw_mean": 0.9789101864434253,
+    "hosting_capacity_mw_median": 0.966399457352686,
+    "hosting_capacity_mw_max": 1.9976122232259461,
+    "hosting_capacity_mw_min": 0.0,
+    "hosting_capacity_mw_stdev": 0.5663290181385114,
+    "hosting_capacity_mw_ci95_low": 0.943808750237081,
+    "hosting_capacity_mw_ci95_high": 1.0140116226497697,
+    "rejection_rate": 0.035,
+    "n_rejected": 35,
+    "n_accepted": 965
+  },
+  "custom": {
+    "threshold_low": 0.92,
+    "threshold_high": 1.05,
+    "n_experiments": 1000,
+    "hosting_capacity_mw_mean": 0.30839694202548795,
+    "hosting_capacity_mw_median": 0.0,
+    "hosting_capacity_mw_max": 1.9963871138887757,
+    "hosting_capacity_mw_min": 0.0,
+    "hosting_capacity_mw_stdev": 0.6451408313637019,
+    "hosting_capacity_mw_ci95_low": 0.2684106990272837,
+    "hosting_capacity_mw_ci95_high": 0.3483831850236922,
+    "rejection_rate": 0.811,
+    "n_rejected": 811,
+    "n_accepted": 189
+  }
+}
