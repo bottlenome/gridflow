@@ -4,11 +4,13 @@ from gridflow.domain.cdl.asset import Asset
 from gridflow.domain.cdl.event import Event
 from gridflow.domain.cdl.experiment_metadata import ExperimentMetadata
 from gridflow.domain.cdl.metric import Metric
+from gridflow.domain.cdl.network import CDLNetwork
 from gridflow.domain.cdl.time_series import TimeSeries
 from gridflow.domain.cdl.topology import Edge, Node, Topology
 
 __all__ = [
     "Asset",
+    "CDLNetwork",
     "Edge",
     "Event",
     "ExperimentMetadata",

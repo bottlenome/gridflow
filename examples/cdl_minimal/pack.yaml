@@ -1,0 +1,23 @@
+# CDL-first Scenario Pack — same network drives OpenDSS and pandapower.
+#
+# Switch solvers with `gridflow run cdl_minimal@1.0.0 --connector opendss`
+# vs `--connector pandapower`; both consume ``network.yaml`` via the
+# ``cdl_network_file`` parameter (Phase 2 §5.1.3).
+
+pack:
+  name: cdl_minimal
+  version: "1.0.0"
+  description: >
+    Two-bus radial feeder expressed in CDL canonical form. Demonstrates
+    Phase 2 §5.1.3 — same network YAML solved by OpenDSS and pandapower
+    without a .dss file.
+  author: gridflow team
+  connector: opendss
+  seed: 0
+
+network:
+  cdl_network_file: network.yaml
+
+parameters:
+  cdl_network_file: network.yaml
+  voltage_base_kv: 12.47
