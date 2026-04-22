@@ -22,6 +22,8 @@ gridflow の MVP 検証は、以下の問いに答えることを目的とする
 ```
 Phase 0: 課題収集
     ↓
+Phase 0.5: アイデア創出（AI 平均化回避プロセス）
+    ↓
 Phase 1: 仮想研究者による MVP 実験
     ↓
 Phase 2: 仮想査読者によるレビュー
@@ -49,6 +51,137 @@ Phase 3: プロダクトオーナーによる最終レビュー
 | 出典論文 | 著者, タイトル, ジャーナル/会議, 年, DOI |
 | 原文引用 | Future Work セクションからの引用 |
 | gridflow との関係 | direct / indirect / out-of-scope |
+
+---
+
+## 2.5 Phase 0.5 — アイデア創出（AI 平均化回避プロセス）
+
+### 2.5.1 背景: なぜこのフェーズが必要か
+
+MVP try2-try7 の実践で、**AI (LLM) が出すアイデアは分布の平均に収束する**
+という構造的問題が判明した。具体的には:
+
+- try5: 「HC を閾値で平均する」(HCA-R) — 教科書的操作
+- try7: 「HC 曲線の 50% 点を見る」(HC₅₀) — 普遍的手法の適用
+- 全 try を通じて「HC(θ) curve 上の統計量の変奏」に fixate し、
+  根本的に異なるアプローチが出なかった
+
+この問題は LLM の構造的特性に起因する (arXiv:2602.20408):
+
+| メカニズム | 内容 |
+|---|---|
+| **Fixation (固着)** | 最初に出した案に後続の案が引きずられる |
+| **Knowledge Partitioning の欠如** | 人間は各人が異なる知識領域を持つが、LLM は全知識を平均化した単一分布から生成する |
+
+### 2.5.2 アイデア創出ルール (全 6 条)
+
+Phase 1 の実験に入る **前に** 以下のプロセスを実行する。
+アイデアの質はこのフェーズで決まり、後段の実験・レビューでは回復できない。
+
+#### Rule 1: AI に解を出させるな、候補を出させろ (HAI-CDP)
+
+AI は **10 個以上のアイデア候補** を生成するだけにし、
+**ranking も推薦もさせない**。人間が候補を読み、
+**最も non-obvious なもの** を選択する。
+
+根拠: AI が ranking すると「もっともらしい中央値」が選ばれる。
+人間の選択眼が外れ値を拾う唯一のメカニズム (HAI-CDP, Cambridge Core 2025)。
+
+```
+❌ 悪い例: 「最適な HCA metric を提案して」
+✅ 良い例: 「HCA の閾値依存を解決するアプローチを 10 個列挙して。
+            ranking しないで。分野横断のものを含めて」
+```
+
+#### Rule 2: Ordinary Persona を使え
+
+「電力系の専門家として考えて」ではなく、**無関係な職業の人格**
+で考えさせる。有名イノベーター (Steve Jobs 等) も避ける。
+
+根拠: ordinary persona は semantic space の distinct region に
+anchor し、LLM の knowledge partitioning を人為的に再現する
+(arXiv:2602.20408, fixation を 36% 削減)。
+
+```
+✅ 例: 「保険のアクチュアリーとして」「農業の品種改良者として」
+        「交通渋滞を研究する都市工学者として」考えさせる
+```
+
+#### Rule 3: 段階を踏め — 解の前に問題構造を分析 (CoT)
+
+「解を出す」前に以下の 4 ステップを強制する:
+
+1. **問題構造の分析**: 何と何の間にどんな矛盾があるか
+2. **隣接分野の列挙**: この問題構造が出現する他の分野を 5 つ以上挙げる
+3. **アナロジー生成**: 各分野でこの問題がどう解かれているか
+4. **最遠アナロジーの選択**: 最も「ありえない」分野からの転用を優先
+
+根拠: CoT prompting は fixation を削減し (arXiv:2602.20408)、
+段階的発散は convergent な回答を抑制する。
+
+#### Rule 4: Extreme User から逆算しろ (IDEO)
+
+「平均的な研究者」の需要ではなく、**極端なユーザー** の
+ニーズから発想する。極端なユーザーの amplified needs は
+平均的ユーザーには見えない制約やチャンスを顕在化させる。
+
+```
+✅ 例:
+  - 「1000 フィーダーを毎日分析する utility のオペレーター」
+  - 「10 年間 1 フィーダーだけを追跡する PhD 学生」
+  - 「ANSI 規格改訂委員会の委員長」
+  - 「DER を一切信用しない保守的な配電計画者」
+```
+
+#### Rule 5: 妥協を禁止しろ (TRIZ 矛盾解決)
+
+Trade-off を受け入れず、**矛盾を同時解決する** 方法を探す。
+「AかBか」ではなく「AもBも」を要求する。
+
+```
+❌ 「精度と速度のバランスを取る」
+✅ 「精度を犠牲にせず速度を上げる方法は何か。
+    両方を同時に達成する原理的な方法があるはず」
+```
+
+#### Rule 6: Fixation 打破 — 3 回連続で同方向なら強制転換
+
+AI が提案したアイデアの系列を監視し、
+**同じ方向の改善案が 3 回以上連続** した場合、
+そのアイデア系列を**強制的に打ち切り**、
+Rule 2 (別 persona) または Rule 3 step 2 (別分野) からやり直す。
+
+```
+例: try5 (HC curve の平均) → try6 (同 curve の 2-feeder 比較)
+    → try7 (同 curve の 50% 点)
+    = 3 回連続で「HC(θ) curve 上の統計量」 → 強制転換すべきだった
+```
+
+### 2.5.3 Novelty Gate (実験前の新規性審査)
+
+アイデアが決まったら、**実験に入る前に** 以下の 6 項目で
+新規性を審査する。1 つでも ❌ なら Rule 1 に戻る。
+
+| # | チェック | 基準 |
+|---|---|---|
+| 1 | 既存 metric / 手法から自明に導けるか | 「パラメータの変更」「統計量の変更」だけなら ❌ |
+| 2 | 先行文献に同等概念があるか | 同じ分野での先行があれば ❌ |
+| 3 | 物理的に解釈可能か | 「平均を取った」等の数学的操作のみでは ❌ |
+| 4 | "So what?" テストに耐えるか | 結果を 1 文で述べたとき、専門家が行動を変えるか |
+| 5 | Cross-disciplinary insight があるか | 単一分野内の改善は novelty として弱い |
+| 6 | 計算手法自体に innovation があるか | 命名 / 形式化 / 標準化提案のみは弱い。新しいアルゴリズム・モデル・理論があるか |
+
+### 2.5.4 エビデンス (本ルールの根拠論文)
+
+| 論文 | 知見 | 適用先 Rule |
+|---|---|---|
+| arXiv:2602.20408 (2025) "Examining and Addressing Barriers to Diversity in LLM-Generated Ideas" | LLM の fixation + knowledge partitioning 欠如を特定。CoT + ordinary persona で改善 | Rule 2, 3, 6 |
+| arXiv:2409.04109 (2024) "Can LLMs Generate Novel Research Ideas?" (100+ NLP 研究者) | LLM ideas は novelty 高いが diversity 低い + feasibility 弱い。top decile には届かない | Rule 1 |
+| CHI 2025 "Human Creativity in the Age of LLMs" | AI 支援で個人の creativity は上がるが collective diversity は下がる | Rule 1, 6 |
+| Nature Sci. Rep. 2025 "Divergent creativity in humans and LLMs" | LLM は 0.28% しか top-tier creativity に到達しない。人間は 35 倍多い | Rule 1 |
+| IDEO "Extremes and Mainstreams Design Toolkit" | Extreme user の amplified needs が non-obvious 解を導く | Rule 4 |
+| TRIZ (Altshuller, 1946-) | 矛盾の妥協なき解決が breakthrough invention の核 | Rule 5 |
+| Cambridge Core 2025 "Enhancing designer creativity through human-AI co-ideation" | HAI-CDP: AI は生成、人間は選択の役割分担が最も効果的 | Rule 1 |
 
 ---
 
@@ -253,3 +386,4 @@ MDPI Energies / IEEE Access 等のよりアクセスしやすい venue では E 
 | 2026-04-12 | 初版作成。MVP try2 レビューで判明した方針不在を受けて策定 |
 | 2026-04-22 | §4.2 E (投稿先水準の査読基準) を追加。IEEE PES GM 水準での評価を try3 レビューで実施し、基準の不在が判明したため。§4.3 に「合格 (Top venue)」判定を追加 |
 | 2026-04-22 | §4.2 E-2 に「フィーダー数」チェック項目を追加。try5 で単一 degenerate case のみの実証が MAJOR 指摘となった教訓を反映 |
+| 2026-04-22 | §2.5 Phase 0.5 (アイデア創出) を新設。try2-try7 で AI のアイデアが分布の平均に収束した問題を受け、6 ルール + Novelty Gate を策定。根拠論文 7 本を引用 |
