@@ -8,6 +8,7 @@
 | 0.2 | 2026-04-11 | §7 追記: Phase 1 事後監査で発見された設計 ⇔ 実装の乖離 (運用環境方針 / domain 不変性 / Docker HEALTHCHECK / REST connector architecture) を TDD で是正。CLAUDE.md §0.5 追加・詳細設計 03b §3.5.6 深化・ContainerOrchestratorRunner 本実装までを記録 | Claude |
 | 0.3 | 2026-04-11 | §7.11 追記: MVP 研究シナリオ (IEEE 13 × DER 浸透率 sweep, `test/mvp_try1/`) で end-to-end 実証。先行研究課題 C-1 / C-3 / C-7 / C-10 に対する定量的な達成を記録。§7.12 で論文化可能性を正直に評価 | Claude |
 | 0.4 | 2026-04-11 | §7.12 を **ユーザー視点 (研究者が gridflow を使って論文を書けるか) で全面 revise**。tool-developer 視点 (SoftwareX 論文) は MVP 検証として不適切だったことを明記。ユーザー視点評価では MVP 未達と判定。§7.13 追記: 是正案として機能 A (sweep) + B (pandapower connector) + C (custom metric plugin) を理想設計で一括実装する方針と、`test/mvp_try2/` での再検証 scenario を定義 | Claude |
+| 0.5 | 2026-04-22 | §5.1 追記: MVP 検証 (try2-try7) で発見された設計ギャップ 3 件 (metric parametric evaluation / per-experiment metrics / CDL canonical input) を Phase 2 持ち越しとして記録。プラグイン構造が研究ワークフローの実態と乖離していた教訓を反映 | Claude |
 
 ---
 
@@ -175,6 +176,72 @@ MVP スコープ外として明示的に見送った項目:
 - **ExperimentResult の BranchResult / GeneratorResult / RenewableResult 実データ化**:
   Orchestrator は NodeResult のみ集約 (OpenDSSTranslator は Topology 抽出のみ)
 - **HybridSync / FederationDriven の時間同期戦略**: lockstep のみ
+
+### 5.1 MVP 検証 (try2-try7) で発見された設計ギャップ
+
+MVP 検証 (test/mvp_try2 〜 try7) で、研究者の実際のワークフローとプラグイン
+インターフェースの不整合が判明した。以下を Phase 2 で対処する。
+
+#### 5.1.1 Metric parametric evaluation (最優先)
+
+**問題**: 現在の MetricCalculator は 1 プラグイン = 1 固定パラメータで、
+sweep 内で metric パラメータ (e.g., 電圧閾値) を変えられない。
+研究者が「同一シミュレーション結果に異なる閾値で metric を再計算したい」
+ワークフローを公式にサポートしていない。
+
+try4 では 3 閾値 × 3 プラグイン × 3 sweep で同一シミュレーションを 3 回実行した
+(非効率)。try5-7 では child experiment JSON から raw voltage を直接読む
+迂回コードを書いた (プラグイン構造をバイパス)。
+
+**対応案**:
+
+```yaml
+# 案 A: metric パラメータを sweep 軸に追加
+axes:
+  - name: voltage_low
+    type: linspace
+    start: 0.90
+    stop: 0.95
+    n: 11
+    target: metric.voltage_low   # metric パラメータへの binding
+```
+
+```bash
+# 案 B: post-processing コマンド (simulation と metric 計算を分離)
+gridflow sweep --plan plan.yaml --output raw/      # simulation のみ
+gridflow evaluate --results raw/ --metric "hc:HC(voltage_low=0.90)"
+gridflow evaluate --results raw/ --metric "hc:HC(voltage_low=0.95)"
+```
+
+案 B はアーキテクチャ的に clean (simulation と analysis の責務分離) だが、
+案 A は既存 sweep_plan.yaml の自然な拡張。両案は排他でなく併用可能。
+
+**根拠**: try4 (3 閾値比較)、try5 (HCA-R, 11 α 点)、try7 (HC₅₀, 101 θ 点)
+の全てが「同一 simulation data に対する parametric metric evaluation」を
+必要としており、研究ワークフローの本質的要件。
+
+#### 5.1.2 Per-experiment metric 値の sweep result 内保持
+
+**問題**: 現在の SweepResult は aggregated_metrics のみ保持。
+per-experiment metric 値の list が含まれないため、
+分位点計算・ヒストグラム・bootstrap resampling 等の下流分析で
+child experiment JSON を全件読み直す必要がある。
+
+try5-7 の `hcar_metric.py:load_placements_from_sweep()` は n=1000 件の
+child JSON を個別に open() しており、I/O コストが大きい。
+
+**対応案**: SweepResult に `per_experiment_metrics: list[dict[str, float]]` を追加。
+aggregated_metrics と並行して、per-experiment の raw metric 値を保持する。
+
+#### 5.1.3 CDL canonical network input (cross-solver 検証)
+
+**問題**: try3, try6 で 2 フィーダー (IEEE 13 / MV ring) を比較したが、
+ソルバーとトポロジが交絡した。同一ネットワークを OpenDSS と pandapower の
+両方で解くには CDL canonical input format が必要。
+
+**対応案**: REQ-F-003 の input 側拡張として、CDL → OpenDSS .dss / pandapower network
+の双方向変換を実装。Phase 2 で IEEE 13 を pandapower でも解けるようにし、
+solver effect と topology effect を分離する。
 
 ---
 

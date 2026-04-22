@@ -1,0 +1,34 @@
+# MVP try 2 — IEEE 13 sweep base pack (OpenDSS path)
+#
+# This is the *base* pack the gridflow.usecase.sweep.SweepOrchestrator
+# derives 500 child packs from. The sweep_plans/opendss_sweep.yaml file
+# overrides ``parameters.pv_bus`` and ``parameters.pv_kw`` for each
+# child run; the OpenDSSConnector reads them and inserts a runtime PV
+# Generator before solving.
+
+pack:
+  name: ieee13_sweep_base
+  version: "1.0.0"
+  description: >
+    IEEE 13-node feeder base for stochastic hosting capacity sweeps.
+    The pack carries a parameterised PV slot (pv_bus / pv_kw / pv_kv /
+    pv_phases / pv_conn) that the OpenDSSConnector inserts at runtime.
+  author: gridflow mvp_try2
+  connector: opendss
+  seed: 42
+
+network:
+  master_file: ieee13_sweep_base.dss
+
+parameters:
+  master_file: ieee13_sweep_base.dss
+  voltage_base_kv: 4.16
+  source_bus: "650"
+  max_iterations: 100
+  tolerance: 0.0001
+  # PV slot — defaults are baseline (0 kW = no PV).
+  pv_bus: "671.1.2.3"
+  pv_kw: 0.0
+  pv_kv: 4.16
+  pv_phases: 3
+  pv_conn: "Delta"

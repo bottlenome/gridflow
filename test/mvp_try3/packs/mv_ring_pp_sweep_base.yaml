@@ -1,0 +1,33 @@
+# MVP try 3 — pandapower MV open-ring 7-bus sweep base pack
+#
+# Cross-topology counterpart of ieee13_sweep_base.yaml. Uses pandapower's
+# built-in ``simple_mv_open_ring_net`` factory: a 7-bus radial MV
+# distribution feeder (20 kV) with baseline voltages inside Range B
+# (0.9922 <= V <= 1.0000), making it a clean target for stochastic HCA.
+#
+# Note: This is a DIFFERENT physical network from IEEE 13 (4.16 kV,
+# 13 nodes). The comparison is cross-topology, not cross-solver.
+# True cross-solver validation on the same network requires CDL
+# canonical input format (Phase 2 scope).
+
+pack:
+  name: pp_mv_ring_sweep_base
+  version: "1.0.0"
+  description: >
+    pandapower simple MV open-ring distribution feeder (7-bus, 20 kV)
+    used as base for stochastic hosting capacity sweeps. The pack
+    carries a parameterised PV slot (pv_bus / pv_kw) that the
+    PandaPowerConnector inserts via pp.create_sgen before solving.
+  author: gridflow mvp_try3
+  connector: pandapower
+  seed: 42
+
+network:
+  master_file: mv_ring_pp_sweep_base.yaml     # placeholder; pandapower
+                                              # builds the network from
+                                              # parameters.pp_network
+
+parameters:
+  pp_network: simple_mv_open_ring_net
+  pv_bus: 3
+  pv_kw: 0.0

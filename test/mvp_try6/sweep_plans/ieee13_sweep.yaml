@@ -1,0 +1,31 @@
+# MVP try 6 — IEEE 13 base sweep for 2-feeder HCA-R comparison.
+# Same configuration as try5 (n=1000, seeds 100/200).
+
+sweep:
+  id: ieee13_hcar_t6
+  base_pack_id: ieee13_sweep_base@1.0.0
+  aggregator: statistics
+  seed: 42
+
+axes:
+  - name: pv_bus
+    type: random_choice
+    values:
+      - "671.1.2.3"
+      - "675.1.2.3"
+      - "634.1.2.3"
+      - "680.1.2.3"
+      - "684.1.3"
+      - "611.3"
+      - "646.2.3"
+      - "645.2"
+      - "632.1.2.3"
+      - "633.1.2.3"
+    n_samples: 1000
+    seed: 100
+  - name: pv_kw
+    type: random_uniform
+    low: 100.0
+    high: 2000.0
+    n_samples: 1000
+    seed: 200

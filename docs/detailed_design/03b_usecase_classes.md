@@ -443,6 +443,52 @@ py-dss-interface経由でOpenDSSエンジンを操作する具象コネクタ。
 
 **OpenDSSTranslator** はOpenDSS固有のデータ構造（ノード電圧配列、線路電流配列等）とCDLクラス（Topology, Asset, TimeSeries, Metric）間の変換を担う。
 
+### 3.5.4a PandaPowerConnector / PandapowerTranslator（Phase 2 拡張）
+
+**モジュール:** `gridflow.adapter.connector.pandapower`
+**レイヤー:** Adapter
+
+pandapower は Python native の電力系統解析ライブラリ。OpenDSS と比較して以下の特性がある:
+
+| 特性 | OpenDSS | pandapower |
+|---|---|---|
+| 主要入力形式 | `.dss` テキスト | Python object (pandapower network) |
+| 三相 | 詳細 (phase-by-phase) | 対称近似が中心 (三相非対称は拡張) |
+| Jacobian 取得 | SystemY からの計算 | `net._ppc['internal']['J']` 直接取得 |
+| 組込フィーダー | なし | `pandapower.networks.*` で豊富 |
+
+#### 設計の焦点
+
+pandapower は OpenDSSConnector と同じ `ConnectorInterface` Protocol を実装する。違いはすべて連携のいインターフェース内部で吸収する:
+
+1. **ネットワーク構築**: `pp.networks.<factory_name>()` を動的に呼び出す。pack.parameters の `pp_network` 属性に factory 名を指定
+2. **PV 注入**: `pp.create_sgen(net, bus=..., p_mw=...)` で静止型 generator として実装
+3. **潮流解**: `pp.runpp(net)` で実行。結果は `net.res_bus.vm_pu` で取得
+4. **bus 名マッピング**: pandapower は integer index を使うため、bus 名は `str(index)` で表現
+
+#### PandapowerTranslator
+
+**モジュール:** `gridflow.adapter.connector.pandapower_translator`
+
+pandapower network object と CDL (Topology / Asset / TimeSeries / Metric) 間の双方向変換。
+
+| メソッド | 説明 |
+|---|---|
+| `to_canonical(net)` | pandapower network → CDL Topology + Asset 群 |
+| `from_canonical(topology, assets)` | CDL → pandapower network (cross-solver 検証の基盤, REQ-F-003 拡張) |
+
+#### Cross-solver 検証への寄与
+
+`from_canonical()` を OpenDSSTranslator と PandapowerTranslator の両方が実装すると、CDL が**第三の中間表現**として機能し、以下が可能になる:
+
+```
+.dss (OpenDSS)  ─┐
+                 ├→ to_canonical → CDL → from_canonical ─┬→ OpenDSS network
+.yaml (pp)      ─┘                                       └→ pandapower network
+```
+
+MVP try6 で判明した「solver と topology が交絡する」問題 (§5.1.3) を、同一 CDL を両 solver に流し込むことで解消できる。
+
 ### 3.5.5 HealthStatus（StepResult は 03e へ移設）
 
 **モジュール:** `gridflow.usecase.interfaces`
@@ -718,6 +764,238 @@ Strategyパターンを適用し、指標計算ロジックを交換可能にす
 | name | str | 指標名 |
 | value | float | 指標値 |
 | unit | str | 単位 |
+
+---
+
+## 3.6a Sweep 関連クラス設計（REQ-F-016）
+
+### 3.6a.1 設計方針
+
+`SweepPlan` と `SweepOrchestrator` は Phase 1 MVP で先行実装されたが (`gridflow.usecase.sweep_plan`, `gridflow.usecase.sweep`)、正式な設計書記述が欠落していた。Phase 2 で以下を確定する:
+
+1. 既存実装を設計書に正式化
+2. `SweepResult` に `per_experiment_metrics` を追加 (MVP try5-7 の教訓。§5.1.2)
+3. `Aggregator` Protocol の拡張点を明文化
+
+### 3.6a.2 SweepPlan
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+**レイヤー:** UseCase (`@dataclass(frozen=True)`)
+
+パラメータ sweep 計画。`base_pack_id` を起点とし、`axes` で指定したパラメータ軸の組合せを展開して子実験を生成する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| sweep_id | str | sweep の一意識別子 |
+| base_pack_id | str | 全子実験が派生する ScenarioPack ID |
+| axes | tuple[ParamAxis, ...] | パラメータ軸のタプル |
+| aggregator_name | str | 集約戦略名 (AggregatorRegistry で解決) |
+| seed | int | 乱数 seed (再現性保証) |
+
+#### 展開セマンティクス
+
+- 非ランダム軸 (`RangeAxis`, `ChoiceAxis`) → **cartesian 積**
+- ランダム軸 (`RandomSampleAxis`) → **zipped draws** (全ランダム軸は同一 n_samples)
+- 最終展開 = cartesian(non-random) × zipped(random)
+
+#### メソッド
+
+**expand**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし (self の axes を使用) |
+| **Process** | 各軸から sample を取得し、上記セマンティクスで展開。各子実験の params-tuple を生成 |
+| **Output** | `tuple[Params, ...]` — 各子実験のパラメータ割当 |
+
+**plan_hash**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | なし |
+| **Process** | sweep_id + base_pack_id + axes の正規化表現を SHA256 し先頭 16 文字を返す |
+| **Output** | `str` (16 chars) — 結果の provenance 追跡用 |
+
+### 3.6a.3 ParamAxis（Protocol）
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+
+sweep の 1 軸を表す Protocol。具象実装は `RangeAxis`, `ChoiceAxis`, `RandomSampleAxis`。
+
+| プロパティ/メソッド | 型 | 説明 |
+|---|---|---|
+| name (property) | str | `pack.parameters` のキー |
+| is_random (property) | bool | zipped-random グループに属するか |
+| sample() | `tuple[object, ...]` | 決定的な値タプル。ランダム軸は seed で再現可能 |
+
+### 3.6a.4 SweepResult
+
+**モジュール:** `gridflow.usecase.sweep_plan`
+**レイヤー:** UseCase (`@dataclass(frozen=True)`)
+
+Monte Carlo sweep の結果を格納する。**Phase 2 で `per_experiment_metrics` を追加**し、下流の post-processing (SensitivityAnalyzer 等) が child experiment JSON を個別に再読み込みせずに済むようにする。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| sweep_id | str | plan.sweep_id |
+| base_pack_id | str | plan.base_pack_id |
+| plan_hash | str | SweepPlan のハッシュ (provenance) |
+| experiment_ids | tuple[str, ...] | 全子実験 ID (順序保証) |
+| aggregated_metrics | tuple[tuple[str, float], ...] | sweep レベルの集約 metric (mean/max/min/stdev 等) |
+| **per_experiment_metrics** | tuple[tuple[str, tuple[float, ...]], ...] | **Phase 2 追加**: metric 名 → 各実験での値のタプル |
+| elapsed_s | float | 実行時間（秒） |
+| created_at | str | ISO 8601 作成時刻 |
+
+#### Phase 2 追加の根拠
+
+MVP try5-7 では `hcar_metric.py:load_placements_from_sweep()` が n=1000 件の child JSON を個別に open() しており、I/O コストが大きかった。`per_experiment_metrics` を SweepResult に含めることで、SensitivityAnalyzer や CVaR 系 metric が 1 ファイル読むだけで全 per-experiment 値を取得できる。
+
+**互換性**: 既存の `aggregated_metrics` は不変。新フィールドの追加のみ。
+
+### 3.6a.5 Aggregator（Protocol）
+
+**モジュール:** `gridflow.usecase.sweep`
+
+per-experiment の metric 値群から sweep レベルの集約 metric を生成する Strategy。
+
+| メソッド | 型 | 説明 |
+|---|---|---|
+| aggregate(results) | `dict[str, float]` | `list[ExperimentResult]` → 集約 metric dict |
+
+標準実装:
+- `StatisticsAggregator`: mean / median / min / max / stdev
+- `ExtremaAggregator`: min / max のみ
+- 追加実装 (Phase 2): `QuantileAggregator` (25th/75th/95th percentile), `CVaRAggregator` (下位 5% の期待値)
+
+### 3.6a.6 SweepOrchestrator
+
+**モジュール:** `gridflow.usecase.sweep`
+**レイヤー:** UseCase
+
+`SweepPlan` を入力とし、`Orchestrator` を N 回駆動して全子実験を実行、`Aggregator` で集約して `SweepResult` を返す。
+
+#### メソッド
+
+**run**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `plan: SweepPlan` |
+| **Process** | 1. plan.expand() で全子実験パラメータを生成。2. 各子実験用に ScenarioPack を派生 (base_pack_id のコピー + パラメータ上書き)。3. Orchestrator.run() で実行、各 ExperimentResult から metric を抽出。4. **per_experiment_metrics を収集**。5. Aggregator.aggregate() で集約。6. SweepResult を構築 |
+| **Output** | `SweepResult`。plan が axes を持たない場合 `ValueError` |
+
+---
+
+## 3.7 SensitivityAnalyzer 関連クラス設計（REQ-F-016）
+
+### 3.7.1 設計方針
+
+MVP 検証 (try4-try7) で「同一 simulation 結果に対して metric パラメータを変えて再評価したい」という研究ワークフロー要件が判明した。現在の MetricCalculator は 1 プラグイン = 1 固定パラメータであり、閾値 sweep に対応できない。
+
+SensitivityAnalyzer は **Connector の再実行を伴わない post-processing** として UseCase 層に配置する。Connector は step 実行のみを担い、感度分析は Connector の出力 (ExperimentResult 群) を入力とする別 UseCase が担う。
+
+```
+Connector.step()
+    → ExperimentResult (voltage data)
+        → SensitivityAnalyzer.analyze() ← NEW
+            → SensitivityResult (metric vs parameter curve)
+```
+
+この設計は以下の原則に従う:
+- **Connector の責務不変**: step 実行 + フォーマット変換のみ（§3.5.2 と整合）
+- **層境界の維持**: 分析は UseCase 層、Connector は Adapter 層（CLAUDE.md §0.1）
+- **MetricCalculator との一貫性**: Strategy pattern で評価ロジックを注入
+
+### 3.7.2 クラス図
+
+```mermaid
+classDiagram
+    class SensitivityAnalyzer {
+        <<UseCase>>
+        +analyze(experiments: list[ExperimentResult], parameter_name: str, parameter_grid: list[float], metric: MetricCalculator) SensitivityResult
+        +analyze_voltage_matrix(experiments: list[ExperimentResult]) VoltageSensitivityMatrix
+    }
+
+    class SensitivityResult {
+        <<dataclass(frozen=True)>>
+        +feeder_id: str
+        +parameter_name: str
+        +parameter_values: tuple[float, ...]
+        +metric_name: str
+        +metric_values: tuple[float, ...]
+    }
+
+    class VoltageSensitivityMatrix {
+        <<dataclass(frozen=True)>>
+        +bus_ids: tuple[str, ...]
+        +matrix: tuple[tuple[float, ...], ...]
+        +max_singular_value: float
+    }
+
+    SensitivityAnalyzer ..> ExperimentResult : reads
+    SensitivityAnalyzer ..> MetricCalculator : uses
+    SensitivityAnalyzer ..> SensitivityResult : produces
+    SensitivityAnalyzer ..> VoltageSensitivityMatrix : produces
+```
+
+### 3.7.3 SensitivityAnalyzer
+
+**モジュール:** `gridflow.usecase.sensitivity`
+**レイヤー:** UseCase
+
+同一 Monte Carlo sweep の ExperimentResult 群を入力とし、metric パラメータを sweep した感度曲線、または bus 間電圧感度行列を算出する。
+
+#### メソッド
+
+**analyze**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `experiments: list[ExperimentResult]` — 同一 sweep の全実験結果。`parameter_name: str` — sweep 対象の metric パラメータ名 (e.g. "voltage_low")。`parameter_grid: list[float]` — 評価するパラメータ値の grid。`metric: MetricCalculator` — パラメータ変更可能な MetricCalculator インスタンス。`bootstrap_n: int = 0` — bootstrap リサンプル数 (0 なら CI なし) |
+| **Process** | 1. 各実験から voltage data を抽出。2. parameter_grid の各値で MetricCalculator を再初期化し、全実験の metric を再計算。3. 各パラメータ値で mean metric を算出。4. bootstrap_n > 0 なら bootstrap CI を算出。5. SensitivityResult を構築して返却 |
+| **Output** | `SensitivityResult`。parameter_grid 外の値を要求された場合は `ValueError`。experiments が空なら `ValueError` |
+
+**analyze_voltage_matrix**
+
+| 項目 | 内容 |
+|---|---|
+| **Input** | `experiments: list[ExperimentResult]` — 各実験は異なる bus への PV 注入を含む。注入 bus は `ExperimentMetadata.parameters` の `pv_bus` から取得。注入量は `pv_kw` から取得 |
+| **Process** | 1. 各実験の (pv_bus, pv_kw, voltage_vector) を抽出。2. baseline (PV なし) の voltage vector を特定または推定。3. ΔV = V(with PV) - V(baseline) を計算。4. bus ごとに ΔV / ΔP の統計量を集約し感度行列 S を構築。5. S の SVD を計算し、最大特異値と対応する bus を特定 |
+| **Output** | `VoltageSensitivityMatrix`。PV 注入情報が不足する場合は `ValueError` |
+
+### 3.7.4 ツール固有の感度行列取得（Protocol 外拡張）
+
+OpenDSS や pandapower は solver 内部で Jacobian / Y-bus 行列を保持しており、数値微分より精度が高い。これらのツール固有機能は **ConnectorInterface Protocol には追加せず**、具象 Connector クラスのメソッドとして提供する。
+
+```python
+# Adapter 層 (Protocol 外)
+class OpenDSSConnector(ConnectorInterface):
+    # Protocol メソッド (§3.5.2 で定義済み)
+    def initialize(self, pack: ScenarioPack) -> None: ...
+    def step(self, step_index: int) -> ConnectorStepOutput: ...
+    def teardown(self) -> None: ...
+
+    # Protocol 外のツール固有拡張
+    def extract_system_y(self) -> tuple[tuple[complex, ...], ...]:
+        """OpenDSS 固有: SystemY (system admittance matrix) を取得."""
+        ...
+```
+
+SensitivityAnalyzer は `isinstance` による型絞りで利用する:
+
+```python
+# UseCase 層
+if isinstance(connector, OpenDSSConnector):
+    y_matrix = connector.extract_system_y()
+    # Y-bus から電圧感度行列を解析的に導出
+else:
+    # 数値微分 (複数 ExperimentResult の差分) にフォールバック
+```
+
+この設計により:
+- ConnectorInterface の統一性は維持される（Grid2Op / HELICS にも適用可能）
+- ツール固有の高精度手法も利用可能
+- フォールバック (数値微分) が常に存在し、graceful degradation
 
 ---
 

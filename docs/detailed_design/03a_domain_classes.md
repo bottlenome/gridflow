@@ -69,6 +69,16 @@
 | DD-CLS-045 | FederatedConnectorInterface | gridflow.usecase.interfaces | UseCase | HELICS対応コネクタIF | REQ-F-007 |
 | DD-CLS-046 | SimulationTask | gridflow.usecase.scheduling | UseCase | バッチスケジューリング用タスク | REQ-F-002 |
 | DD-CLS-047 | TaskResult | gridflow.usecase.scheduling | UseCase | タスク実行結果 | REQ-F-002 |
+| DD-CLS-050 | SensitivityAnalyzer | gridflow.usecase.sensitivity | UseCase | 感度分析 (post-processing)。同一 simulation 結果に対して metric パラメータを変えて再評価 | REQ-F-016 |
+| DD-CLS-051 | SensitivityResult | gridflow.domain.result | Domain | 感度分析結果。パラメータ軸上の metric 値曲線 + 特徴点 | REQ-F-016 |
+| DD-CLS-052 | VoltageSensitivityMatrix | gridflow.domain.result | Domain | bus 間電圧感度行列。dV_j/dP_i を格納 | REQ-F-016 |
+| DD-CLS-053 | SweepPlan | gridflow.usecase.sweep_plan | UseCase | パラメータ sweep 計画 (軸 + aggregator)。既存実装を設計書に正式化 | REQ-F-016 |
+| DD-CLS-054 | ParamAxis | gridflow.usecase.sweep_plan | UseCase (Protocol) | sweep の 1 軸。RangeAxis/ChoiceAxis/RandomSampleAxis が実装 | REQ-F-016 |
+| DD-CLS-055 | SweepResult | gridflow.usecase.sweep_plan | UseCase | Monte Carlo sweep の結果。per_experiment_metrics を含む (Phase 2 拡張) | REQ-F-016 |
+| DD-CLS-056 | Aggregator | gridflow.usecase.sweep | UseCase (Protocol) | per-experiment metric から aggregated metric への集約戦略 | REQ-F-016 |
+| DD-CLS-057 | EvaluateCommandHandler | gridflow.adapter.cli.commands | Adapter | `gridflow evaluate` CLI ハンドラー (既存結果への metric 再適用) | REQ-F-016 |
+| DD-CLS-058 | PandaPowerConnector | gridflow.adapter.connector.pandapower | Adapter | pandapower 接続実装 (ConnectorInterface 実装) | REQ-F-007 |
+| DD-CLS-059 | PandapowerTranslator | gridflow.adapter.connector.pandapower_translator | Adapter | pandapower ⇔ CDL 変換。cross-solver 検証の基盤 | REQ-F-003, REQ-F-007 |
 
 ---
 
@@ -624,6 +634,42 @@ CDL データの永続化・取得を担う UseCase 層 Protocol。
 | duration_min | float | 停電時間（分） |
 | customers_affected | int | 影響を受けた顧客数 |
 | cause | str | 原因（"fault" \| "maintenance" \| "overload"） |
+
+### 3.4.20 SensitivityResult
+
+**モジュール:** `gridflow.domain.result`
+
+感度分析の結果データモデル。metric パラメータ（e.g. 電圧閾値 θ_low）を sweep した際の metric 値の曲線と特徴点を格納する。`SensitivityAnalyzer` (UseCase 層) が生成する。
+
+Connector の再実行は不要であり、既存の `ExperimentResult` 群を post-processing して生成する点が `SweepResult` との本質的な違いである。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| feeder_id | str | 対象フィーダーの識別子 |
+| parameter_name | str | sweep 対象のパラメータ名（e.g. "voltage_low"） |
+| parameter_values | tuple[float, ...] | パラメータ値の grid |
+| metric_name | str | 評価対象の metric 名（e.g. "hosting_capacity_mw"） |
+| metric_values | tuple[float, ...] | 各パラメータ値での metric 値 |
+| metric_ci95_low | tuple[float, ...] \| None | Bootstrap 95% CI 下限 |
+| metric_ci95_high | tuple[float, ...] \| None | Bootstrap 95% CI 上限 |
+| n_experiments | int | 元の Monte Carlo 実験数 |
+| bootstrap_resamples | int \| None | Bootstrap リサンプル数 |
+
+### 3.4.21 VoltageSensitivityMatrix
+
+**モジュール:** `gridflow.domain.result`
+
+bus 間の電圧感度行列。S[i][j] = ΔV_j / ΔP_i (bus i への有効電力注入 1 MW に対する bus j の電圧変化 pu) を格納する。
+
+`SensitivityAnalyzer` が複数の `ExperimentResult` の差分から数値的に推定するか、ソルバー固有の手法（OpenDSS の SystemY、pandapower の Jacobian）から取得する。後者の場合は Adapter 層の具象 Connector が Protocol 外のメソッドとして提供し、`SensitivityAnalyzer` が `isinstance` で型絞りして利用する。
+
+| 属性 | 型 | 説明 |
+|---|---|---|
+| bus_ids | tuple[str, ...] | bus ID の順序付きリスト |
+| matrix | tuple[tuple[float, ...], ...] | 感度行列 S[i][j] (行 = 注入 bus, 列 = 応答 bus) |
+| max_singular_value | float | S の最大特異値（worst-case 感度の上界） |
+| dominant_injection_bus | str | 最大特異値に対応する注入 bus |
+| dominant_response_bus | str | 最大特異値に対応する応答 bus |
 
 ---
 

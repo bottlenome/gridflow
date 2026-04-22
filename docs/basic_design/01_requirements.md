@@ -58,7 +58,7 @@
 | REQ-F-013 | Leaderboard | ベンチマークリーダーボード | 計画書 3.2 |
 | REQ-F-014 | Team Workspace | チームワークスペース | 計画書 3.2 |
 | REQ-F-015 | Fault Injection | 障害注入テスト | 計画書 3.2 |
-| REQ-F-016 | Sensitivity Sweep | 感度分析スイープ | 計画書 3.2 |
+| REQ-F-016 | Sensitivity Sweep | 感度分析スイープ。同一 simulation 結果に対して metric パラメータ (e.g. 電圧閾値) を変えて再評価する post-processing 機能。Connector の再実行は不要。UseCase 層の SensitivityAnalyzer が担う。MVP try4-7 で「1 sweep = 1 metric パラメータ」の制約が研究ワークフローの障害となった教訓を反映 | 計画書 3.2 |
 
 ### P2: 高度化機能
 
