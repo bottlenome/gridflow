@@ -123,9 +123,12 @@ class EvaluationResult:
         plan_hash: Content hash of the plan; lets callers detect
             tampering when comparing reruns.
         experiment_ids: Ordered tuple of every evaluated experiment ID.
-        per_experiment_metrics: Raw per-experiment metric values,
-            positionally aligned with ``experiment_ids`` (same shape as
-            :attr:`SweepResult.per_experiment_metrics`).
+        per_experiment_metrics: Column-oriented raw per-experiment metric
+            values (same shape and rationale as
+            :attr:`SweepResult.per_experiment_metrics` —
+            ``tuple[tuple[str, tuple[float, ...]], ...]`` sorted by
+            metric name, each value vector positionally aligned with
+            ``experiment_ids``).
         created_at: Wall-clock completion time (UTC).
         elapsed_s: Total evaluation wall time.
     """
@@ -133,24 +136,32 @@ class EvaluationResult:
     evaluation_id: str
     plan_hash: str
     experiment_ids: tuple[str, ...]
-    per_experiment_metrics: tuple[tuple[tuple[str, float], ...], ...]
+    per_experiment_metrics: tuple[tuple[str, tuple[float, ...]], ...]
     created_at: datetime
     elapsed_s: float
 
     def __post_init__(self) -> None:
-        if len(self.per_experiment_metrics) != len(self.experiment_ids):
-            raise ValueError(
-                f"EvaluationResult: per_experiment_metrics length "
-                f"({len(self.per_experiment_metrics)}) must match experiment_ids "
-                f"length ({len(self.experiment_ids)})"
-            )
+        n = len(self.experiment_ids)
+        names = [name for name, _ in self.per_experiment_metrics]
+        if len(names) != len(set(names)):
+            raise ValueError(f"EvaluationResult: duplicate metric names in per_experiment_metrics: {names}")
+        if list(names) != sorted(names):
+            raise ValueError(f"EvaluationResult: per_experiment_metrics must be sorted by metric name, got {names}")
+        for name, values in self.per_experiment_metrics:
+            if len(values) != n:
+                raise ValueError(
+                    f"EvaluationResult: per_experiment_metrics['{name}'] has {len(values)} values "
+                    f"but experiment_ids has {n}"
+                )
 
     def to_dict(self) -> dict[str, object]:
         return {
             "evaluation_id": self.evaluation_id,
             "plan_hash": self.plan_hash,
             "experiment_ids": list(self.experiment_ids),
-            "per_experiment_metrics": [dict(row) for row in self.per_experiment_metrics],
+            # Column-oriented: ``{metric_name: [v0, v1, ...]}`` —
+            # pandas-friendly ``orient="list"`` shape.
+            "per_experiment_metrics": {name: list(values) for name, values in self.per_experiment_metrics},
             "created_at": self.created_at.isoformat(),
             "elapsed_s": self.elapsed_s,
         }
@@ -178,19 +189,23 @@ class Evaluator:
         harness = BenchmarkHarness(metrics=metrics)
 
         experiment_ids: list[str] = []
-        per_experiment: list[tuple[tuple[str, float], ...]] = []
+        # Per-row dict during the loop; transposed to column form once
+        # at the end (matches SweepOrchestrator pattern). See
+        # ``SweepResult.per_experiment_metrics`` docstring for the
+        # column-vs-row design rationale.
+        per_experiment_rows: list[dict[str, float]] = []
         for path in plan.results:
             result = self._loader.load(path)
             experiment_ids.append(result.experiment_id)
             summary = harness.evaluate(result)
-            per_experiment.append(tuple(sorted(summary.values, key=lambda kv: kv[0])))
+            per_experiment_rows.append(dict(summary.values))
 
         elapsed = time.perf_counter() - start_wall
         return EvaluationResult(
             evaluation_id=plan.evaluation_id,
             plan_hash=plan.plan_hash(),
             experiment_ids=tuple(experiment_ids),
-            per_experiment_metrics=tuple(per_experiment),
+            per_experiment_metrics=_columnize(per_experiment_rows),
             created_at=datetime.now(tz=UTC),
             elapsed_s=elapsed,
         )
@@ -299,6 +314,20 @@ def build_evaluation_plan(
         results=tuple(result_paths),
         metrics=tuple(metric_specs),
     )
+
+
+def _columnize(rows: list[dict[str, float]]) -> tuple[tuple[str, tuple[float, ...]], ...]:
+    """Transpose a row-of-dicts into the column-oriented EvaluationResult shape.
+
+    Same semantics as :func:`gridflow.usecase.sweep._columnize_per_experiment`
+    — kept as a private duplicate here so usecase.evaluation does not depend
+    on usecase.sweep. Missing values per row become NaN to keep the
+    column vectors rectangular.
+    """
+    if not rows:
+        return ()
+    metric_names = sorted({name for row in rows for name in row})
+    return tuple((name, tuple(float(row.get(name, float("nan"))) for row in rows)) for name in metric_names)
 
 
 def metric_spec_from_dict(raw: dict[str, object]) -> MetricSpec:

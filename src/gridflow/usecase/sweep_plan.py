@@ -382,14 +382,18 @@ class SweepResult:
             tampering when comparing reruns.
         experiment_ids: Ordered tuple of every child experiment ID.
         aggregated_metrics: Sweep-level reduced metrics in params-tuple form.
-        per_experiment_metrics: Raw per-experiment metric values, one tuple
-            per child experiment, positionally aligned with
-            :attr:`experiment_ids`. Each inner tuple is in canonical
-            sorted ``tuple[tuple[str, float], ...]`` form. Exposed so
-            downstream analysis (quantile / histogram / bootstrap etc.)
-            need not re-open every child ExperimentResult JSON — the
-            research gap documented in
-            ``docs/phase1_result.md`` §5.1.2.
+        per_experiment_metrics: Raw per-experiment metric values in
+            **column-oriented** form. Each outer entry is a
+            ``(metric_name, values)`` pair where ``values`` is a tuple
+            of N floats positionally aligned with :attr:`experiment_ids`
+            (i.e. ``values[i]`` is the metric value for the experiment
+            ``experiment_ids[i]``). The outer tuple is sorted by
+            ``metric_name`` for deterministic round-trip. Column form is
+            chosen because the documented downstream consumers
+            (sensitivity analysis, quantile, bootstrap, histogram —
+            ``docs/phase1_result.md`` §5.1.2) all operate "one metric,
+            many experiments" which is O(1) lookup + O(N) iterate in
+            this layout vs O(N·M) in row-oriented form.
         assignments: Per-child parameter assignment, positionally aligned
             with :attr:`experiment_ids`. Each entry is the
             :class:`ChildAssignment` used to derive the child pack and
@@ -405,18 +409,26 @@ class SweepResult:
     plan_hash: str
     experiment_ids: tuple[str, ...]
     aggregated_metrics: tuple[tuple[str, float], ...]
-    per_experiment_metrics: tuple[tuple[tuple[str, float], ...], ...]
+    per_experiment_metrics: tuple[tuple[str, tuple[float, ...]], ...]
     assignments: tuple[ChildAssignment, ...]
     created_at: datetime
     elapsed_s: float
 
     def __post_init__(self) -> None:
         n = len(self.experiment_ids)
-        if len(self.per_experiment_metrics) != n:
-            raise ValueError(
-                f"SweepResult: per_experiment_metrics length ({len(self.per_experiment_metrics)}) "
-                f"must match experiment_ids length ({n})"
-            )
+        # Column-oriented invariant: every metric vector must have length
+        # N (positionally aligned with experiment_ids), names must be
+        # unique, and the outer sequence must be sorted by metric name.
+        names = [name for name, _ in self.per_experiment_metrics]
+        if len(names) != len(set(names)):
+            raise ValueError(f"SweepResult: duplicate metric names in per_experiment_metrics: {names}")
+        if list(names) != sorted(names):
+            raise ValueError(f"SweepResult: per_experiment_metrics must be sorted by metric name, got {names}")
+        for name, values in self.per_experiment_metrics:
+            if len(values) != n:
+                raise ValueError(
+                    f"SweepResult: per_experiment_metrics['{name}'] has {len(values)} values but experiment_ids has {n}"
+                )
         if len(self.assignments) != n:
             raise ValueError(
                 f"SweepResult: assignments length ({len(self.assignments)}) must match experiment_ids length ({n})"
@@ -429,7 +441,9 @@ class SweepResult:
             "plan_hash": self.plan_hash,
             "experiment_ids": list(self.experiment_ids),
             "aggregated_metrics": dict(self.aggregated_metrics),
-            "per_experiment_metrics": [dict(row) for row in self.per_experiment_metrics],
+            # Column-oriented: ``{metric_name: [v0, v1, ...]}`` —
+            # pandas-friendly ``orient="list"`` shape.
+            "per_experiment_metrics": {name: list(values) for name, values in self.per_experiment_metrics},
             "assignments": [a.to_dict() for a in self.assignments],
             "created_at": self.created_at.isoformat(),
             "elapsed_s": self.elapsed_s,

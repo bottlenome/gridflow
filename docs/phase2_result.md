@@ -5,6 +5,7 @@
 | 版数 | 日付 | 変更内容 | 著者 |
 |---|---|---|---|
 | 0.1 | 2026-04-22 | 初版作成。`docs/phase1_result.md` §5.1 で Phase 2 持ち越しに指定された 3 件 (metric parametric evaluation / per-experiment metrics / CDL canonical network input) を理想設計で一括実装 | Claude |
+| 0.2 | 2026-04-22 | 設計整合レビュー反映: `SweepResult.per_experiment_metrics` / `EvaluationResult.per_experiment_metrics` を **column-oriented** (`tuple[tuple[str, tuple[float, ...]], ...]` sorted by metric name) に変更。設計書 03b §3.6a.4 と一致。row-oriented の実装ミスは §5.1.2 が要求する分析ワークロード (quantile / bootstrap / histogram) で O(N·M) → O(N) になる重大な性能差を持っていたため、CLAUDE.md §0.5.1 「割り切り = インターフェース設計の欠陥」として是正 | Claude |
 
 ---
 
@@ -98,6 +99,39 @@ v0.5 時点 約 4,480 → Phase 2 後 約 **6,780** (約 +51%)。
 - §0.5.1「割り切りはインターフェース設計の欠陥」── prefix 方式は後から metric target だけ特殊化したくなる圧力を蓄積する
 
 `SweepPlan.expand()` の戻り値型を `tuple[Params, ...]` → `tuple[ChildAssignment, ...]` に **破壊的変更**。3 箇所の既存テストを ChildAssignment シグネチャに合わせて書き換え。
+
+### 4.1.1 `per_experiment_metrics` は column-oriented (v0.2 是正)
+
+v0.1 で導入した `per_experiment_metrics` を当初 row-oriented (各 experiment の `tuple[tuple[str, float], ...]` の outer tuple) で実装したが、設計書 03b §3.6a.4 と矛盾していた上、§5.1.2 motivating use case と整合しなかったので v0.2 で column-oriented に是正した。
+
+最終形:
+
+```python
+SweepResult.per_experiment_metrics: tuple[tuple[str, tuple[float, ...]], ...]
+EvaluationResult.per_experiment_metrics: tuple[tuple[str, tuple[float, ...]], ...]
+# 各 outer entry = (metric_name, vector_of_N_floats)
+# vector[i] が experiment_ids[i] に対応 (positional alignment)
+# outer は metric_name で sort 済み (canonical 形)
+```
+
+JSON シリアライズ:
+```json
+"per_experiment_metrics": {"voltage_deviation": [0.04, 0.06, ...], "hc_metric": [1.2, 0.8, ...]}
+```
+
+**根拠**:
+- §5.1.2 が指す downstream consumer (sensitivity analysis / quantile / bootstrap / histogram) は **「1 metric × N experiments」を 1 ベクトルで取得するワークロード**。column-oriented なら O(1) lookup + O(N) iterate で済むのに対し、row-oriented では各アクセスごとに dict 再構築 = O(N·M)
+- pandas / NumPy / Apache Arrow といった analytics エコシステムが column-oriented 前提
+- メモリ上の Python tuple object 数も column の方が ~M 倍少ない (n=1000, m=5 で実測 ~14x)
+
+**不変条件** (`__post_init__` で fail-fast):
+1. metric 名は重複なし
+2. metric 名で昇順ソート (canonical 形)
+3. 各 vector の長さが `len(experiment_ids)` と一致 (rectangular)
+
+**実装ヘルパー**: `gridflow.usecase.sweep._columnize_per_experiment` / `gridflow.usecase.evaluation._columnize`。row-of-dict (Aggregator Protocol の input 形) を column tuple に転置。欠損値は NaN 埋めで rectangular 性を維持。
+
+**テスト**: `test_sweep_plan.py::TestSweepResult` / `test_evaluation.py::TestEvaluationResult` が column 形の構築・to_dict・不変条件を網羅。
 
 ### 4.2 MetricSpec を §5.1.1 A / §5.1.1 B で共通化
 

@@ -194,13 +194,16 @@ class TestEvaluationPlan:
 
 
 class TestEvaluationResult:
-    def test_length_mismatch_rejected(self) -> None:
-        with pytest.raises(ValueError, match="per_experiment_metrics length"):
+    """EvaluationResult.per_experiment_metrics is column-oriented
+    (same shape as SweepResult.per_experiment_metrics)."""
+
+    def test_metric_vector_length_must_match_experiments(self) -> None:
+        with pytest.raises(ValueError, match=r"has 1 values but experiment_ids has 2"):
             EvaluationResult(
                 evaluation_id="e1",
                 plan_hash="h",
                 experiment_ids=("e1", "e2"),
-                per_experiment_metrics=((("m", 1.0),),),
+                per_experiment_metrics=(("m", (1.0,)),),
                 created_at=datetime(2026, 1, 1, tzinfo=UTC),
                 elapsed_s=0.0,
             )
@@ -210,14 +213,35 @@ class TestEvaluationResult:
             evaluation_id="e1",
             plan_hash="h",
             experiment_ids=("x1",),
-            per_experiment_metrics=((("m", 0.5),),),
+            per_experiment_metrics=(("m", (0.5,)),),
             created_at=datetime(2026, 1, 1, tzinfo=UTC),
             elapsed_s=1.0,
         )
         d = r.to_dict()
         assert d["evaluation_id"] == "e1"
         assert d["experiment_ids"] == ["x1"]
-        assert d["per_experiment_metrics"] == [{"m": 0.5}]
+        # Column-oriented JSON: ``{metric_name: [v0, ...]}``.
+        assert d["per_experiment_metrics"] == {"m": [0.5]}
+
+    def test_metric_names_must_be_sorted_and_unique(self) -> None:
+        with pytest.raises(ValueError, match="must be sorted"):
+            EvaluationResult(
+                evaluation_id="e1",
+                plan_hash="h",
+                experiment_ids=("x1",),
+                per_experiment_metrics=(("z", (1.0,)), ("a", (2.0,))),
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                elapsed_s=0.0,
+            )
+        with pytest.raises(ValueError, match="duplicate"):
+            EvaluationResult(
+                evaluation_id="e1",
+                plan_hash="h",
+                experiment_ids=("x1",),
+                per_experiment_metrics=(("a", (1.0,)), ("a", (2.0,))),
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                elapsed_s=0.0,
+            )
 
 
 # ----------------------------------------------------------------- Evaluator
@@ -236,14 +260,13 @@ class TestEvaluator:
         )
         result = Evaluator(result_loader=loader).run(plan)
         assert result.experiment_ids == ("exp-1", "exp-2")
-        assert len(result.per_experiment_metrics) == 2
-        # Both have voltage_deviation populated
-        for row in result.per_experiment_metrics:
-            keys = [name for name, _ in row]
-            assert "voltage_deviation" in keys
+        # Column-oriented: one metric column with 2 per-experiment values.
+        column_dict = dict(result.per_experiment_metrics)
+        assert "voltage_deviation" in column_dict
+        assert len(column_dict["voltage_deviation"]) == 2
 
     def test_same_plugin_two_kwargs_coexist(self) -> None:
-        """The flagship §5.1.1 use case: one plugin, two kwargs, two
+        """The flagship §5.1.1 use case: one plugin, two kwargs, three
         output columns under caller-chosen names."""
         r1 = _make_experiment_result("exp-1", (0.94, 0.96, 0.98))
         loader = _InMemoryLoader({Path("/a/exp-1.json"): r1})
@@ -271,12 +294,13 @@ class TestEvaluator:
         )
         result = Evaluator(result_loader=loader).run(plan)
         assert len(result.experiment_ids) == 1
-        values = dict(result.per_experiment_metrics[0])
+        # Column-oriented: three metric columns, each with 1 per-experiment value.
+        column_dict = dict(result.per_experiment_metrics)
         # voltages = (0.94, 0.96, 0.98):
         # < 0.90 → 0/3; < 0.95 → 1/3; < 0.97 → 2/3
-        assert values["frac_below_090"] == pytest.approx(0.0)
-        assert values["frac_below_095"] == pytest.approx(1 / 3)
-        assert values["frac_below_097"] == pytest.approx(2 / 3)
+        assert column_dict["frac_below_090"][0] == pytest.approx(0.0)
+        assert column_dict["frac_below_095"][0] == pytest.approx(1 / 3)
+        assert column_dict["frac_below_097"][0] == pytest.approx(2 / 3)
 
     def test_plan_hash_recorded(self) -> None:
         r1 = _make_experiment_result("exp-1", (1.0,))

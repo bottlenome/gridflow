@@ -300,7 +300,9 @@ metrics:
         payload = json.loads(out_path.read_text())
         assert payload["evaluation_id"] == "smoke_eval"
         assert payload["experiment_ids"] == [experiment_id]
-        assert "voltage_deviation" in payload["per_experiment_metrics"][0]
+        # Column-oriented JSON: {"voltage_deviation": [<value>], ...}
+        assert "voltage_deviation" in payload["per_experiment_metrics"]
+        assert len(payload["per_experiment_metrics"]["voltage_deviation"]) == 1
 
 
 # json import for the new test class

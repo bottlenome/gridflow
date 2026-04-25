@@ -213,8 +213,12 @@ class SweepOrchestrator:
 
         start_wall = time.perf_counter()
         experiment_ids: list[str] = []
+        # Per-child dict form is the Aggregator Protocol's input. The
+        # column-oriented per_experiment_metrics required by SweepResult
+        # is built once at the end via :func:`_columnize_per_experiment`
+        # so the orchestrator never holds two redundant shapes during
+        # the loop.
         per_experiment_metrics_dicts: list[dict[str, float]] = []
-        per_experiment_metrics_tuples: list[tuple[tuple[str, float], ...]] = []
 
         for idx, assignment in enumerate(assignments):
             child_pack = self._derive_child_pack(base_pack, plan, idx, assignment)
@@ -232,9 +236,6 @@ class SweepOrchestrator:
             harness = self._harness_for_assignment(assignment)
             summary = harness.evaluate(result)
             per_experiment_metrics_dicts.append(dict(summary.values))
-            # Canonical sorted tuple form for the SweepResult field; the dict
-            # form is kept solely for the Aggregator Protocol input.
-            per_experiment_metrics_tuples.append(tuple(sorted(summary.values, key=lambda kv: kv[0])))
             self._persist_child_result(result)
 
         aggregated = aggregator.aggregate(per_experiment_metrics_dicts)
@@ -245,7 +246,7 @@ class SweepOrchestrator:
             plan_hash=plan.plan_hash(),
             experiment_ids=tuple(experiment_ids),
             aggregated_metrics=aggregated,
-            per_experiment_metrics=tuple(per_experiment_metrics_tuples),
+            per_experiment_metrics=_columnize_per_experiment(per_experiment_metrics_dicts),
             assignments=tuple(assignments),
             created_at=datetime.now(tz=UTC),
             elapsed_s=elapsed,
@@ -375,6 +376,34 @@ def build_default_sweep_orchestrator(
 
 
 # ----------------------------------------------------------------- helpers
+
+
+def _columnize_per_experiment(
+    rows: list[dict[str, float]],
+) -> tuple[tuple[str, tuple[float, ...]], ...]:
+    """Transpose row-of-metric-dicts into the column-oriented SweepResult shape.
+
+    Spec: SweepResult.per_experiment_metrics is
+    ``tuple[tuple[str, tuple[float, ...]], ...]`` sorted by metric name,
+    with each value vector positionally aligned with experiment_ids.
+    See SweepResult docstring for the rationale (column form is the
+    natural shape for analytics consumers).
+
+    Missing metrics in any row are filled with NaN so that the resulting
+    column tuples all have the same length N — sweep workflows compute
+    every metric for every child today (BenchmarkHarness.evaluate is
+    total over the metric set), but the helper must remain robust if
+    that ever stops holding (e.g. plugin raises silently in a future
+    version) so consumers do not see ragged vectors.
+    """
+    if not rows:
+        return ()
+    metric_names = sorted({name for row in rows for name in row})
+    columns: list[tuple[str, tuple[float, ...]]] = []
+    for name in metric_names:
+        values = tuple(float(row.get(name, float("nan"))) for row in rows)
+        columns.append((name, values))
+    return tuple(columns)
 
 
 def _builtin_metric_by_name(name: str) -> MetricCalculator | None:

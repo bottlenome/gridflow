@@ -306,9 +306,10 @@ class TestSweepOrchestratorRun:
         assert sorted(seen_kws) == [100.0, 200.0, 300.0]
 
     def test_per_experiment_metrics_are_recorded(self, tmp_path: Path) -> None:
-        """§5.1.2: SweepResult must carry per-child raw metric values so
-        downstream analysis (histogram / quantile / bootstrap) does not
-        need to re-open every child ExperimentResult JSON."""
+        """§5.1.2: SweepResult must carry per-child raw metric values in
+        column-oriented form so downstream analysis (histogram /
+        quantile / bootstrap) gets O(1) lookup + O(N) iterate per
+        metric without re-opening every child ExperimentResult JSON."""
         _, sweep, _ = _make_orchestrator_fixture(tmp_path)
         plan = SweepPlan(
             sweep_id="s1",
@@ -317,16 +318,17 @@ class TestSweepOrchestratorRun:
             aggregator_name="statistics",
         )
         result = sweep.run(plan)
-        assert len(result.per_experiment_metrics) == len(result.experiment_ids) == 3
-        # Each per-experiment entry is the canonical sorted tuple of
-        # (metric_name, value) pairs; all metrics computed by the harness
-        # appear (at least voltage_deviation + runtime).
-        for row in result.per_experiment_metrics:
-            keys = [name for name, _ in row]
-            assert "voltage_deviation" in keys
-            assert "runtime" in keys
-            # sorted by key
-            assert keys == sorted(keys)
+        assert len(result.experiment_ids) == 3
+        # Column-oriented: outer is metric_name → vector of N floats.
+        # Both built-in metrics (voltage_deviation, runtime) appear.
+        column_dict = dict(result.per_experiment_metrics)
+        assert "voltage_deviation" in column_dict
+        assert "runtime" in column_dict
+        assert len(column_dict["voltage_deviation"]) == 3
+        assert len(column_dict["runtime"]) == 3
+        # Sorted by metric name (deterministic canonical form).
+        names = [name for name, _ in result.per_experiment_metrics]
+        assert names == sorted(names)
 
     def test_metric_targeted_axis_reinstantiates_metric_per_child(self, tmp_path: Path) -> None:
         """§5.1.1 Option A: axes with ``target='metric:<name>'`` override
