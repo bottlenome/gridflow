@@ -70,15 +70,25 @@ class PandaPowerConnector(ConnectorInterface):
     # ------------------------------------------------------------------ life
 
     def initialize(self, pack: ScenarioPack) -> None:
+        # Phase 2 §5.1.3: prefer CDL canonical input when the pack carries
+        # one; fall back to the Phase 1 ``pp_network`` factory otherwise.
+        cdl_file = get_param(pack.metadata.parameters, "cdl_network_file")
         pp_network = get_param(pack.metadata.parameters, "pp_network")
-        if not isinstance(pp_network, str) or not pp_network:
-            raise ConnectorError(
-                "pandapower pack requires a 'pp_network' parameter (name of a pandapower.networks factory)",
-                context={"pack_id": pack.pack_id},
-            )
 
         pp = self._load_pandapower()
-        net = self._call_factory(pp, pp_network, pack.pack_id)
+        if isinstance(cdl_file, str) and cdl_file:
+            net = self._build_from_cdl(pack, cdl_file)
+            pp_network_label = f"cdl:{cdl_file}"
+        elif isinstance(pp_network, str) and pp_network:
+            net = self._call_factory(pp, pp_network, pack.pack_id)
+            pp_network_label = pp_network
+        else:
+            raise ConnectorError(
+                "pandapower pack requires either a 'cdl_network_file' parameter "
+                "(path to a CDL network YAML) or a 'pp_network' parameter "
+                "(name of a pandapower.networks factory)",
+                context={"pack_id": pack.pack_id},
+            )
 
         # Optional PV insertion via static generator (sgen).
         pv_kw = get_param(pack.metadata.parameters, "pv_kw")
@@ -113,7 +123,7 @@ class PandaPowerConnector(ConnectorInterface):
                     type="PV",
                 )
 
-        self._state = _SolveState(pp=pp, net=net, pp_network_name=pp_network)
+        self._state = _SolveState(pp=pp, net=net, pp_network_name=pp_network_label)
 
     def step(self, step_index: int) -> ConnectorStepOutput:
         state = self._require_state()
@@ -149,6 +159,35 @@ class PandaPowerConnector(ConnectorInterface):
         if self._state is None:
             raise ConnectorError("PandaPowerConnector.step called before initialize")
         return self._state
+
+    @staticmethod
+    def _build_from_cdl(pack: ScenarioPack, cdl_file: str) -> Any:
+        """Build a pandapower network from a CDL YAML referenced by the pack.
+
+        Resolves ``cdl_file`` relative to the pack's ``network_dir`` so
+        packs stay self-contained (alongside ``.dss`` files used by the
+        OpenDSS connector).
+        """
+        from pathlib import Path
+
+        from gridflow.adapter.network.cdl_to_pandapower import cdl_to_pandapower
+        from gridflow.adapter.network.cdl_yaml_loader import (
+            CDLNetworkLoadError,
+            load_cdl_network_from_yaml,
+        )
+
+        path = Path(cdl_file)
+        if not path.is_absolute():
+            path = pack.network_dir / cdl_file
+        try:
+            network = load_cdl_network_from_yaml(path)
+        except CDLNetworkLoadError as exc:
+            raise ConnectorError(
+                f"failed to load CDL network from {path}: {exc}",
+                context={"pack_id": pack.pack_id, "cdl_file": str(path)},
+                cause=exc,
+            ) from exc
+        return cdl_to_pandapower(network)
 
     @staticmethod
     def _load_pandapower() -> Any:

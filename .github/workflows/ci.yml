@@ -61,8 +61,8 @@ jobs:
       - name: Set up Python
         run: uv python install 3.11
 
-      - name: Install dependencies
-        run: uv sync --frozen --dev
+      - name: Install dependencies (with pandapower for CDL cross-solver tests)
+        run: uv sync --frozen --dev --extra pandapower
 
       - name: Unit + E2E tests (no OpenDSS)
         run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing tests/ -m "not spike"
@@ -102,3 +102,6 @@ jobs:
 
       - name: Build opendss-connector image
         run: docker build -f docker/opendss-connector/Dockerfile -t gridflow/opendss-connector:ci .
+
+      - name: Build pandapower-connector image
+        run: docker build -f docker/pandapower-connector/Dockerfile -t gridflow/pandapower-connector:ci .
