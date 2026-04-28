@@ -256,6 +256,9 @@ Rule 5 (妥協なし) を実行する際、解の参照を **本問題から dom
 が大きい分野** に強制する。同分野 / 隣接分野からの組み合わせは
 "既存技術の組合せ" として novelty が弱い。
 
+**重要 (try10 の失敗教訓)**: 単一の遠隔ドメインを 1 つ持ってくるだけでは
+不十分。**(a) 複数候補の比較** と **(b) invariant 保存の確認** を要する。
+
 **適用法**:
 
 1. 問題の抽象矛盾を 1 文に圧縮 (例: "個体性能向上 vs 集団同期共鳴回避")
@@ -264,8 +267,63 @@ Rule 5 (妥協なし) を実行する際、解の参照を **本問題から dom
    共有が少ない分野) を 10 個以上列挙
 4. 各遠隔ドメインの **機構そのもの** (= 名前ではなく動作原理) を
    本問題に射影
-5. 移植後、**Rule 8 の S6-S7 で再強制テスト** (= 移植先で本当に method
-   が一意化するか)
+5. **複数候補 (≥ 3 個) を並列で抽象化**:
+   各候補について以下を 2 sentence で書く
+   - (a) 元ドメインで **保存される invariant** (mathematical /
+     structural property)
+   - (b) 移植先で **invariant が保存される条件** (target の
+     constraint 構造下で本当に成立するか)
+6. **Invariant 検査**: (a) と (b) の vocabulary を入れ替えて、
+   **元ドメインの暗黙前提** (例: 個体同種性、目的関数の形) が
+   移植先で **満たされるか** を確認
+7. **元の暗黙前提が target で成立しないものは脱落**
+8. 残った候補で **Rule 8 の S6-S7 で再強制テスト**
+9. それでも複数残れば、stakeholder cost (Rule 8 S5) で 1 つに絞る
+
+**try10 phyllotactic charging の失敗例 (本ルールの教訓元)**:
+
+step 5 (複数並列) を skip し phyllotaxis 1 個だけ採用。
+step 6 (invariant 検査) で確認すべきだった暗黙前提:
+
+| 元ドメイン (botany) | 移植先 (EV charging) | 一致? |
+|---|---|---|
+| 葉は同種 | EV は heterogeneous (E_i, τ_i 異なる) | **❌** |
+| 目的 = 被覆均一性 | 目的 = peak load 最小化 | **❌** (積分均一 ≠ max 最小) |
+| 角度配置の continuity | 時間配置の discreteness | ⚠️ |
+
+→ step 6 を踏んでいれば、heterogeneous case で **6% peak gap が
+predicate** できた。Rule 9 v1 (= step 5-6 欠落) が原因で、実験で
+事後発見する羽目になった。
+
+**失敗パターン**:
+- 単一遠隔ドメインを採用 (= step 5 skip) → "1 個試して当たるかどうか"
+  ギャンブルになる。`try10/review_record.md` 参照
+- Invariant の表層しか見ない (= step 6 skip)。例: "irrational
+  rotation で resonance 防止" まで書いて止めると、その下の
+  "同種前提" / "目的一致" を見逃す
+- 候補を出した後 ranking で絞る → Rule 1 (HAI-CDP) と矛盾。
+  Invariant 検査で **mechanical に脱落させる**こと
+
+```
+❌ 悪い例 (try10 phyllo):
+  step 5 で phyllotaxis 1 個だけ採用
+  step 6 を skip (= 表層 invariant "non-resonance" のみ確認)
+  → 実験で initial 仮説 falsify (phyllo は MILP より 6% 悪い)
+
+✅ 良い例 (Rule 9 v2 後):
+  step 5 で 7 候補 (phyllotaxis / polyrhythm / cicada cycles /
+    quantum revival / cellular automaton / antibody maturation /
+    Penrose tiling) を並列抽象化
+  step 6 で各 invariant を検査:
+    - phyllotaxis: 同種前提 ❌ → 脱落
+    - polyrhythm: 同種前提 ❌ → 脱落
+    - antibody maturation: heterogeneity 内蔵 ✅ → 残る
+    - cellular automaton: 局所規則 ✅ → 残る
+  step 7-8 で残候補 (#4, #5) を S6-S7 で絞る
+  → 実験前に invariant 不一致を予測、無駄な実装を回避
+```
+
+
 
 **Domain distance の判定**:
 
@@ -537,3 +595,4 @@ MDPI Energies / IEEE Access 等のよりアクセスしやすい venue では E 
 | 2026-04-22 | §4.2 E-2 に「フィーダー数」チェック項目を追加。try5 で単一 degenerate case のみの実証が MAJOR 指摘となった教訓を反映 |
 | 2026-04-22 | §2.5 Phase 0.5 (アイデア創出) を新設。try2-try7 で AI のアイデアが分布の平均に収束した問題を受け、6 ルール + Novelty Gate を策定。根拠論文 7 本を引用 |
 | 2026-04-28 | §2.5.2 に Rule 7 (乱数アンカリング) / Rule 8 (課題深掘り連鎖 S0-S8) / Rule 9 (TRIZ 遠隔ドメイン移植) を追加。try10 で v1 (Novelty Gate を文献検索なしに通過させた) → v2 (課題深掘り後付け) → v3 (乱数 anchor で phyllotactic charging に到達) の試行錯誤を経て、3 ルールが揃って初めて非妥当 anchor から手法強制が成立することが判明したため。Novelty Gate を 6 → 9 項目に拡張、根拠論文 4 本 (Tversky & Kahneman / de Bono / Niederreiter / Mitchison) を追加引用 |
+| 2026-04-28 | Rule 9 を v2 に拡張。try10 phyllotactic charging が単一遠隔ドメインのワンショット移植のため experiment 後に MILP に対して 6% 劣る (= invariant 不整合) ことを後付け発見した教訓から、step 5-9 を追加: **(a) ≥3 候補の並列抽象化**, **(b) invariant 保存検査** (元ドメイン暗黙前提が target で成立するか), **(c) 機械的脱落** (preservation 不成立で除外), **(d) Rule 8 S6-S7 で残候補から強制絞込**。try10 phyllo の失敗を worked anti-pattern として本文に埋込 (botany の「葉同種」「目的=被覆均一」前提が EV charging で成立しないことを mechanical に確認すべきだった)。AI ideation の "another domain method を 1 個持ってくれば novel になる" バイアス対策 |
