@@ -166,11 +166,13 @@ class PandaPowerConnector(ConnectorInterface):
 
         Resolves ``cdl_file`` relative to the pack's ``network_dir`` so
         packs stay self-contained (alongside ``.dss`` files used by the
-        OpenDSS connector).
+        OpenDSS connector). Delegates to
+        :meth:`PandapowerTranslator.from_canonical` (spec-aligned
+        bidirectional surface — 03b §3.5.4a).
         """
         from pathlib import Path
 
-        from gridflow.adapter.network.cdl_to_pandapower import cdl_to_pandapower
+        from gridflow.adapter.connector.pandapower_translator import PandapowerTranslator
         from gridflow.adapter.network.cdl_yaml_loader import (
             CDLNetworkLoadError,
             load_cdl_network_from_yaml,
@@ -187,7 +189,7 @@ class PandaPowerConnector(ConnectorInterface):
                 context={"pack_id": pack.pack_id, "cdl_file": str(path)},
                 cause=exc,
             ) from exc
-        return cdl_to_pandapower(network)
+        return PandapowerTranslator.from_canonical(network)
 
     @staticmethod
     def _load_pandapower() -> Any:

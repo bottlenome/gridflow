@@ -211,11 +211,13 @@ class OpenDSSConnector(ConnectorInterface):
         """Resolve the pack's CDL YAML and render it to an OpenDSS script.
 
         Kept as a static helper so tests can exercise the CDL → .dss
-        rendering path without a live DSS driver.
+        rendering path without a live DSS driver. Delegates the actual
+        conversion to :meth:`OpenDSSTranslator.from_canonical` (the
+        spec-aligned bidirectional surface — 03b §3.5.4a).
         """
         from pathlib import Path
 
-        from gridflow.adapter.network.cdl_to_dss import cdl_to_dss
+        from gridflow.adapter.connector.opendss_translator import OpenDSSTranslator
         from gridflow.adapter.network.cdl_yaml_loader import (
             CDLNetworkLoadError,
             load_cdl_network_from_yaml,
@@ -232,7 +234,7 @@ class OpenDSSConnector(ConnectorInterface):
                 context={"pack_id": pack.pack_id, "cdl_file": str(path)},
                 cause=exc,
             ) from exc
-        return cdl_to_dss(network, circuit_name=pack.name)
+        return OpenDSSTranslator.from_canonical(network, circuit_name=pack.name)
 
     def _load_driver(self) -> ModuleType | Any:
         try:
