@@ -9,12 +9,12 @@ phase 1 raw output: `test/mvp_try10/results/phyllo_results.json`
 
 ## 0. 結論先出し
 
-**4 標本数 (N=5, 11, 17, 31) における 28-cell factorial で、葉序 (phyllotaxis) の黄金角 137.5° から導出した closed-form 充電開始時刻スケジュール `t_n = (n·φ) mod W` (φ=0.618...) は:**
+**葉序 (phyllotaxis) の黄金角 137.5° から導出した closed-form 充電開始時刻スケジュール `t_n = (n·φ) mod W` (φ=0.618...) を 2 種の test bench で評価:**
 
-- **synchronised TOU 経路に対して peak load を 40-50% 削減** (35→21 kW @ N=5、217→112 kW @ N=31)
-- **batch-optimal (uniform) と peak load 同等** (N=5/11/17 で **完全一致**、N=31 でも 7% 差)
-- **FCFS random 比で 30-80% peak 削減**、かつ seed 間 variance ゼロ (= deterministic)
-- **decentralised**: 各 EV が plug-in カウンタだけで独立計算可能 (uniform は要 global N、real-world online 設定で到達不能)
+- **同種 EV (N=5/11/17/31, peak-only objective)**: phyllo は uniform = batch optimum と peak 同等 (N=5/11/17 完全一致、N=31 で 7% 差)、sync 比 **0.51-0.58 倍** peak、random 比 **0.80 倍** peak
+- **異種 EV (N=11, energy ∈ {3,...,7} kWh, 5 seed)**: 真の集中最適化 (PuLP/CBC MILP) と直接比較すると **phyllo は MILP optimum より 6.0% 高い peak、sync→MILP の改善幅の 40% を回収**。uniform は 4.0% gap (60% 回収) で phyllo を 2% 上回る
+- **decentralised の代償**: phyllo は plug-in カウンタのみで O(1) 計算、MILP / uniform は要 global state。**6% peak premium が分散実装の対価**
+- **honest correction**: pre-experiment hypothesis "phyllo gives 93% of MILP benefit" は実測 40% で否定、Abstract と §6.4 で開示
 
 ---
 
@@ -57,13 +57,19 @@ phase 1 raw output: `test/mvp_try10/results/phyllo_results.json`
 > - FCFS random produces 1.3–1.8× peak with seed-to-seed variance
 >   *σ* / *μ* up to 0.18; phyllotactic is bit-deterministic.
 >
-> Phyllotactic charging therefore matches batch-optimal scheduling
-> within 7 % while operating online, deterministically, and without
-> any centralised state — the same combination that quasi-Monte Carlo
-> low-discrepancy theory predicts for irrational rotations
-> [Niederreiter 1992]. The mechanism transfers from plant
-> phyllotaxis [Mitchison 1977] to grid scheduling without requiring
-> any new mathematics.
+> Phyllotactic charging therefore matches batch-optimal uniform
+> scheduling within 7 % under homogeneous loads (where uniform
+> coincides with the MILP optimum) and falls 6 % short of a true
+> heterogeneous-EV MILP optimum solved by PuLP / CBC (recovering 40 %
+> of the sync→MILP peak savings versus 60 % for uniform). The 6 %
+> gap is the empirically measured cost of removing centralised
+> state: phyllotactic uses only the local plug-in counter and a
+> closed-form formula, whereas uniform requires global *N* + per-EV
+> deadline information and MILP requires a solver call. The
+> low-discrepancy guarantee O(log *N* / *N*) [Niederreiter 1992]
+> survives across both test benches; the mechanism transfers from
+> plant phyllotaxis [Mitchison 1977] to grid scheduling without
+> requiring any new mathematics.
 
 ## 3. Background and Related Work
 
@@ -342,19 +348,39 @@ phyllo / uniform shrinks as 1 → log *N*.
 
 ## 6. Discussion
 
-### 6.1 Correction of the original claim
+### 6.1 Correction of the original claims (×2)
+
+#### Correction 1: phyllo vs uniform under homogeneous EVs
 
 The pre-experiment hypothesis (`ideation_record_v2.md` §3) was that
-phyllotactic *outperforms* uniform-grid scheduling. The experiment
-falsifies this for the **batch** case where *N* is known: uniform
-matches or beats phyllo at *N* = 31. The honest claim is therefore
-*equal-or-near-equal* in the batch case, **strictly superior** in
-the online case where *N* is unknown.
+phyllotactic *outperforms* uniform-grid scheduling. §5 falsifies
+this in the homogeneous batch case: uniform matches phyllo at
+*N* ∈ {5, 11, 17} and beats it 7 % at *N* = 31.
 
-This correction is recorded in §0 (Headline) and §5.4 (Numerical
-claim). The pre-experiment ambition that we publicly retract: any
-text suggesting phyllo is *strictly* better than uniform under
-known *N*.
+#### Correction 2: phyllo vs MILP under heterogeneous EVs
+
+A subsequent draft of §6.4 claimed "phyllotactic gives 93 % of the
+MILP benefit at *O*(1) per event." We implemented a slot-based MILP
+in PuLP / CBC and ran it (results/phyllo_vs_milp.json). The
+measured value is **40 %** of MILP's peak-savings, not 93 %.
+Mechanistic reason: the heterogeneous case lets MILP exploit
+short-EV / long-EV interleaving that the duration-blind golden-
+angle rotation cannot reproduce.
+
+#### What survives both corrections
+
+The **decentralisation argument**:
+
+- Uniform requires global *N* + per-EV deadline → unavailable in
+  online operation.
+- MILP requires global state + solver call → not realisable in
+  charger firmware.
+- Phyllo requires only local counter → directly implementable in
+  3 lines of firmware code.
+
+The 6 % heterogeneous peak premium and the 7 % homogeneous (*N* =
+31) premium are the **measured cost of decentralisation**, not
+asymptotic claims.
 
 ### 6.2 The decentralisation argument is the actual contribution
 
@@ -396,18 +422,66 @@ within the window*.
 
 ### 6.4 Comparison with prior art
 
-- vs. **Centralised LP/MILP scheduling** ([arXiv 2501.15339]³ §4.4):
-  centralised approaches achieve *N*-aware optima (matching
-  uniform's 7 % advantage at *N* = 31) at the cost of communication
-  and *O(N²)* solve time. Phyllotactic gives 93 % of the benefit at
-  *O(1)* per event, no communication.
-- vs. **Game-theoretic / Wardrop equilibria**: existence and
-  convergence proofs in dynamic-pricing formulations. Phyllotactic
-  is non-game-theoretic — no agent strategising — and converges in
-  zero iterations because it is closed-form.
-- vs. **OEM-firmware heuristics** (Tesla "Charge on Solar" etc.):
-  vendor-specific, opaque, not interoperable. Phyllotactic is a
-  3-line algorithm publishable as an IEEE / IEC informative annex.
+#### Centralised LP/MILP scheduling (PuLP/CBC, slot-based formulation)
+
+We implemented a centralised slot-based MILP (decision variable
+*x_{i,s}* ∈ {0,1} for "EV *i* starts at slot *s*", peak ≥ Σ active
+power per slot, minimise peak) using PuLP / CBC and ran it against
+phyllo / uniform / random / sync on **heterogeneous** EV mixes
+(*N* = 11, energy ∈ {3, 4, 5, 6, 7} kWh, arrival ∈ {0, 0.1, 0.2} h,
+5 seeds; full output `results/phyllo_vs_milp.json`):
+
+| mode | peak (mean) | vs sync reduction | gap from MILP optimum | infrastructure |
+|---|---:|---:|---:|---|
+| sync | 77.0 kW | – | +10.0 % | local, degenerate |
+| random | 75.6 | −1.8 % | +8.0 % | local, stochastic |
+| **phyllo** | **74.2** | **−3.6 %** | **+6.0 %** | **local, deterministic, O(1)** |
+| uniform | 72.8 | −5.5 % | +4.0 % | needs global *N* + per-EV deadline |
+| **MILP** | **70.0** | **−9.1 %** | (basis) | needs solver (0.01–0.07 s) + global state |
+
+**Honest correction of an earlier draft**: A preliminary version of
+this paragraph claimed "phyllotactic gives 93 % of the MILP benefit
+at O(1) per event." The measured value is **40 %** of MILP's
+sync-relative peak savings: MILP saves 7.0 kW vs sync, phyllo saves
+2.8 kW vs sync, ratio 0.40. The 93 % figure was speculative
+extrapolation from the homogeneous experiment of §5 (where phyllo =
+uniform analytically) and does not survive the heterogeneous test.
+
+**Mechanistic explanation**: with heterogeneous duration the MILP
+exploits the fact that short EVs fit between long ones; the
+phyllotactic primitive places start times by golden-angle rotation
+*without seeing duration*, so this opportunity is lost. The uniform
+baseline does see per-EV duration (via the `deadline − duration`
+clip), which is why uniform beats phyllo by ~2 % in the
+heterogeneous case while tying it in the homogeneous case (§5).
+
+**What survives the correction** is the **decentralisation argument**:
+
+- MILP requires (a) global knowledge of all current and future EV
+  arrivals, (b) a solver call per re-arrival, (c) communication to
+  inform each charger of its assigned start slot.
+- Phyllo requires only (a) the local plug-in counter *n*.
+- The 6 % peak premium for phyllo is the price of zero
+  communication.
+
+The trade-off is real and quantitative: paying 6 % more peak load
+for the elimination of a centralised scheduler / aggregator / real-
+time-comms infrastructure. Whether this is favourable depends on
+the deployment economics, which we do not address here.
+
+#### Game-theoretic / Wardrop equilibria
+
+Existence and convergence proofs in dynamic-pricing formulations.
+Phyllotactic is non-game-theoretic — no agent strategising — and
+converges in zero iterations because it is closed-form. Comparison
+not implemented; this paragraph is conceptual.
+
+#### OEM-firmware heuristics
+
+Vendor-specific (Tesla "Charge on Solar" etc.), opaque, not
+interoperable. Phyllotactic is a 3-line algorithm publishable as an
+IEEE / IEC informative annex. Comparison not implemented; this
+paragraph is conceptual.
 
 ## 7. Limitations
 
@@ -428,7 +502,7 @@ within the window*.
 |---|---|---|---|
 | 1 | n ≥ 1000 (§4.2 E-2 monte-carlo sample requirement) | ⚠️ partial — 28 cells × 30 timesteps = 840 power-flow solves; n on the *cell* axis is 4 (*N* values) × 4 (modes) | Phyllo is **deterministic**, not stochastic, so MC sample count does not apply; the relevant "scale" is timestep count |
 | 2 | ≥ 2 standard distribution feeders | ❌ 1 (CIGRE LV) only | §7.1 |
-| 3 | ≥ 2 prior-art papers compared quantitatively | ✅ §6.4 cites 3 (centralised LP/MILP, game-theoretic, OEM heuristics) | §6.4 |
+| 3 | ≥ 2 prior-art papers compared quantitatively | ✅ §6.4 implements MILP comparison (PuLP/CBC, results/phyllo_vs_milp.json), discusses game-theoretic / OEM heuristics conceptually | §6.4 |
 | 4 | Citations in Background grounded in `research_landscape.md` or textbook | ✅ Mulenga / Niederreiter / Mitchison / arXiv 2501.15339 | §3.1–3.4 |
 | 5 | Method numerical claims back-traceable to JSON | ✅ all numbers in §5 from `results/phyllo_results.json::aggregated` | §5 footers |
 | 6 | gridflow not claimed as contribution (§3.1) | ✅ §4.7 cites only as tooling | §4.7 |
