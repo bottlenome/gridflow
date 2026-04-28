@@ -305,5 +305,79 @@ metrics:
         assert len(payload["per_experiment_metrics"]["voltage_deviation"]) == 1
 
 
+class TestEvaluateInlineMode:
+    """Phase 2 v0.3 §M4: ``gridflow evaluate --results <json> --metric ...``
+    inline-DSL form. Exercises the parser → EvaluationPlan → Evaluator
+    pipeline without YAML."""
+
+    def test_inline_single_builtin_metric(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        # Run one experiment to land an ExperimentResult JSON on disk.
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+        runner.invoke(app, ["run", "demo@1.0.0", "--connector", "fake", "--format", "plain"])
+        result_jsons = list((gridflow_home / "results").glob("*.json"))
+        assert len(result_jsons) == 1
+        result_path = result_jsons[0]
+
+        out = tmp_path / "eval.json"
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--results",
+                str(result_path),
+                "--metric",
+                "voltage_deviation",
+                "--output",
+                str(out),
+                "--format",
+                "json",
+            ],
+        )
+        assert rv.exit_code == 0, rv.output
+        payload = json.loads(out.read_text())
+        assert "voltage_deviation" in payload["per_experiment_metrics"]
+
+    def test_plan_and_inline_mutually_exclusive(self, gridflow_home: Path, tmp_path: Path) -> None:
+        # Provide both --plan and --metric; should exit 2.
+        eval_yaml = tmp_path / "e.yaml"
+        eval_yaml.write_text(
+            "evaluation:\n  id: demo\n  results:\n    - x.json\nmetrics:\n  - name: voltage_deviation\n",
+            encoding="utf-8",
+        )
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--plan",
+                str(eval_yaml),
+                "--metric",
+                "voltage_deviation",
+            ],
+        )
+        assert rv.exit_code == 2
+
+    def test_neither_plan_nor_inline_rejected(self, gridflow_home: Path) -> None:
+        rv = runner.invoke(app, ["evaluate"])
+        assert rv.exit_code == 2
+
+    def test_inline_requires_at_least_one_metric(self, gridflow_home: Path, tmp_path: Path) -> None:
+        # --results without --metric should fail at argument parse.
+        result_path = tmp_path / "fake.json"
+        result_path.write_text("{}", encoding="utf-8")
+        rv = runner.invoke(app, ["evaluate", "--results", str(result_path)])
+        assert rv.exit_code == 2
+
+
 # json import for the new test class
 import json  # noqa: E402  -- placed here to keep test_cli history-clean for pre-sweep tests

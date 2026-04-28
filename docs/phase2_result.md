@@ -6,6 +6,7 @@
 |---|---|---|---|
 | 0.1 | 2026-04-22 | 初版作成。`docs/phase1_result.md` §5.1 で Phase 2 持ち越しに指定された 3 件 (metric parametric evaluation / per-experiment metrics / CDL canonical network input) を理想設計で一括実装 | Claude |
 | 0.2 | 2026-04-22 | 設計整合レビュー反映: `SweepResult.per_experiment_metrics` / `EvaluationResult.per_experiment_metrics` を **column-oriented** (`tuple[tuple[str, tuple[float, ...]], ...]` sorted by metric name) に変更。設計書 03b §3.6a.4 と一致。row-oriented の実装ミスは §5.1.2 が要求する分析ワークロード (quantile / bootstrap / histogram) で O(N·M) → O(N) になる重大な性能差を持っていたため、CLAUDE.md §0.5.1 「割り切り = インターフェース設計の欠陥」として是正 | Claude |
+| 0.3 | 2026-04-22 | 設計整合 Commit 1 + 2: (1) 設計書 03a/03b §3.6a を実装に合わせて update (M2/M3/M7/M8/M9)。(2) 設計書 03b §3.7 の `SensitivityAnalyzer` を実装 (M5: `gridflow.usecase.sensitivity`、`SensitivityResult` / `VoltageSensitivityMatrix` を Domain 層に追加 = DD-CLS-051/052)。(3) `gridflow evaluate` CLI に inline DSL 形式 (`--results <path> --metric "name:Cls(kw=val)" [--parameter-sweep "kw:start:stop:n"]`) を追加 (M4 案 C: case-A/B 併存)。`--parameter-sweep` 経路は `SensitivityAnalyzer` を起動。382 tests passing (+29) | Claude |
 
 ---
 

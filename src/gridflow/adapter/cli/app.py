@@ -29,6 +29,11 @@ from gridflow.adapter.benchmark.metric_registry import (
     build_default_metric_registry,
     load_metric_plugin,
 )
+from gridflow.adapter.cli.evaluate_dsl import (
+    EvaluateDSLError,
+    parse_metric_spec,
+    parse_parameter_sweep,
+)
 from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
 from gridflow.domain.error import (
@@ -49,13 +54,18 @@ from gridflow.infra.orchestrator import (
 )
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
 from gridflow.usecase.evaluation import (
+    EvaluationPlan,
     Evaluator,
     FilesystemResultLoader,
 )
-from gridflow.usecase.evaluation_yaml_loader import load_evaluation_plan_from_yaml
+from gridflow.usecase.evaluation_yaml_loader import (
+    EvaluationPlanLoadError,
+    load_evaluation_plan_from_yaml,
+)
 from gridflow.usecase.interfaces import ConnectorInterface, OrchestratorRunner
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
+from gridflow.usecase.sensitivity import SensitivityAnalyzer
 from gridflow.usecase.sweep import (
     SweepOrchestrator,
     build_default_aggregator_registry,
@@ -116,16 +126,47 @@ _SWEEP_METRIC_PLUGIN_OPT = typer.Option(
     ),
 )
 _EVAL_PLAN_OPT = typer.Option(
-    ...,
+    None,
     "--plan",
     exists=True,
     readable=True,
-    help="Path to evaluation.yaml",
+    help="Path to evaluation.yaml (case-B form). Mutually exclusive with --results / --metric inline-DSL form.",
+)
+_EVAL_RESULTS_OPT = typer.Option(
+    None,
+    "--results",
+    exists=True,
+    readable=True,
+    help=(
+        "Inline-DSL form (case A): SweepResult JSON, results dir, or single ExperimentResult JSON. "
+        "Combine with --metric (repeatable) and optional --parameter-sweep."
+    ),
+)
+_EVAL_METRIC_OPT = typer.Option(
+    None,
+    "--metric",
+    help=(
+        "Inline metric spec — repeatable. Forms: 'name' (built-in), "
+        "'name:module:Cls', 'name:module:Cls(k=v,...)'. Required with --results."
+    ),
+)
+_EVAL_PARAMETER_SWEEP_OPT = typer.Option(
+    None,
+    "--parameter-sweep",
+    help=(
+        "Trigger SensitivityAnalyzer with one inline-DSL grid: "
+        "'kwarg:start:stop:n'. Requires exactly one --metric with a plugin."
+    ),
+)
+_EVAL_FEEDER_ID_OPT = typer.Option(
+    "unknown",
+    "--feeder-id",
+    help="Provenance label written to SensitivityResult.feeder_id (--parameter-sweep only).",
 )
 _EVAL_OUTPUT_OPT = typer.Option(
     None,
     "--output",
-    help="Write EvaluationResult JSON to this path (default: stdout)",
+    help="Write EvaluationResult / SensitivityResult JSON to this path (default: stdout)",
 )
 _EVAL_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
 
@@ -600,31 +641,75 @@ def sweep_command(
 
 @app.command("evaluate")
 def evaluate_command(
-    plan: Path = _EVAL_PLAN_OPT,
+    plan: Path | None = _EVAL_PLAN_OPT,
+    results: Path | None = _EVAL_RESULTS_OPT,
+    metrics: list[str] | None = _EVAL_METRIC_OPT,
+    parameter_sweep: str | None = _EVAL_PARAMETER_SWEEP_OPT,
+    feeder_id: str = _EVAL_FEEDER_ID_OPT,
     output: Path | None = _EVAL_OUTPUT_OPT,
     fmt: str = _EVAL_FMT_OPT,
 ) -> None:
     """Re-apply metrics to already-simulated experiment results.
 
-    Reads an ``evaluation.yaml`` that references a set of ExperimentResult
-    JSON files (or a SweepResult) plus a list of metrics (built-in or
-    plugin, with per-spec kwargs). Each metric is applied to every
-    referenced experiment and the results are emitted as a single
-    :class:`EvaluationResult` JSON.
+    Two surface forms (M4 — phase2_result.md §C):
 
-    Unlike ``gridflow sweep`` this command runs **no simulation** — it is
-    a pure post-processing step so researchers can re-compute metrics
-    with different kwargs (e.g. an 11-point voltage-threshold sweep)
-    without re-running the underlying N simulations. See
-    ``docs/phase1_result.md`` §5.1.1 (Option B).
+    **Case B — ``--plan eval.yaml``**: full multi-metric evaluation with
+    declarative YAML. Any ``--results``/``--metric`` flags are forbidden
+    in this mode (mutual exclusion).
+
+    **Case A — inline DSL**: ``--results <path>`` plus one or more
+    ``--metric`` flags. Optional ``--parameter-sweep "kw:start:stop:n"``
+    triggers :class:`SensitivityAnalyzer` to vary a metric kwarg across
+    the grid (requires exactly one ``--metric`` with a plugin).
+
+    Unlike ``gridflow sweep`` this command runs **no simulation** — it
+    is a pure post-processing step so researchers can re-compute
+    metrics with different kwargs (e.g. an 11-point voltage-threshold
+    sweep) without re-running the underlying N simulations. See
+    ``docs/phase1_result.md`` §5.1.1.
     """
     ctx = _build_context(fmt=OutputFormat(fmt))
     configure_logging(level="INFO")
     log = get_logger("gridflow.cli.evaluate")
 
+    plan_mode = plan is not None
+    inline_mode = results is not None or bool(metrics)
+    if plan_mode and inline_mode:
+        typer.echo("--plan is mutually exclusive with --results / --metric (M4 case A vs B).")
+        raise typer.Exit(code=2)
+    if not plan_mode and not inline_mode:
+        typer.echo("Provide either --plan <eval.yaml> or --results + --metric.")
+        raise typer.Exit(code=2)
+
+    if plan_mode:
+        assert plan is not None  # for type-narrowing
+        _evaluate_plan_path(ctx, log, plan, output)
+        return
+
+    # Inline DSL path.
+    if not metrics:
+        typer.echo("--results requires at least one --metric.")
+        raise typer.Exit(code=2)
+    assert results is not None
+    if parameter_sweep is not None:
+        _evaluate_parameter_sweep(
+            ctx,
+            log,
+            results=results,
+            metric_strs=metrics,
+            sweep_spec=parameter_sweep,
+            feeder_id=feeder_id,
+            output=output,
+        )
+    else:
+        _evaluate_inline(ctx, log, results=results, metric_strs=metrics, output=output)
+
+
+def _evaluate_plan_path(ctx: CLIContext, log: Any, plan: Path, output: Path | None) -> None:
+    """Case-B path: drive Evaluator from a YAML plan."""
     try:
         eval_plan = load_evaluation_plan_from_yaml(plan)
-    except Exception as exc:
+    except EvaluationPlanLoadError as exc:
         log.error("evaluation_plan_load_failed", plan=str(plan), message=str(exc))
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
@@ -642,29 +727,149 @@ def evaluate_command(
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
 
-    payload = result.to_dict()
+    _write_payload(ctx, output, result.to_dict(), summary=_summary_for_eval_result(result))
+
+
+def _evaluate_inline(
+    ctx: CLIContext,
+    log: Any,
+    *,
+    results: Path,
+    metric_strs: list[str],
+    output: Path | None,
+) -> None:
+    """Case-A path: build an EvaluationPlan in-memory from inline DSL flags."""
+    try:
+        metric_specs = tuple(parse_metric_spec(s) for s in metric_strs)
+    except EvaluateDSLError as exc:
+        log.error("evaluate_dsl_parse_failed", message=str(exc))
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+
+    result_paths = _resolve_inline_result_paths(results)
+    eval_plan = EvaluationPlan(
+        evaluation_id=f"inline:{results.stem}",
+        results=result_paths,
+        metrics=metric_specs,
+    )
+    evaluator = Evaluator(result_loader=FilesystemResultLoader())
+    try:
+        result = evaluator.run(eval_plan)
+    except GridflowError as exc:
+        log.error("evaluation_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    _write_payload(ctx, output, result.to_dict(), summary=_summary_for_eval_result(result))
+
+
+def _evaluate_parameter_sweep(
+    ctx: CLIContext,
+    log: Any,
+    *,
+    results: Path,
+    metric_strs: list[str],
+    sweep_spec: str,
+    feeder_id: str,
+    output: Path | None,
+) -> None:
+    """Case-A + parameter-sweep path: drive SensitivityAnalyzer."""
+    if len(metric_strs) != 1:
+        typer.echo("--parameter-sweep requires exactly one --metric.")
+        raise typer.Exit(code=2)
+    try:
+        metric_spec = parse_metric_spec(metric_strs[0])
+        sweep = parse_parameter_sweep(sweep_spec)
+    except EvaluateDSLError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+    if metric_spec.plugin is None:
+        typer.echo("--parameter-sweep requires a metric plugin (built-in metrics take no kwargs).")
+        raise typer.Exit(code=2)
+
+    # Load experiments via the same FilesystemResultLoader used elsewhere.
+    result_paths = _resolve_inline_result_paths(results)
+    loader = FilesystemResultLoader()
+    experiments = [loader.load(p) for p in result_paths]
+
+    analyzer = SensitivityAnalyzer()
+    try:
+        sensitivity = analyzer.analyze(
+            experiments=experiments,
+            parameter_name=sweep.kwarg_name,
+            parameter_grid=sweep.grid(),
+            metric_plugin=metric_spec.plugin,
+            metric_kwargs_base=dict(metric_spec.kwargs),
+            feeder_id=feeder_id,
+        )
+    except GridflowError as exc:
+        log.error("sensitivity_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    _write_payload(
+        ctx,
+        output,
+        sensitivity.to_dict(),
+        summary={
+            "feeder_id": sensitivity.feeder_id,
+            "parameter_name": sensitivity.parameter_name,
+            "n_grid_points": len(sensitivity.parameter_values),
+            "metric_name": sensitivity.metric_name,
+        },
+    )
+
+
+def _resolve_inline_result_paths(results: Path) -> tuple[Path, ...]:
+    """``--results`` accepts a single JSON, a directory of JSONs, or a SweepResult.
+
+    Mirrors evaluation_yaml_loader semantics so case-A and case-B
+    behave identically once the plan is built.
+    """
+    if results.is_dir():
+        return tuple(sorted(results.glob("*.json")))
+    if results.suffix == ".json":
+        # Could be a SweepResult (has experiment_ids list) or a single
+        # ExperimentResult. Discriminate by content.
+        data = json.loads(results.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "experiment_ids" in data:
+            ids = data["experiment_ids"]
+            if not isinstance(ids, list):
+                raise typer.BadParameter("SweepResult has malformed experiment_ids")
+            paths: list[Path] = []
+            for exp_id in ids:
+                candidate = results.parent / f"{exp_id}.json"
+                if not candidate.exists():
+                    raise typer.BadParameter(f"experiment_id '{exp_id}' has no JSON next to {results}")
+                paths.append(candidate)
+            return tuple(paths)
+        return (results,)
+    raise typer.BadParameter(f"--results must be a JSON file or a directory, got {results}")
+
+
+def _summary_for_eval_result(result: Any) -> dict[str, object]:
+    """Plain-format summary common to plan-based and inline evaluation."""
+    return {
+        "evaluation_id": result.evaluation_id,
+        "n_experiments": len(result.experiment_ids),
+        "elapsed_s": result.elapsed_s,
+        "plan_hash": result.plan_hash,
+    }
+
+
+def _write_payload(
+    ctx: CLIContext,
+    output: Path | None,
+    payload: dict[str, object],
+    *,
+    summary: dict[str, object],
+) -> None:
+    """Write JSON payload to disk (if --output) and emit summary to stdout."""
     if output is not None:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-
-    log.info(
-        "evaluation_completed",
-        evaluation_id=result.evaluation_id,
-        n_experiments=len(result.experiment_ids),
-        elapsed_s=result.elapsed_s,
-    )
-
     if ctx.formatter.format is OutputFormat.PLAIN:
-        typer.echo(
-            ctx.formatter.render(
-                {
-                    "evaluation_id": result.evaluation_id,
-                    "n_experiments": len(result.experiment_ids),
-                    "elapsed_s": result.elapsed_s,
-                    "plan_hash": result.plan_hash,
-                }
-            )
-        )
+        typer.echo(ctx.formatter.render(summary))
     else:
         typer.echo(ctx.formatter.render(payload))
 
