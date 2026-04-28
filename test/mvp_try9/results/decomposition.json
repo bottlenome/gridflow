@@ -1,0 +1,142 @@
+{
+  "cell_summary": [
+    {
+      "feeder": "cigre_lv",
+      "load_level": 0.5,
+      "mean": 0.072266,
+      "median": 0.022727,
+      "n": 256,
+      "stdev": 0.096169,
+      "threshold": 0.94
+    },
+    {
+      "feeder": "cigre_lv",
+      "load_level": 0.5,
+      "mean": 0.072266,
+      "median": 0.022727,
+      "n": 256,
+      "stdev": 0.096169,
+      "threshold": 0.95
+    },
+    {
+      "feeder": "cigre_lv",
+      "load_level": 0.5,
+      "mean": 0.096236,
+      "median": 0.045455,
+      "n": 256,
+      "stdev": 0.088136,
+      "threshold": 0.96
+    },
+    {
+      "feeder": "cigre_lv",
+      "load_level": 1.0,
+      "mean": 0.382369,
+      "median": 0.363636,
+      "n": 256,
+      "stdev": 0.114372,
+      "threshold": 0.94
+    },
+    {
+      "feeder": "cigre_lv",
+      "load_level": 1.0,
+      "mean": 0.505415,
+      "median": 0.477273,
+      "n": 256,
+      "stdev": 0.121517,
+      "threshold": 0.95
+    },
+    {
+      "feeder": "cigre_lv",
+      "load_level": 1.0,
+      "mean": 0.548384,
+      "median": 0.5,
+      "n": 256,
+      "stdev": 0.121834,
+      "threshold": 0.96
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 0.5,
+      "mean": 0.0,
+      "median": 0.0,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.94
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 0.5,
+      "mean": 0.0,
+      "median": 0.0,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.95
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 0.5,
+      "mean": 0.0,
+      "median": 0.0,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.96
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 1.0,
+      "mean": 0.6,
+      "median": 0.6,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.94
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 1.0,
+      "mean": 0.6,
+      "median": 0.6,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.95
+    },
+    {
+      "feeder": "cigre_mv",
+      "load_level": 1.0,
+      "mean": 0.6,
+      "median": 0.6,
+      "n": 256,
+      "stdev": 0.0,
+      "threshold": 0.96
+    }
+  ],
+  "elapsed_s": 301.361,
+  "factor_levels": {
+    "feeder": [
+      "cigre_lv",
+      "cigre_mv"
+    ],
+    "load_level": [
+      0.5,
+      1.0
+    ],
+    "threshold": [
+      0.94,
+      0.95,
+      0.96
+    ]
+  },
+  "factors": [
+    "feeder",
+    "load_level",
+    "threshold"
+  ],
+  "metric": "violation_ratio",
+  "n_base_runs": 1024,
+  "n_metric_rows": 3072,
+  "variance_fractions": {
+    "feeder": 0.001461,
+    "load_level": 0.865783,
+    "residual_and_interactions": 0.12738,
+    "threshold": 0.005376
+  }
+}
