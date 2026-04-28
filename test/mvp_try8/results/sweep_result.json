@@ -1,0 +1,65 @@
+{
+  "aggregated_metrics": {
+    "runtime_max": 0.19604358999998794,
+    "runtime_mean": 0.18871818575000532,
+    "runtime_median": 0.18781656900000598,
+    "runtime_min": 0.18319601500002136,
+    "runtime_stdev": 0.004670900284267767,
+    "voltage_deviation_max": 0.004082449576664299,
+    "voltage_deviation_mean": 0.003603311246804743,
+    "voltage_deviation_median": 0.003601296510888989,
+    "voltage_deviation_min": 0.003128202388776695,
+    "voltage_deviation_stdev": 0.0003556658357778591
+  },
+  "assignments": [
+    {
+      "metric_params": {},
+      "pack_params": {
+        "pv_kw": 0.0
+      }
+    },
+    {
+      "metric_params": {},
+      "pack_params": {
+        "pv_kw": 200.0
+      }
+    },
+    {
+      "metric_params": {},
+      "pack_params": {
+        "pv_kw": 400.0
+      }
+    },
+    {
+      "metric_params": {},
+      "pack_params": {
+        "pv_kw": 600.0
+      }
+    }
+  ],
+  "base_pack_id": "try8_feeder@1.0.0",
+  "created_at": "2026-04-28T01:05:51.701262+00:00",
+  "elapsed_s": 0.7631002739999531,
+  "experiment_ids": [
+    "exp-c82eb914f5aa",
+    "exp-a894804e4185",
+    "exp-153a7835d893",
+    "exp-77894f7f4b4a"
+  ],
+  "per_experiment_metrics": {
+    "runtime": [
+      0.18319601500002136,
+      0.18867897699999503,
+      0.19604358999998794,
+      0.18695416100001694
+    ],
+    "voltage_deviation": [
+      0.004082449576664299,
+      0.0037604861187773672,
+      0.003442106903000611,
+      0.003128202388776695
+    ]
+  },
+  "plan_hash": "ff244093849d365e",
+  "sweep_id": "try8_pv_sweep"
+}

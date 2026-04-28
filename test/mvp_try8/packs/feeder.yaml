@@ -1,0 +1,85 @@
+# 4-bus radial CDL canonical network for Phase 2 v0.3 MVP validation.
+# Solvable by both OpenDSSConnector and PandaPowerConnector via the
+# pack ``cdl_network_file`` parameter (Phase 2 §5.1.3).
+
+network:
+  name: try8_feeder
+  base_voltage_kv: 12.47
+  base_frequency_hz: 60.0
+  source_bus: sourcebus
+
+nodes:
+  - id: sourcebus
+    name: Source
+    node_type: source
+    voltage_kv: 12.47
+  - id: bus1
+    name: Bus1
+    node_type: bus
+    voltage_kv: 12.47
+  - id: bus2
+    name: Bus2
+    node_type: bus
+    voltage_kv: 12.47
+  - id: bus3
+    name: Bus3
+    node_type: bus
+    voltage_kv: 12.47
+
+edges:
+  - id: line_1
+    from: sourcebus
+    to: bus1
+    edge_type: line
+    length_km: 1.0
+    properties:
+      r1_ohm_per_km: 0.3
+      x1_ohm_per_km: 0.5
+      r0_ohm_per_km: 0.5
+      x0_ohm_per_km: 0.7
+      max_i_ka: 1.0
+  - id: line_2
+    from: bus1
+    to: bus2
+    edge_type: line
+    length_km: 1.0
+    properties:
+      r1_ohm_per_km: 0.3
+      x1_ohm_per_km: 0.5
+      r0_ohm_per_km: 0.5
+      x0_ohm_per_km: 0.7
+      max_i_ka: 1.0
+  - id: line_3
+    from: bus2
+    to: bus3
+    edge_type: line
+    length_km: 1.0
+    properties:
+      r1_ohm_per_km: 0.3
+      x1_ohm_per_km: 0.5
+      r0_ohm_per_km: 0.5
+      x0_ohm_per_km: 0.7
+      max_i_ka: 1.0
+
+assets:
+  - id: load_1
+    name: load_1
+    asset_type: load
+    node_id: bus1
+    rated_power_kw: 200.0
+    parameters:
+      pf: 0.95
+  - id: load_2
+    name: load_2
+    asset_type: load
+    node_id: bus2
+    rated_power_kw: 300.0
+    parameters:
+      pf: 0.95
+  - id: load_3
+    name: load_3
+    asset_type: load
+    node_id: bus3
+    rated_power_kw: 400.0
+    parameters:
+      pf: 0.95

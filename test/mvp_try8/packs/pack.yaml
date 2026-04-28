@@ -1,0 +1,23 @@
+# CDL-first Scenario Pack for try8 MVP validation. The same pack works
+# for OpenDSS or pandapower (--connector flag); the network_dir holds
+# the canonical CDL YAML which both connectors materialise via the
+# Phase 2 v0.3 PandapowerTranslator / OpenDSSTranslator.
+
+pack:
+  name: try8_feeder
+  version: "1.0.0"
+  description: >
+    4-bus radial feeder for Phase 2 v0.3 MVP validation. Drives both
+    OpenDSS and pandapower from a single CDL canonical YAML.
+  author: gridflow phase2
+  connector: pandapower
+  seed: 42
+
+network:
+  cdl_network_file: feeder.yaml
+
+parameters:
+  cdl_network_file: feeder.yaml
+  voltage_base_kv: 12.47
+  pv_kw: 0
+  pv_bus: 1
