@@ -121,3 +121,93 @@
 
 ---
 
+## 4. 既存手法サーベイ
+
+VPP / DER aggregation の reliability 問題に対して、既存研究は概ね 4 系統に分類される。本提案 (S8 = trigger-orthogonal portfolio) との関係を表に整理:
+
+| 系統 | 代表手法 | 代表文献 (調査要) | 強み | 限界 (S8 制約に対して) |
+|---|---|---|---|---|
+| **A. 確率計画 (Stochastic Programming, SP)** | 二段階 SP、Sample Average Approximation | Conejo 2010, Wang 2019 | シナリオで不確実性を表現 | 重尾分布のシナリオは少数では再現不能 (S3 違反) |
+| **B. 分布ロバスト最適化 (DRO)** | Wasserstein-ball DRO, moment-based DRO | Esfahani 2018, Liu 2021 | 過去データへの過適合を回避 | ball 内で **暗黙の i.i.d.**、causal 構造を扱わない (S7 違反) |
+| **C. ロバスト最適化 (RO) / Reserve sizing** | Bertsimas-Sim、LOLP-based reserve | Ortega-Vazquez 2009, Zhang 2017 | uncertainty set を陽に設計 | 集合設計に causal 視点なし、保守的 (S6 設計面が薄い) |
+| **D. 学習ベース** | DQN, PPO, multi-agent RL | 2018 以降多数 | データ駆動、適応的 | ブラックボックス → SLA 保証なし、新規トリガー OOD (S4 違反) |
+| **E. 相関 portfolio** | CVaR-based DER portfolio, factor model | Mathieu 2015 | 過去 correlation で分散 | 相関は **後ろ向き**、未観測トリガーに脆弱 (S7 違反) |
+| **F. ゲーム理論 / coalition** | Shapley value DER aggregation | Akhter 2020 | 公平な利益配分 | 運用 reliability に踏み込まず |
+
+### 4.1 提案との差分 (S8 制約での positioning)
+
+**全系統が S7 (causal trigger orthogonality) を扱っていない**。最も近いのは **B (DRO)** だが、Wasserstein ball は確率分布の "近傍" を扱うのみで、**何が変動するか (どの因果ドライバーか)** の構造を入れない。
+
+近年金融分野で **causal portfolio construction** (Lopez de Prado 2019, López de Prado & Lewis 2020) が登場しており、ファクター露出の因果同定を portfolio 構築に組み込む流れがある。本提案はこれを **VPP の文脈に明示的に持ち込む** 初の試み (= 隣接分野の方法論を borrowing する正当な positioning)。
+
+### 4.2 比較実験で要する baseline
+
+Phase 1 では以下を baseline として実装する:
+
+| Baseline | 目的 |
+|---|---|
+| 静的過剰契約 (active の +30%) | 業界実装の lower bound |
+| 確率計画 (SP, シナリオ N=200) | 系統 A の代表 |
+| Wasserstein DRO (radius τ) | 系統 B の代表 |
+| 相関 portfolio (Markowitz on hist. corr.) | 系統 E の代表 |
+| **提案: trigger-orthogonal portfolio** | 本研究 |
+
+評価指標は §後述 (Phase 1 計画) で確定。
+
+---
+
+## 5. Naive NN baseline はなぜ不十分か
+
+「単純にニューラルネットで churn 量を予測して standby 量を反応的に決めればよいのでは?」 という reviewer 的疑問に **事前** に答える。これは Phase 2 査読で確実に問われる質問なので、ideation で論理を確定しておく。
+
+### 5.1 Naive NN の構成 (想定)
+
+```
+入力: t 時点での観測ベクトル
+       (時刻、気象、市場価格、過去 60 分の churn 履歴、ほか)
+出力: t+5 分の churn rate 予測
+ロス: MSE または quantile loss
+動員: 予測値に応じて standby 動員量を決定
+```
+
+### 5.2 5 つの根本問題
+
+| # | 問題 | S 制約と対応 |
+|---|---|---|
+| **1** | **MSE は平均に収束、重尾の tail を過小評価する**。quantile loss でも訓練データに含まれる tail しか捉えない | S3 (重尾) 違反 |
+| **2** | **OOD トリガー** (新規 market rule、initial 観測の cold snap) は学習分布外 → 予測値が外れる | S4 (新規トリガー) 違反 |
+| **3** | **相関 vs 因果の混同**: 学習時に dinner-cook (時刻トリガー) と price spike (市場トリガー) が同時刻に起きる場合、NN は 2 つを区別できない。1 つだけ起きる新規シナリオで予測崩壊 | S7 (因果独立) 違反 |
+| **4** | **SLA 保証不能**: NN は点推定または confidence interval を返すが、SLA は **tail 確率** の制約。点推定 → SLA 換算が非自明、保守側補正で過剰契約に逆戻り | S6 (動員) で fail |
+| **5** | **設計を解いていない**: NN は予測機。**誰を standby に置くべきか** (= S6 設計問題) は別の最適化が要る。NN 単独では問題の 1/2 しか解いていない | S6 (設計) で fail |
+
+### 5.3 提案手法 (trigger-orthogonal portfolio) がなぜ各問題を解くか
+
+| # | NN の問題 | 提案手法の対応 |
+|---|---|---|
+| 1 | 重尾 tail 過小評価 | **予測しない**。trigger-orthogonal 設計は「どんな 1 トリガーに対しても残る」構造的保証で、tail の大きさを直接予測しない |
+| 2 | 新規トリガー OOD | DER を **トリガー基底ベクトル** で表現するため、新規トリガーは既存基底の線形結合として表現可能 (基底次元自体が新規でない限り) |
+| 3 | 相関と因果の混同 | DER の **因果トリガー曝露** を明示的にラベル付け (DER 種別 × 既知トリガー)。学習データの spurious 相関に依存しない |
+| 4 | SLA tail 制約への翻訳 | portfolio 制約は「任意の 1 トリガー失効下でも sum standby capacity ≥ max burst」 = **直接 SLA に翻訳可能** |
+| 5 | 設計を解いていない | 提案手法の出力 = **standby DER 選択そのもの**。設計と動員を分離した S6 構造を直接解く |
+
+### 5.4 NN との **混合** は使えないか
+
+「naive NN は不十分でも、tail を捉える NN + 提案手法 = 強い」案も検討:
+
+- ✅ NN を **動員フェーズ** (= 今補充するか) の検出器として使うのは合理的 (point estimate でもトリガー成立判定は可能)
+- ❌ NN を **設計フェーズ** に入れると S7 違反が再発 (NN は因果を学ばない)
+
+つまり提案手法の **portfolio 設計を NN に置き換える** ことはできない。動員は NN または閾値法でよく、研究 contribution はあくまで **設計フェーズ** にある。
+
+### 5.5 (Phase 1 で要検証) 反証可能性
+
+NN baseline と提案手法を実 trace で比較するとき、提案手法が勝つには **以下の条件が trace に含まれる必要**:
+
+- (a) burst churn の trigger が複数種類 (時刻、気象、市場)
+- (b) 一部 trigger が **訓練/検証で異なる頻度** (= OOD 状況の擬似)
+
+trace 設計でこの 2 条件を担保しないと、NN が偶然 trace を覚えて勝つ可能性がある。Phase 1 の trace synthesis でこれを反映する。
+
+---
+
+
