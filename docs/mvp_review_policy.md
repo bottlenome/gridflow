@@ -52,6 +52,25 @@ Phase 3: プロダクトオーナーによる最終レビュー
 | 原文引用 | Future Work セクションからの引用 |
 | gridflow との関係 | direct / indirect / out-of-scope |
 
+### 2.3 MVP 課題候補プール (try11 以降)
+
+try1-10 の経験で、try ごとに問題定義を作り直すと **学術蓄積が分散** することが判明した
+(try1-9 = HCA、try10 = EV)。これを抑制するため、try11 以降は
+**`docs/mvp_problem_candidates.md` の候補プールから問題を採用する**。
+
+**ルール**:
+
+- 各 try は候補プールの 1 問題を選択し、`mvp_problem_candidates.md` の
+  「採用記録」に try 番号を追記する
+- 同一問題を複数 try で扱ってよい (= 異なる手法を比較可能にする利点)
+- 新しい候補を pool に追加する場合は `mvp_problem_candidates.md` を更新し、
+  本ポリシーの更新履歴にも記録する
+- pool から外れた問題を扱いたい場合は、まず pool に追加してから採用する
+  (= ad-hoc な問題ジャンプを禁止)
+
+**効果**: Rule 7-9 の **手法発想** に思考リソースを集中できる。
+課題側の発散は禁じ、手法側の発散は奨励する分業。
+
 ---
 
 ## 2.5 Phase 0.5 — アイデア創出（AI 平均化回避プロセス）
@@ -596,3 +615,4 @@ MDPI Energies / IEEE Access 等のよりアクセスしやすい venue では E 
 | 2026-04-22 | §2.5 Phase 0.5 (アイデア創出) を新設。try2-try7 で AI のアイデアが分布の平均に収束した問題を受け、6 ルール + Novelty Gate を策定。根拠論文 7 本を引用 |
 | 2026-04-28 | §2.5.2 に Rule 7 (乱数アンカリング) / Rule 8 (課題深掘り連鎖 S0-S8) / Rule 9 (TRIZ 遠隔ドメイン移植) を追加。try10 で v1 (Novelty Gate を文献検索なしに通過させた) → v2 (課題深掘り後付け) → v3 (乱数 anchor で phyllotactic charging に到達) の試行錯誤を経て、3 ルールが揃って初めて非妥当 anchor から手法強制が成立することが判明したため。Novelty Gate を 6 → 9 項目に拡張、根拠論文 4 本 (Tversky & Kahneman / de Bono / Niederreiter / Mitchison) を追加引用 |
 | 2026-04-28 | Rule 9 を v2 に拡張。try10 phyllotactic charging が単一遠隔ドメインのワンショット移植のため experiment 後に MILP に対して 6% 劣る (= invariant 不整合) ことを後付け発見した教訓から、step 5-9 を追加: **(a) ≥3 候補の並列抽象化**, **(b) invariant 保存検査** (元ドメイン暗黙前提が target で成立するか), **(c) 機械的脱落** (preservation 不成立で除外), **(d) Rule 8 S6-S7 で残候補から強制絞込**。try10 phyllo の失敗を worked anti-pattern として本文に埋込 (botany の「葉同種」「目的=被覆均一」前提が EV charging で成立しないことを mechanical に確認すべきだった)。AI ideation の "another domain method を 1 個持ってくれば novel になる" バイアス対策 |
+| 2026-04-29 | §2.3 に「MVP 課題候補プール」を新設。try1-10 で問題定義が試行ごとに発散していた (try1-9 HCA / try10 EV) ため、try11 以降は `docs/mvp_problem_candidates.md` から問題を採用する。3 候補 (Volt-VAR / VPP churn / 復旧順序) を初版に登録。**課題側の発散を禁じ、手法側 (Rule 7-9) の発散に思考リソースを集中** する分業ルール |
