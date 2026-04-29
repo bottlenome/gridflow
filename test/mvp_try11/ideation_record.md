@@ -140,7 +140,47 @@ VPP / DER aggregation の reliability 問題に対して、既存研究は概ね
 
 近年金融分野で **causal portfolio construction** (Lopez de Prado 2019, López de Prado & Lewis 2020) が登場しており、ファクター露出の因果同定を portfolio 構築に組み込む流れがある。本提案はこれを **VPP の文脈に明示的に持ち込む** 初の試み (= 隣接分野の方法論を borrowing する正当な positioning)。
 
-### 4.2 比較実験で要する baseline
+### 4.5 金融 causal portfolio との差分 — 「単純な domain transfer ではない」根拠
+
+**懸念**: もし金融 causal portfolio をそのまま VPP に置けば本提案になるなら、それは単なる domain transfer であり novelty が弱い。
+
+**回答**: 構造が **3 点で異なる**。
+
+#### 差分 (1): 因果関係の所在
+
+| | 金融 causal portfolio | VPP trigger-orthogonal portfolio (本提案) |
+|---|---|---|
+| 因果グラフのノード | **資産 (assets)** | **DER × 外部トリガー** (二部グラフ) |
+| 因果の発見方法 | データから causal discovery (PC アルゴリズム / NOTEARS 等) | **物理 / 契約型から enumerate** (commute, weather, market は既知) |
+| 隠れ confounder | 大量に存在 (株価には未観測 driver) | 限定的 (物理的トリガーは枚挙可能) |
+
+→ 金融は「**何が原因か分からないが因果構造を推定する**」問題、VPP は「**因果トリガーは枚挙可能、各 DER の曝露を構造から導く**」問題。**因果同定の困難さの所在が異なる**。
+
+#### 差分 (2): 不確実性の性質
+
+| | 金融 | VPP |
+|---|---|---|
+| トリガー集合 | open (新規 macro factor が常時出現) | semi-closed (commute / weather / market / comm fault が支配的、新規は稀) |
+| トリガー観測可能性 | 部分観測 (factor 取り出しに統計操作要) | **直接観測可能** (時刻・気温・電力市場価格・通信状態は計測機で取得可) |
+| 損失の制約形式 | utility / variance / VaR | **SLA tail 確率** (規制と契約で外部固定) |
+
+→ VPP は「観測可能な exogenous トリガーへの曝露」を **物理ベクトル化** する形に翻訳できる。金融はこれが (隠れ confounder が多すぎて) できない。**問題の structural decomposition が VPP 側で固有に成立** する。
+
+#### 差分 (3): ロバスト性保証の達成方法
+
+| | 金融 causal portfolio | VPP 本提案 |
+|---|---|---|
+| 保証の根拠 | 因果グラフの正しさに依存 (誤りなら保証崩壊) | トリガー基底の **網羅性**に依存 (基底が exhaustive なら保証成立) |
+| 新規トリガー耐性 | 因果グラフ再学習が必要 | 既存基底の線形結合として表現可能なら再設計不要 |
+| 実装難度 | 因果同定 (高難度) + portfolio 最適化 | 物理曝露ラベリング (中難度) + portfolio 最適化 |
+
+→ 金融版は **データ駆動の弱点** (causal discovery の不安定性) を継承する。VPP 版は **物理事前知識** で causal discovery 部分を bypass できる、これが **転用ではなく独立 contribution** となる根拠。
+
+### 4.6 まとめ: positioning ステートメント
+
+> 金融 causal portfolio は本提案の **概念的祖先** だが、(a) causal graph の所在 (資産間 vs DER × トリガー)、(b) トリガーの observability (隠れ vs 物理計測可能)、(c) 保証の根拠 (グラフ精度 vs 基底網羅性) の 3 点で構造的に異なる。VPP の物理計測可能性と外部トリガーの enumerable 性が、causal discovery を回避した **structural causal portfolio** を可能にする。
+
+### 4.7 Phase 1 比較実験で要する baseline
 
 Phase 1 では以下を baseline として実装する:
 
@@ -150,6 +190,7 @@ Phase 1 では以下を baseline として実装する:
 | 確率計画 (SP, シナリオ N=200) | 系統 A の代表 |
 | Wasserstein DRO (radius τ) | 系統 B の代表 |
 | 相関 portfolio (Markowitz on hist. corr.) | 系統 E の代表 |
+| **金融 causal portfolio (PC アルゴリズム)** | §4.5 への直接反証 baseline (= "金融転用と何が違うか" を示す) |
 | **提案: trigger-orthogonal portfolio** | 本研究 |
 
 評価指標は §後述 (Phase 1 計画) で確定。
