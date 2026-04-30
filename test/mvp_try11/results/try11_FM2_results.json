@@ -1,0 +1,262 @@
+{
+  "config": {
+    "feeders": [
+      "cigre_lv"
+    ],
+    "methods": [
+      "M1",
+      "B1",
+      "B4"
+    ],
+    "scales": [
+      200
+    ],
+    "seeds": [
+      0
+    ],
+    "traces": [
+      "C1",
+      "C7",
+      "C8"
+    ]
+  },
+  "elapsed_s": 46.0,
+  "n_cells": 9,
+  "n_errors": 0,
+  "records": [
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.025,
+      "elapsed_s": 15.58,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.117894538962737,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9262643928795784,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.058333333333333334
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.0,
+      "elapsed_s": 15.588,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B1",
+      "method_label": "B1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.117894538962737,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9262643928795784,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.058333333333333334
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.026,
+      "elapsed_s": 15.909,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 25.113688127176832,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9223114521552658,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.05555555555555555
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.305,
+      "elapsed_s": 15.984,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B4",
+      "method_label": "B4",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.117894538962737,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9262643928795784,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.058333333333333334
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.0,
+      "elapsed_s": 15.178,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B1",
+      "method_label": "B1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 25.113688127176832,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9223114521552658,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.05555555555555555
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.24,
+      "elapsed_s": 15.409,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B4",
+      "method_label": "B4",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 25.113688127176832,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9223114521552658,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.05555555555555555
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.028,
+      "elapsed_s": 15.218,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.443216337165527,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9212789000681402,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.0,
+      "elapsed_s": 15.244,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B1",
+      "method_label": "B1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.121935595915573,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9260716630198323,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.06111111111111111
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.105,
+      "elapsed_s": 15.234,
+      "error": null,
+      "feeder": "cigre_lv",
+      "method": "B4",
+      "method_label": "B4",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 27.121935595915573,
+        "max_voltage_pu": 1.0,
+        "min_voltage_pu": 0.9260716630198323,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0,
+        "voltage_violation_ratio": 0.06111111111111111
+      },
+      "n_standby": 1,
+      "scale": 200,
+      "seed": 0,
+      "trace_id": "C8"
+    }
+  ]
+}
