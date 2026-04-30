@@ -6,6 +6,77 @@
 
 ---
 
+## A. プロジェクト背景・目的・stakeholder
+
+### A.1 gridflow とは
+
+`/home/user/gridflow/` に置かれた **電力系統研究用ツール群** プロジェクト。
+Python ベース、pandapower / pulp / pyaml 等を依存に持つ。配電網シミュレー
+ション + 最適化 + ベンチマーク + シナリオパック管理の hexagonal architecture
+で実装されている (`src/gridflow/{domain,usecase,adapter,infra}`)。
+
+主要設計原則は **`/home/user/gridflow/CLAUDE.md`** に記載 (要必読):
+- §0.1 妥協なき理想設計の原則
+- §0.5 割り切り禁止 + 聞く前に考える原則 (§0.5.3 自問テンプレート)
+
+### A.2 MVP 検証フロー
+
+`/home/user/gridflow/docs/mvp_review_policy.md` で定義された 4 phase loop:
+
+```
+Phase 0   課題収集 (= research_landscape.md / mvp_problem_candidates.md)
+Phase 0.5 アイデア創出 (Rule 1-9) — ← AI 平均化バイアス回避が目的
+Phase 1   仮想研究者による実装 + 実験
+Phase 2   仮想査読者による review (= review_record.md)
+Phase 3   PO による最終 review
+```
+
+各 try (try1, try2, ...) が独立した MVP cycle。本 try11 は **try10 phyllotactic
+charging** の失敗 (= Rule 9 v1 単一遠隔ドメイン) を受けて Rule 9 v2 (≥3 候補
++ invariant 検査) を最初から適用した cycle。
+
+### A.3 try11 の研究目標
+
+**問題**: 仮想発電所 (Virtual Power Plant; VPP) の補助サービス契約に発生する
+重尾 burst churn (= 共通因果トリガーで DER が同期離脱)。
+
+**提案手法**: **Causal-Trigger Orthogonal Portfolio (CTOP)** = DER の物理因果
+トリガー曝露ベクトルを基にした discrete structural causal portfolio MILP。
+動物行動学の sentinel 機構を遠隔ドメイン移植 (Rule 9 v2 で 5 候補から
+invariant 検査により機械的選定)。
+
+**target venue**: IEEE Trans. on Power Systems (PWRS) — top venue。
+revision 受理水準を要件とする。
+
+### A.4 stakeholder と作業形態
+
+- **PO (Product Owner)**: 本リポジトリのオーナー。前セッションで PWRS reviewer
+  ゼロベースレビューを依頼、reviewer C3 (96% voltage 違反は致命的) /
+  C2 (合成データのみは PWRS 不可) を指摘済み。
+- **作業形態**: PO が **コンテナを移動** する都度引き継ぎが発生。本書は
+  この non-持続的環境を前提とした handover document。
+- **コミット運用**: 各 MS (milestone) で smoke test 付き commit + push を
+  徹底 (= 進捗を環境跨いで保存)。
+
+### A.5 Phase D の **真の目的** (本引継書の範囲)
+
+PWRS reviewer C3 (= deployable でない 12% voltage violation) と
+C2 (= framework のみで実データ未取得) の **真の解消**。
+
+成功定義 (Phase D 完了基準):
+
+| 項目 | 達成基準 |
+|---|---|
+| Voltage 違反 (dispatch-induced) | **< 0.1%** (PWRS 水準) |
+| 実データ実験 | **少なくとも 1 source (CAISO 推奨) で sweep 結果取得** |
+| 倫理的 review_record | **「12% 合格」判定を取消、honest re-judge** |
+| 論文の引用整合 | abstract / §1.4 / §6 / §9 が新数値と一致 |
+| 再現可能性 | 全 sweep が seed 固定で deterministic、commit 履歴で trace 可能 |
+
+達成すれば PWRS revision 投稿水準。失敗すれば 後段 §代替パス を参照。
+
+---
+
 ## 0. 現状の正直な評価 (= 未解消の問題)
 
 ### 0.1 C3 の "解消" は不十分
