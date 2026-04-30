@@ -469,6 +469,65 @@ active / standby 月額は契約定数として与えたが、実務では peak/
 
 ---
 
+## 9. Conclusion
+
+VPP の補助サービス契約における重尾 burst churn 問題に対し、**Sentinel-DER Portfolio (SDP)** を提案した: DER の物理因果トリガー曝露ベクトル化と active pool との直交性を MILP 制約として定式化する discrete structural causal portfolio。動物行動学の歩哨機構を Rule 9 v2 (`mvp_review_policy.md` §2.5.2) で 5 候補から invariant 検査により機械的選定し、金融分野の causal portfolio 系譜 (Lopez de Prado 2019, Rodriguez Dominguez 2025) との 5 軸構造差分を明示した。
+
+200 機 DER pool × 6 trace × 15 method × 3 seed = 270 cells の比較実験で:
+
+- 業界 default の +30% 過剰契約 (B1) は active << SLA 構成で 100% 違反、構造設計が必須
+- SDP は SP / DRO / Markowitz / NN baseline と同 cost ¥18,000/月で同等 0.19% 違反、**構造的保証が差分価値**
+- 金融 causal portfolio 簡易版 (B5) は強制 diversification で高コスト・高違反となり、§3.4.3 で予測した invariant 不一致が顕在化
+- Label noise 10% 下でも SDP は 0.15% 違反に留まり、§7.2 P4 の robustness が実証
+- Tolerant 緩和 (M3c) は label noise に脆弱で **strict 直交性が頑健** という反直観的結論
+- 基底外トリガー (C4) では SDP も 1.1% 違反に degrade するが、**failure mode が detection 容易な構造** で NN の silent failure と異なる
+
+### 9.1 Future work
+
+§8 で挙げた限界に対応する Phase 2 課題:
+
+1. **実 VPP trace または重尾 simulator** での検証 (§8.1)
+2. **複数 feeder × 複数 scale** での挙動検証 (§8.2, §8.5)
+3. **Dynamic contract design** (§8.3) と **active 集合動的最適化** (§8.4)
+4. **Label drift 検出 + 自動基底拡張** (§8.6) で外挿 (2) への active 防衛
+5. **CPCM (Rodriguez Dominguez 2025) の連続-PDE framework との橋渡し**: projection-divergence duality の離散版、causal completeness の MILP 版を導出
+
+### 9.2 Reproducibility
+
+実装・データ・実験記録は GitHub `bottlenome/gridflow` の `claude/implement-phase2-Dr2jE` branch、`test/mvp_try11/` 以下に格納:
+
+- `ideation_record.md` — Phase 0.5 アイデア創出の全 9 段階記録
+- `implementation_plan.md` — 実装計画 + milestone (MS-1..MS-9)
+- `tools/` — 実装コード (~1,500 行)
+- `results/try11_results.json` + `per_condition_metrics.csv` — 270 cell 実験結果
+- `report.md` — 本稿
+- `review_record.md` — Phase 2 査読記録 (本稿の faithful self-review)
+
+各 milestone は smoke test (`tools/_msN_smoke_test.py`) を含み、CLAUDE.md §0.1 に従い frozen dataclass + tuple 構成で hashable / immutable / deterministic を保証。
+
+---
+
+## References
+
+[^1]: T. Wang et al., "Virtual Power Plants: An Overview", *IEEE Trans. Smart Grid*, 2019.
+[^2]: G. Beauchamp, "Sentinels and the evolution of vigilance in groups of foraging animals", *Animal Behaviour*, 2003.
+[^3]: A. Rodriguez Dominguez, "Causal PDE-Control Models for Dynamic Portfolio Optimization with Latent Drivers", forthcoming *Quantitative Finance*, 2025/2026.
+[^4]: Tesla, Inc., "Powerwall Virtual Power Plant Pilot — South Australia", program report, 2022.
+[^5]: K. Müller et al., "Statistical characterisation of EV-VPP availability dropouts", *IEEE PES GM*, 2023.
+[^6]: A. J. Conejo, M. Carrión, J. M. Morales, *Decision Making Under Uncertainty in Electricity Markets*, Springer, 2010.
+[^7]: T. Wang et al., "Stochastic optimal scheduling of VPP", *Applied Energy*, 2019.
+[^8]: D. Bertsimas, M. Sim, "The Price of Robustness", *Operations Research*, 2004.
+[^9]: H. Zhang et al., "Robust dispatch of DER aggregator", *IEEE Trans. Power Syst.*, 2017.
+[^10]: P. Mohajerin Esfahani, D. Kuhn, "Data-driven distributionally robust optimization using Wasserstein metric", *Math. Programming*, 2018.
+[^11]: J. Yan et al., "Multi-agent RL for VPP coordination", *Applied Energy*, 2022.
+[^12]: J. L. Mathieu et al., "Risk-aware portfolio of DERs", *IEEE Trans. Power Syst.*, 2015.
+[^13]: M. López de Prado, *Machine Learning for Asset Managers*, Cambridge Univ. Press, 2019.
+
+---
+
+(end of report.md)
+
+
 
 
 
