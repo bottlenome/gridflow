@@ -30,7 +30,7 @@
 
 ## 総合判定 (C3 / C2 改訂版 — F-M2 + Grid-aware + Dataset framework + Phase D 改訂)
 
-**判定: 条件付き合格 (Phase D 拡張で投稿水準に到達見込み、Phase 2 で final sweep 実行が必須)**
+**判定: 条件付き合格 (Phase D 拡張で投稿水準に到達見込み、large-scale sweep + 長期間 real-data は Phase 2 必須)**
 
 先行リビジョンでは「合格 (top venue 水準)」と判定していたが、Phase D レビュー (NEXT_STEPS.md) で以下の倫理的問題が明らかになり、本リビジョンで判定を **格下げ** した:
 
@@ -38,7 +38,7 @@
 2. voltage_violation_ratio が **baseline-only** (既存負荷起因; controller は原理的に repair 不能) と **dispatch_induced** (controller の責任) の合算であり、reviewer に controller の責任として読まれる過大評価だった
 3. 「12% への低減 = 5× reduction」という headline が上記 (1)(2) の caveat なしで提示されていた
 
-Phase D-1〜D-6 実装で上記を構造的に解消する tooling を揃えた (詳細は report.md §8.7.3); ただし full sweep 実行 (D-2 strict-bound F-M2 / D-4 envelope / D-5 real-data) は本リビジョンで未達。**Phase 2 commit cycle で final sweep 実走 + report 数値置換** を完遂すれば top-venue 投稿水準に到達する見込み。
+Phase D-1〜D-6 実装で上記を構造的に解消する tooling を揃えた (詳細は report.md §8.7.3)。さらに **Phase D-5 follow-up (本リビジョン後半)** で実 CAISO データ (OASIS API: `SLD_FCST` v1, RTM 5Min, CA ISO-TAC, 2024-01-01 → 01-08, 2015 timestamps, 15.1–27.7 GW) を取得し、kerber_dorf における M7-strict 動作を実データ × ANSI strict envelope で検証: **SLA 違反 0.0000%, dispatch-induced voltage 違反 0.0000%, 0.985 ≤ V ≤ 1.036 pu で 0.95 ≤ V ≤ 1.05 envelope を clear**。これは PWRS reviewer C2 への構造的回答であり、`MS-D5` smoke test の real-data leg が sha256 pin で再現性を保証する。残るは **Phase 2 commit cycle での large-scale sweep (D-2 strict-bound F-M2 / D-4 full envelope / 1 ヶ月以上の real-data 期間延長 / AEMO・Pecan Street registration ベース取得)** を完遂すれば top-venue 投稿水準に到達する見込み。
 
 ### C3 部分解消 (relaxed-bound 12% → Phase D で内訳分離 / strict-bound へ移行)
 
