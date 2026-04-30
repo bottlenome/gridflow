@@ -406,6 +406,135 @@ def synth_c5_frequency_shift(
 # ----------------------------------------------------------------- C6 (label noise)
 
 
+# ----------------------------------------------------------------- C7 (correlation reversal)
+
+
+def synth_c7_correlation_reversal(
+    pool: tuple[DER, ...],
+    *,
+    seed: int = 0,
+    train_days: int = DEFAULT_TRAIN_DAYS,
+    test_days: int = DEFAULT_TEST_DAYS,
+    timestep_min: int = DEFAULT_TIMESTEP_MIN,
+    sla_kw: float = DEFAULT_SLA_TARGET_KW,
+    duration_min: float = 60.0,
+    magnitude: float = 0.7,
+) -> ChurnTrace:
+    """C7 — correlation reversal between train and test periods.
+
+    In the **train** period, ``commute`` and ``weather`` triggers always
+    fire at *the same time of day* (~7 a.m.) — a strong positive
+    correlation that data-driven methods (Markowitz, NN) learn from.
+
+    In the **test** period, ``commute`` fires at 7 a.m. as before, but
+    ``weather`` shifts to 11 p.m. — the correlation breaks. Methods that
+    relied on the train-period correlation (= they reserved standby
+    based on "weather and commute fire together") will fail in the test
+    period: a 7 a.m. commute event consumes their orthogonal capacity,
+    leaving nothing for the unexpected 11 p.m. weather event.
+
+    SDP, by contrast, labels DERs by *physical exposure axis* and
+    reserves orthogonal-to-each-axis capacity independently — its
+    structural guarantee is correlation-invariant.
+    """
+    rng = random.Random(seed)
+    horizon_days = train_days + test_days
+    n_steps = horizon_days * 24 * 60 // timestep_min
+    events: list[TriggerEvent] = []
+    # Train: commute and weather both at ~7 a.m. each day (correlated)
+    for day in range(train_days):
+        morning_start = day * 24 * 60 + 7 * 60 + rng.uniform(-15, 15)
+        events.append(TriggerEvent("commute", morning_start, duration_min, magnitude))
+        events.append(TriggerEvent("weather", morning_start, duration_min, magnitude))
+    # Test: commute at 7 a.m., weather shifted to 11 p.m. (decorrelated)
+    for day in range(train_days, horizon_days):
+        morning = day * 24 * 60 + 7 * 60 + rng.uniform(-15, 15)
+        evening = day * 24 * 60 + 23 * 60 + rng.uniform(-15, 15)
+        events.append(TriggerEvent("commute", morning, duration_min, magnitude))
+        events.append(TriggerEvent("weather", evening, duration_min, magnitude))
+    events_t = tuple(events)
+    matrix = _build_active_matrix(
+        pool, events_t, n_steps, timestep_min, TRIGGER_BASIS_K4, seed
+    )
+    return ChurnTrace(
+        trace_id="C7", timestep_min=timestep_min, horizon_days=horizon_days,
+        train_days=train_days, test_days=test_days,
+        der_ids=tuple(d.der_id for d in pool),
+        trigger_basis=TRIGGER_BASIS_K4, events=events_t,
+        der_active_status=matrix, sla_target_kw=sla_kw, seed=seed,
+    )
+
+
+# ----------------------------------------------------------------- C8 (scarce orthogonal)
+
+
+def make_scarce_orthogonal_pool(
+    pool: tuple[DER, ...],
+    *,
+    n_utility_keep: int = 5,
+    cost_multiplier: float = 1.0,
+) -> tuple[DER, ...]:
+    """Modify a pool so that fully-orthogonal type (utility_battery) is
+    scarce: only ``n_utility_keep`` utility batteries survive.
+
+    Used to realise C8 trace condition: under scarcity, methods cannot
+    converge to the trivial "buy 3 utility batteries" solution and the
+    structural difference between SDP and baselines is forced into the
+    open. ``cost_multiplier`` optionally inflates standby cost too.
+    """
+    out: list[DER] = []
+    n_util_seen = 0
+    for d in pool:
+        if d.der_type == "utility_battery":
+            n_util_seen += 1
+            if n_util_seen > n_utility_keep:
+                continue
+            # Optionally bump cost
+            if cost_multiplier != 1.0:
+                d = DER(
+                    der_id=d.der_id, der_type=d.der_type,
+                    capacity_kw=d.capacity_kw,
+                    contract_cost_active=d.contract_cost_active * cost_multiplier,
+                    contract_cost_standby=d.contract_cost_standby * cost_multiplier,
+                    trigger_exposure=d.trigger_exposure,
+                )
+        out.append(d)
+    return tuple(out)
+
+
+def synth_c8_scarce_orthogonal(
+    pool: tuple[DER, ...],
+    *,
+    seed: int = 0,
+    train_days: int = DEFAULT_TRAIN_DAYS,
+    test_days: int = DEFAULT_TEST_DAYS,
+    timestep_min: int = DEFAULT_TIMESTEP_MIN,
+    sla_kw: float = DEFAULT_SLA_TARGET_KW,
+) -> ChurnTrace:
+    """C8 trace = same content as C1 single-trigger.
+
+    The C8 *condition* is realised by **modifying the pool** with
+    :func:`make_scarce_orthogonal_pool` before solving. The trace itself
+    is C1-shaped; what changes is the candidate-pool composition.
+    """
+    base = synth_c1_single_trigger(
+        pool, seed=seed, train_days=train_days, test_days=test_days,
+        timestep_min=timestep_min, sla_kw=sla_kw,
+    )
+    # Re-tag trace_id without mutating the frozen instance
+    return ChurnTrace(
+        trace_id="C8", timestep_min=base.timestep_min,
+        horizon_days=base.horizon_days,
+        train_days=base.train_days, test_days=base.test_days,
+        der_ids=base.der_ids, trigger_basis=base.trigger_basis,
+        events=base.events, der_active_status=base.der_active_status,
+        sla_target_kw=base.sla_target_kw, seed=base.seed,
+    )
+
+
+# ----------------------------------------------------------------- C6 (label noise)
+
+
 def perturb_pool_label_noise(
     pool: tuple[DER, ...],
     noise_rate: float,
