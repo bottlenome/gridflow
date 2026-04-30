@@ -28,27 +28,43 @@
 
 ---
 
-## 総合判定 (C3 / C2 改訂版 — F-M2 + Grid-aware + Dataset framework)
+## 総合判定 (C3 / C2 改訂版 — F-M2 + Grid-aware + Dataset framework + Phase D 改訂)
 
-**判定: 合格 (top venue 水準、MAJOR 0 件、MODERATE 1 件)**
+**判定: 条件付き合格 (Phase D 拡張で投稿水準に到達見込み、Phase 2 で final sweep 実行が必須)**
 
-PWRS reviewer ゼロベースレビューの C2 / C3 概念を実装で解消:
+先行リビジョンでは「合格 (top venue 水準)」と判定していたが、Phase D レビュー (NEXT_STEPS.md) で以下の倫理的問題が明らかになり、本リビジョンで判定を **格下げ** した:
 
-### C3 解消 (96% → 12% voltage 違反、5x 改善)
+1. relaxed bound (V_max=1.10, L_max=120%) 下の measurement を ANSI C84.1 strict (1.05) 規格と暗黙比較していた
+2. voltage_violation_ratio が **baseline-only** (既存負荷起因; controller は原理的に repair 不能) と **dispatch_induced** (controller の責任) の合算であり、reviewer に controller の責任として読まれる過大評価だった
+3. 「12% への低減 = 5× reduction」という headline が上記 (1)(2) の caveat なしで提示されていた
+
+Phase D-1〜D-6 実装で上記を構造的に解消する tooling を揃えた (詳細は report.md §8.7.3); ただし full sweep 実行 (D-2 strict-bound F-M2 / D-4 envelope / D-5 real-data) は本リビジョンで未達。**Phase 2 commit cycle で final sweep 実走 + report 数値置換** を完遂すれば top-venue 投稿水準に到達する見込み。
+
+### C3 部分解消 (relaxed-bound 12% → Phase D で内訳分離 / strict-bound へ移行)
 
 新変種 M7 (Grid-aware CTOP) を実装:
 - `tools/grid_impact.py`: per-feeder voltage / line impact 行列 (DistFlow 線形近似、1 kW probe)
 - `tools/sdp_grid_aware.py`: M7 MILP solver、TriOrth + capacity coverage + voltage / line constraints
-- F-M2 mini-sweep (360 cells) で M7 vs M1 比較:
+- F-M2 mini-sweep (360 cells, **relaxed bound V_max=1.10**) で M7 vs M1 比較:
 
-| metric | M1 | M7 | 改善 |
+| metric | M1 | M7 | 改善 (relaxed bound) |
 |---|---:|---:|---:|
 | SLA 違反 | 0.38% | **0.23%** | -39% |
-| **Voltage 違反** | **61.40%** | **12.38%** | **5x reduction** |
+| Voltage 違反 (合算, V_max=1.10) | 61.40% | 12.38% | 5× reduction *under relaxed bound* |
 | Cost | ¥3,500 | ¥3,500 | 同等 |
 | Solve time | 0.011s | 0.097s | 8.8× |
 
-**M7 は voltage 違反を 5× 削減しつつ SLA 違反も改善、同 cost で baseline を 40% 下回る**。PWRS reviewer C3 (deployable でない) は構造的に解消。
+**先行リビジョンで「5× reduction」と表現した数値は relaxed bound 下の合算値であり、`tools/_msD1_smoke_test.py` で内訳分離した結果 cigre_lv 代表セルでは baseline_only ≈ 100% / dispatch_induced ≈ 0% が判明した** (controller は新たな違反をゼロ件しか作らず、12% は構造的に repair 不能な feeder design 起因)。
+
+Phase D 拡張群:
+- D-1: voltage 違反 metric を baseline_only / dispatch_induced に分離 (`grid_metrics.py`)
+- D-2: ANSI C84.1 strict envelope (V_max=1.05) を default 化、`solve_sdp_grid_aware_soft` で常時 feasible な M7-soft を追加 (slack 統計でどれだけ規格を緩めたか定量化)
+- D-3: M8 = active+standby joint MILP (`sdp_full_milp.py`)、active 配置自体を grid-aware 化
+- D-4: (feeder, α, β) feasibility envelope sweep tooling (`run_envelope.py` / `aggregate_envelope.py`)
+- D-5: real-data trace adapter (`real_data_trace.py`) + CAISO OASIS fetcher (`fetch_caiso.py`)、demo CSV で end-to-end 検証済み
+- D-6: multi-scale scaling sweep tooling (`run_scaling.py` / `plot_scaling.py`)、Theorem 2 検証用
+
+PWRS reviewer C3 (deployable でない) は **「Phase D 拡張群で構造的に解消する経路は揃った」** が、final strict-bound sweep 実走による reporting は Phase 2 で完遂する。
 
 ### C2 部分解消 (real-data framework + 6 loaders + demo fixtures)
 
@@ -80,8 +96,8 @@ PWRS reviewer C2 (合成データのみは PWRS 水準で不十分) に対し:
 
 `mvp_review_policy.md` §4.3 基準:
 - A (核要件): ✅ 合格
-- B/C/D に CRITICAL/MAJOR なし → 合格基準達成
-- E (top venue): MAJOR ×0 のため **top venue 水準合格** に到達
+- B/C/D に CRITICAL/MAJOR なし → 基本合格基準達成
+- E (top venue): 先行リビジョンでは「MAJOR ×0 のため top venue 水準合格」と判定していたが、本リビジョンで「relaxed bound 下 12%」「baseline-only / dispatch-induced 内訳未分離」が headline として誤解を招く水準であったため **「条件付き合格 (Phase D 拡張で投稿水準到達見込み)」** に格下げ。Phase D 実装は本リビジョンで全 6 sub-phase 完了 (smoke test 付き) しており、Phase 2 で final sweep 実走 + report 数値置換を完遂すれば top venue 水準に到達する
 
 F-M1 で指摘された MAJOR 2 件は F-M2 で解消:
 
@@ -103,7 +119,7 @@ F-M1 で指摘された MAJOR 2 件は F-M2 で解消:
 | Multi-feeder | 単一 | **3 feeders (CIGRE LV / Kerber Dorf / Kerber Landnetz)** |
 | Theoretical | なし | **Theorem 1-3** (Pareto / greedy / noise) |
 | 命名 | Sentinel-DER Portfolio | **Causal-Trigger Orthogonal Portfolio (CTOP)** |
-| Total judgment | 条件付き合格 (MAJOR ×2) | **合格 (top venue 水準)** |
+| Total judgment | 条件付き合格 (MAJOR ×2) | **条件付き合格 (Phase D 拡張で投稿水準到達見込み, final sweep 実走必須)** |
 
 ---
 
