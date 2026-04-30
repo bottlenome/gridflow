@@ -166,6 +166,129 @@ C2 (= framework のみで実データ未取得) の **真の解消**。
 
 ---
 
+## C. 引継ぎ前の必読リスト
+
+次セッション開始時に **下記の順番で読む** こと。各 file の役割と所要読書時間
+を併記。
+
+| # | path | 役割 | 所要 |
+|---|---|---|---|
+| 1 | `/home/user/gridflow/CLAUDE.md` | プロジェクト原則 (§0.1 妥協なし、§0.5 自己判断) | 10 分 |
+| 2 | `/home/user/gridflow/docs/mvp_review_policy.md` | MVP loop / Rule 1-9 / 査読基準 | 15 分 |
+| 3 | `/home/user/gridflow/docs/mvp_problem_candidates.md` | 候補プール (try11 = 候補 2 採用) | 5 分 |
+| 4 | `/home/user/gridflow/test/mvp_try11/ideation_record.md` | Phase 0.5 全 9 段階 ideation 記録 | 30 分 |
+| 5 | `/home/user/gridflow/test/mvp_try11/implementation_plan.md` | 元の Phase 1 実装計画 | 10 分 |
+| 6 | `/home/user/gridflow/test/mvp_try11/theorems.md` | 理論貢献 (Theorem 1-3) | 10 分 |
+| 7 | `/home/user/gridflow/test/mvp_try11/report.md` | 論文ドラフト (§§1-9) | 30 分 |
+| 8 | `/home/user/gridflow/test/mvp_try11/review_record.md` | 査読記録 (= 倫理修正対象) | 10 分 |
+| 9 | **`本書 NEXT_STEPS.md`** | **= 本書 (引継書、Phase D 設計)** | 30 分 |
+
+合計 **約 2.5 時間** の読書で full context が得られる。
+
+### C.1 急ぎの場合 (= 30 分でキャッチアップ)
+
+時間が無い場合の最低限:
+
+1. CLAUDE.md §0.1 + §0.5 (5 分)
+2. 本書 §A プロジェクト背景 + §F 現在状態 (10 分)
+3. 本書 §0 現状の正直評価 (5 分)
+4. 本書 §10 統合スケジュール推奨 (5 分)
+5. 直近 commit log (`git log --oneline -20`) (5 分)
+
+これで Phase D-1 着手可能 (= D-2/D-7 はやや context 不足)。
+
+---
+
+## D. 環境セットアップ手順
+
+### D.1 既存 .venv の確認
+
+```bash
+cd /home/user/gridflow
+ls -la .venv/bin/python
+# 既存: /home/user/gridflow/.venv/bin/python (Python 3.11.15)
+```
+
+### D.2 依存パッケージ確認
+
+```bash
+.venv/bin/python -c "
+import pulp; print('pulp', pulp.__version__)
+import pandapower; print('pandapower', pandapower.__version__)
+import numpy; print('numpy', numpy.__version__)
+import sklearn; print('sklearn', sklearn.__version__)
+import scipy; print('scipy', scipy.__version__)
+import matplotlib; print('matplotlib', matplotlib.__version__)
+"
+# 期待される出力 (前セッション時点):
+# pulp 3.3.0
+# pandapower 3.4.0
+# numpy 1.26.4
+# sklearn 1.8.0
+# scipy 1.16.3
+# matplotlib 3.10.9
+```
+
+### D.3 PYTHONPATH の設定
+
+すべての commands で以下を export または各実行で先頭に付与:
+
+```bash
+export PYTHONPATH=/home/user/gridflow/src
+# または
+PYTHONPATH=/home/user/gridflow/src .venv/bin/python -m ...
+```
+
+### D.4 既存 cache の確認
+
+```bash
+ls test/mvp_try11/results/grid_impact_cache/
+# 期待: cigre_lv.json, kerber_dorf.json, kerber_landnetz.json
+# (= 3 feeder の voltage/line impact 行列、再計算不要)
+
+ls test/mvp_try11/data/
+# 期待: caiso_system_load_demo.csv, aemo_tesla_vpp_demo.csv
+# (= MS-C2-6 で生成した demo fixtures、published schema 一致)
+
+ls test/mvp_try11/results/plots/
+# 期待: pareto_cost_violation.png 等 5 図
+# (= MS-A8 で生成、D-7 で再生成予定)
+```
+
+### D.5 既存 sweep 結果の確認
+
+```bash
+.venv/bin/python -c "
+import json
+d = json.loads(open('test/mvp_try11/results/try11_FM2_results.json').read())
+print(f'records: {len(d[\"records\"])}, errors: {d[\"n_errors\"]}, methods: {len(d[\"config\"][\"methods\"])}')
+"
+# 期待: records: 360 (M7 sweep) または 1080 (full F-M2 sweep)
+# 注: M7 sweep が overwrite した可能性あり、git history で確認
+```
+
+### D.6 Smoke test 全件 pass 確認
+
+```bash
+cd /home/user/gridflow/test/mvp_try11
+for ms in _ms1 _ms2 _ms3 _ms5 _msA1 _msA2 _msA3 _msA4 _msC3_1; do
+    PYTHONPATH=/home/user/gridflow/src \
+        /home/user/gridflow/.venv/bin/python -m tools.${ms}_smoke_test || \
+        echo "FAILED: $ms"
+done
+# 全部 OK -- MS-X smoke test passed が出れば pristine
+```
+
+### D.7 Dataset テスト (41 test) 確認
+
+```bash
+cd /home/user/gridflow
+PYTHONPATH=src .venv/bin/python -m pytest tests/dataset/ -q
+# 期待: 41 passed
+```
+
+---
+
 ## 0. 現状の正直な評価 (= 未解消の問題)
 
 ### 0.1 C3 の "解消" は不十分
