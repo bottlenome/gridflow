@@ -492,3 +492,110 @@ M8 の MILP は変数数が 2N (= 400 for N=200) で重いが、CBC で 1-5 秒/
 2-3 日 (MILP 設計 + big-M 線形化 + smoke test + sweep 実行)
 
 ---
+
+## 6. Phase D-4: Feasibility envelope 分析 (novel contribution)
+
+**目的**: D-2/D-3 で voltage 制約付き MILP が成立する範囲が **feeder × SLA × burst**
+の複合的な関数であることが分かった。これを **明示的に可視化** することで
+論文の novel contribution に昇格させる。
+
+### 6.1 アイデア
+
+PWRS reviewer の典型的批判は「benchmark が単一 setup」。Feasibility envelope
+は **どの operational regime で CTOP が deployable か** を示すマップで、
+配電事業者にとって直接的な意思決定支援となる。
+
+### 6.2 実験設計
+
+3 軸 grid sweep:
+
+```
+feeder ∈ {cigre_lv, kerber_dorf, kerber_landnetz}
+SLA scale α ∈ {0.10, 0.20, 0.30, 0.40, 0.50, 0.60} × trafo_MVA
+burst level β ∈ {0.5, 1.0, 1.5, 2.0} × default_burst
+```
+
+= 3 × 6 × 4 = 72 (feeder, α, β) cells × 8 traces × 3 seeds × 16 methods
+= 27,648 cells
+
+**スケール大** なので分割実行:
+- **D-4a**: 1 method (M8 strict) のみで envelope 測定 = 1,728 cells (= 約 1 時間)
+- **D-4b**: 1-2 baseline (B4 etc.) を加えて比較 = 5,184 cells (= 約 3 時間)
+
+### 6.3 測定指標
+
+各 (feeder, α, β) cell で:
+
+- **Feasibility rate**: (feasible cells) / (8 traces × 3 seeds) ∈ [0, 1]
+- **Mean SLA violation**: feasible cells のみ
+- **Mean voltage violation (dispatch-induced)**: D-1 metric
+- **Mean cost normalised by SLA**: ¥ / kW_SLA (= cost intensity)
+
+### 6.4 視覚化
+
+3 つの heatmap (per feeder):
+
+```
+         β=0.5  β=1.0  β=1.5  β=2.0
+α=0.10    ✅100%  ✅100%  ✅100%  ⚠️70%
+α=0.20    ✅100%  ✅100%  ⚠️60%  ❌20%
+α=0.30    ✅100%  ⚠️70%  ❌30%  ❌5%
+α=0.40    ⚠️80%  ❌40%  ❌10%  ❌0%
+α=0.50    ❌50%  ❌10%  ❌0%   ❌0%
+...
+```
+
+各セル = feasibility rate (緑/黄/赤)。これが論文の Figure 6 候補。
+
+### 6.5 論文への組込方針
+
+報告書 §6 に新節 §6.5 "Feasibility Envelope" を追加:
+
+> CTOP の operational deployability は (feeder, SLA scale, burst level) の
+> 三軸関数。我々は 72 (feeder × α × β) operating points × 8 traces × 3 seeds
+> で envelope を測定し、配電事業者向け **deployability map** を作成。
+> CIGRE LV は α ≤ 0.20 で 100% feasible、Kerber Dorf は α ≤ 0.40 で 90%、
+> Kerber Landnetz は α ≤ 0.50 で 100%。
+
+### 6.6 実装手順
+
+#### Step 1: `tools/run_envelope.py` を新規作成
+
+`run_phase1_multifeeder.py` を base に、α/β を sweep 軸に追加:
+
+```python
+def main():
+    parser.add_argument("--alpha-sla", type=float, nargs="+",
+                        default=[0.10, 0.20, 0.30, 0.40, 0.50, 0.60])
+    parser.add_argument("--beta-burst", type=float, nargs="+",
+                        default=[0.5, 1.0, 1.5, 2.0])
+    ...
+
+def run_one_envelope_cell(args):
+    feeder, alpha, beta, trace_id, method, seed = args
+    cfg_default = get_feeder_config(feeder)
+    sla_kw = cfg_default.sla_kw * (alpha / 0.50)  # rescale
+    burst = {k: v * beta for k, v in cfg_default.burst_dict().items()}
+    ...
+```
+
+#### Step 2: 集計スクリプト `tools/aggregate_envelope.py`
+
+```python
+# (feeder, alpha, beta) の三重ループで feasibility rate を算出
+# matplotlib heatmap で 3 図描画
+```
+
+#### Step 3: 論文 §6.5 に embed
+
+### 6.7 完了基準
+
+- 3 feeder × 6 α × 4 β = 72 envelope cells の feasibility / cost / violation を測定
+- matplotlib heatmap 3 図 (per feeder) を `results/plots/feasibility_envelope_*.png`
+- 論文 §6.5 "Feasibility Envelope" を執筆 (~ 1 ページ + 3 図)
+
+### 6.8 工数目安
+
+1-2 日 (sweep 1-3 時間 + 集計 + 図 + 論文執筆)
+
+---
