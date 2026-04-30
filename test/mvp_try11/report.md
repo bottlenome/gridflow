@@ -72,3 +72,75 @@ $$
 4. **実証** (§5-6): 200 機 DER pool × 6 trace × 15 method × 3 seed = 270 cells の比較実験で、業界 default (B1) が 100% 違反する条件下で SDP が baseline と同 cost で 0.19% 違反、label noise 10% 下で 0.15% を達成
 
 ---
+
+## 2. Background
+
+### 2.1 仮想発電所 (VPP) と補助サービス
+
+VPP は分散型 DER を ICT 技術で統合管理するプラットフォームで、欧米では Tesla Powerwall fleet [^4]、日本では関西電力・東京電力の VPP 実証等が運用中。集約 DER は **補助サービス市場** (PJM の synchronized reserve、ENTSO-E の FCR/aFRR、日本の調整力公募) で予備力商品として取引される。契約は典型的に「アップ/ダウン X MW を 30 秒/15 分応答」など SLA tail 制約形式である。
+
+### 2.2 集約 SLA 達成の不確実性
+
+DER 個別の出力可用性は (a) 物理的能力 (蓄電池 SOC、EV 接続状態)、(b) 所有者の意思 (帰宅時間、給湯機運転時刻)、(c) 通信状態に依存する。VPP 事業者は集約 SLA を保証するため、active 集合の個別 churn を集合内で吸収する設計が必要となる。
+
+### 2.3 重尾 burst churn の経験的特性
+
+VPP 実運用ログを解析した Müller et al. 2023 [^5] は、residential EV pool の active 数が時間帯依存の cyclic shift と日付依存の rare deep shift を持つことを報告し、後者が SLA 違反の主因であると指摘した。同研究は churn を時間方向の 1 次マルコフ仮定でモデル化したが、**因果ドライバーの構造分解** には踏み込んでいない。
+
+---
+
+## 3. Related Work
+
+### 3.1 Stochastic / Robust / DRO アプローチ
+
+Conejo et al. 2010 [^6] は二段階 stochastic programming を電力システム scheduling 全般に適用、Wang et al. 2019 [^7] は VPP context での実装を提示した。これらはシナリオ集合の質に強く依存し、重尾分布では N が膨張する。
+
+Bertsimas & Sim 2004 [^8] の robust optimization framework を VPP に適用した Zhang et al. 2017 [^9] は uncertainty set 設計の具体化を試みたが、**集合の選択基準** に causal 視点はない。Esfahani & Kuhn 2018 [^10] の Wasserstein DRO は「distribution の近傍」を扱うが、**何が変動するか** (どの因果軸か) を明示しない。
+
+### 3.2 強化学習 / 深層学習
+
+Yan et al. 2022 [^11] は multi-agent RL で VPP 内 DER 配分を学習。RL の本質的課題は (i) SLA 保証の明示性欠如、(ii) 訓練分布外 (OOD) でのブラックボックス崩壊。本研究は §6.3 で OOD 条件下の比較実験で具体的にこの問題を再現する。
+
+### 3.3 相関 portfolio (Markowitz 系)
+
+Mathieu et al. 2015 [^12] は CVaR-based DER portfolio で過去相関行列を使った最小分散選択を提案。**問題: 過去相関は backward-looking** で、市場ルール変更や新規気象パターン下では相関が破れる。
+
+### 3.4 金融 causal portfolio との関係 (本研究の最重要先行)
+
+#### 3.4.1 Lopez de Prado 2019 [^13]
+
+Hierarchical risk parity に causal graph (PC アルゴリズム経由) を組み込んだ portfolio 構築。Causal direction を考慮するが、**graph は資産間** (asset-asset) の相関構造から data-driven に推定される。
+
+#### 3.4.2 Rodriguez Dominguez 2025 [^3]
+
+**Causal PDE-Control Models (CPCM)** は causal portfolio の最前線で、以下を統合:
+
+- **Structural causal drivers** + **nonlinear filtering** で隠れドライバー推定
+- **Forward-backward PDE control** で連続-time 動的最適化
+- **Driver-conditional risk-neutral measure** で hedging/pricing 統一
+- **Projection-divergence duality**: portfolio を causal driver span に restrict すると unconstrained optimum に最も近い feasible allocation が選ばれる
+- **Causal completeness condition**: 有限 driver span が systematic premia を捕捉する条件
+- **Markowitz / CAPM / APT / Black-Litterman は limiting case**, RL / deep hedging は unconstrained approximation
+
+CPCM は U.S. equity panel × 300+ candidate drivers で Sharpe 比 / turnover / persistence の改善を実証。
+
+#### 3.4.3 SDP との 5 軸構造差分
+
+`ideation_record.md` §4.5b で詳細化した通り、SDP と CPCM は以下 5 軸で構造的に異なる:
+
+| 軸 | CPCM (金融) | SDP (本研究, VPP) |
+|---|---|---|
+| (a) Driver 同定 | nonlinear filtering で観測過程から推定 | **物理事前知識から enumerate** (~5 軸) |
+| (b) Allocation 形式 | 連続値 portfolio weight + PDE 制御 | **離散 (binary) DER 選択集合**; MILP |
+| (c) 制約形式 | projection-divergence duality (連続) | **trigger-orthogonal set 制約** (離散) |
+| (d) 目的関数 | Sharpe / utility / hedging error | **SLA tail 確率** (規制契約で外部固定) |
+| (e) 動学設定 | continuous-time PDE 制御 | **discrete-event jump (heavy-tail burst)** |
+
+特に (a) が決定的: CPCM は「**何が原因か分からない**まま因果構造を推定」する困難な問題を解くが、SDP は「**因果トリガーは枚挙可能**、各 DER の曝露を物理構造から導く」問題で、causal discovery 段階を bypass できる。
+
+#### 3.4.4 Positioning ステートメント
+
+> SDP は CPCM の連続-PDE framework に subsume されない **discrete structural causal portfolio** であり、power systems の物理計測可能性と離散 DER 選択の必然性を活用した独立 contribution である。
+
+---
+
