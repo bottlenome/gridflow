@@ -228,4 +228,73 @@ $$
 
 ---
 
+## 5. Experiments
+
+### 5.1 Setup
+
+#### 5.1.1 DER pool
+
+200 機器 × 5 種別:
+
+| 種別 | 台数 | 容量 | active 月額 | standby 月額 | 既定曝露 (commute, weather, market, comm) |
+|---|---|---|---|---|---|
+| residential_ev      | 80 |   7 kW |   500 |   150 | (T, F, F, T) |
+| commercial_fleet    | 30 |  22 kW |  1500 |   400 | (F, F, F, T) |
+| industrial_battery  | 30 | 100 kW |  5000 |  1500 | (F, F, T, T) |
+| heat_pump           | 30 |   3 kW |   300 |   100 | (F, T, F, T) |
+| utility_battery     | 30 | 500 kW | 20000 |  6000 | (F, F, F, F) |
+
+各 DER の曝露は種別 default に独立 5% per-axis flip で軽微な heterogeneity を導入。
+
+#### 5.1.2 Active pool
+
+active 集合 $A$ = residential_ev 60 機 (= 420 kW、 commute 軸 100% 曝露)。SLA target = 1500 kW。すなわち active 単独では SLA 達成不可で、standby が機能性の中核を担う構成。
+
+#### 5.1.3 Burst sizes
+
+$B = (\mathrm{commute}{:}1500, \mathrm{weather}{:}500, \mathrm{market}{:}500, \mathrm{comm}{:}300)$ kW。
+
+#### 5.1.4 Trace ファミリー (C1-C6)
+
+各 trace は 30 日 (= train 14 日 + test 16 日)、5 分 step、計 8640 step。3 seed (0, 1, 2)。
+
+| trace | 中身 | 検証する外挿の種類 |
+|---|---|---|
+| **C1** 単一既知トリガー | commute / weather / market 各々を 1 日 1 回発火、magnitude 0.7 | baseline (外挿 (1) 基準) |
+| **C2** 既知軸の過去最大級 | train max の 1.9 倍規模の weather burst を test 期に 3 回注入 | **外挿 (1) — SDP 構造保証の主張根拠** |
+| **C3** 複数既知同時 | "厳冬朝 + 通勤" 等の 2-trigger pair を test 期に交互発火 | P3 (single trigger 仮定の崩れ) |
+| **C4** 基底外の新トリガー軸 | "regulatory mandate" を train 期不在 / test 期出現 (K+1 番目軸) | **外挿 (2) — SDP も崩れるが detection 可能** |
+| **C5** OOD 頻度 | market trigger を train 期 weekly / test 期 daily-2 回 | 外挿 (1) の頻度 shift |
+| **C6** label noise | DER の trigger_exposure を 10% 反転 | 提案手法 P4 (label 誤り) ロバスト性 |
+
+#### 5.1.5 評価指標
+
+`vpp_metrics.py` に gridflow MetricCalculator Protocol 互換で実装:
+
+- `sla_violation_ratio`: 全期間で aggregate < SLA target の step 比率
+- `sla_violation_ratio_train` / `sla_violation_ratio_test`: 期間別
+- `ood_gap`: test 比率 - train 比率
+- `standby_pool_size`: standby DER 数
+- `burst_compensation_rate`: 違反 step での aggregate / target 平均
+
+#### 5.1.6 比較条件
+
+提案 SDP 9 variants (M1, M2a-c, M3b, M3c, M4b, M5, M6) + baseline 6 (B1-B6) × 6 trace × 3 seed = **270 cells**。各 cell は seed 固定で決定論的、再現可能。
+
+### 5.2 Implementation
+
+実装は `test/mvp_try11/tools/`:
+- `der_pool.py` (153 行) — DER + 基底定義
+- `trace_synthesizer.py` (271 行) — C1-C6 trace 合成
+- `sdp_optimizer.py` (276 行) — M1/M3b/M3c/M4b solver (PuLP + CBC)
+- `vpp_simulator.py` (157 行) — 時刻別 aggregate 計算 + ExperimentResult 変換
+- `vpp_metrics.py` (98 行) — 6 metric 実装
+- `baselines/` (各 100-150 行) — B1-B6 baseline
+- `run_phase1.py` (251 行) — sweep orchestrator
+
+合計 約 1500 行。総実行時間 155.7 秒 / 270 cells (Intel 8 コア相当 single-thread)。
+
+---
+
+
 
