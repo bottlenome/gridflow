@@ -138,6 +138,24 @@ def make_default_pool(
     return tuple(pool)
 
 
+# Per-scale pool size profiles (spec F-M2, multi-scale extension).
+# Each scale roughly preserves the type ratio of the default 200-pool
+# (40% residential_ev, 15% each of the other 4 types).
+SCALE_PROFILES: dict[int, dict[str, int]] = {
+    50:   {"n_residential_ev": 20, "n_commercial_fleet": 8,  "n_industrial_battery": 8,  "n_heat_pump": 7,  "n_utility_battery": 7},
+    200:  {"n_residential_ev": 80, "n_commercial_fleet": 30, "n_industrial_battery": 30, "n_heat_pump": 30, "n_utility_battery": 30},
+    1000: {"n_residential_ev": 400,"n_commercial_fleet": 150,"n_industrial_battery": 150,"n_heat_pump": 150,"n_utility_battery": 150},
+    5000: {"n_residential_ev": 2000,"n_commercial_fleet": 750,"n_industrial_battery": 750,"n_heat_pump": 750,"n_utility_battery": 750},
+}
+
+
+def make_scaled_pool(scale: int, *, seed: int = 0) -> tuple[DER, ...]:
+    """Generate a pool of approximately ``scale`` DERs preserving type ratios."""
+    if scale not in SCALE_PROFILES:
+        raise ValueError(f"unknown scale: {scale}; valid: {sorted(SCALE_PROFILES)}")
+    return make_default_pool(seed=seed, **SCALE_PROFILES[scale])
+
+
 def write_pool_csv(pool: tuple[DER, ...], path: Path) -> None:
     """Persist a pool as CSV (spec §3.1)."""
     path.parent.mkdir(parents=True, exist_ok=True)
