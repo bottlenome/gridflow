@@ -308,6 +308,94 @@ SDP は MILP 形式の portfolio 問題で、**理論的な新規性は構造化
 
 ---
 
+## ゼロベース PWRS 査読 (本リビジョン後半、Phase D-5 follow-up 完了後)
+
+**実施**: 2026-04-30。Phase D-7 で「条件付き合格」と判定したが、PO 依頼により **PWRS reviewer ゼロベース観点** で再評価。先行レビュー (C2/C3) を含む全 commit 履歴を破棄し、提出論文を初見として読む reviewer の視点で記述。
+
+**判定 (本査読): Major Revision (再投稿時 desk reject 可能性あり)**
+
+技術労力 (Phase D-1〜D-7 全実装) は相当だが、論文として top venue に掲載されるには以下の MAJOR 6 件 / MODERATE 7 件 / MINOR 4 件で根本的再構成が必要。
+
+### MAJOR (= Top venue 不可 / Phase 2 commit cycle では解決不能)
+
+#### M-1 「実データ検証」が semantic non-sequitur (C2 への対応失敗)
+
+§8.7.5 の headline "real CAISO validation, dispatch_induced 0.0000%" は、論文の主張と取得データの間に **物理的因果関係が皆無**:
+
+- 取得データ: California ISO 系統全体の `SLD_FCST` (system-level demand **forecast**, 15-28 GW)
+- 検証対象: 200-DER の住宅 pool が **kerber_dorf** (ドイツ仕様 0.4 MVA 配電 LV feeder) 上で動作
+- マッピング: load > μ+σ となる時間帯を `weather` トリガー event として inject
+
+すなわち (i) California 系統需要 ≠ ドイツ LV 配電網の DER 個別 churn、(ii) forecast ≠ realized、(iii) trigger axis "weather" の semantic はマッピング過程で消失。**「実データを取得した」事実と「実データで controller を validate した」事実は別物**。
+
+**Ask**: DER 個別 availability を直接測定したデータ (Pecan Street individual unit log / AEMO Tesla VPP per-unit) で再検証。できないなら "real-data validation" の主張を撤回し "pipeline ready for real data" に弱体化。
+
+#### M-2 "0.0000% violation" は構造的に trivial (検証として無情報)
+
+kerber_dorf 0.4 MVA、SLA=200 kW、active=140 kW (20 EVs)、min_avail=163/200 という設定では **どんな controller でも 0% 違反**。 0.985-1.036 pu はドイツ低圧 400V radial の物理的 normal range であり、自動的に達成される。
+
+**Ask**: 同実データに M1/B1/B4/B6 を流し、controller 間で差が出る operating point を特定。違反 > 0 を生む高 α/高 β の test を §8.7.5 に追加。
+
+#### M-3 統計的有意性の欠如 / sample size 1 / no error bars
+
+§8.7.5 = 1 feeder × 1 method × 7 日 × 1 seed。CI 算出不能。§6.1 主結果も n=9 (3 feeder × 3 seed) で mean のみ、std/CI なし。「40% コスト削減」は ¥3,500 vs ¥6,000 の整数倍関係 (= MILP 整数粒度の人工的階段) で、連続化すると差は 1-2 機の utility_battery 選択。
+
+**Ask**: 全 headline に mean ± 95% CI、各 cell n≥30、実データは複数週/複数 method/複数 feeder。
+
+#### M-4 関連研究 (DER siting / VVO / PCC voltage control) の survey 欠落
+
+M7 の DistFlow 線形化 + per-DER 配置最適化は **DER siting / VVO** の中核問題。Atwa 2010, Borges 2006, Quezada 2006, Farivar-Low 2013, Lavaei-Low 2012 等の蓄積文献を **§3 で 1 つも引用していない**。M7 は Borges 2006 の直接派生。
+
+**Ask**: §3 に DER siting / VVO サブセクション追加、M7 の positioning を「causal portfolio」から「trigger-orthogonal DER siting」に書き直し。
+
+#### M-5 理論貢献 (Theorem 1-3) の独立性ほぼゼロ
+
+- **Thm 1 (Pareto-optimality)**: min-cost MILP の自明性質。新規性ゼロ
+- **Thm 2 (greedy ln K + 1)**: Chvátal 1979 weighted set cover の transcription。reduction 自体が sketchy
+- **Thm 3 (label noise bound)**: `ε · Σ cap_j` は Markov 不等式の素朴適用、直交性構造を利用していない
+
+**Ask**: Thm 1 削除、Thm 2 は引用扱い、Thm 3 は直交性活用 bound に書き直し or 削除。真の新規性は (K, N, topology) の feasibility frontier closed-form 等。
+
+#### M-6 査読対応の度に headline が動く (judgment instability)
+
+96% → 12% → 0% と数字が振れ、reviewer は **どれが真の主張か判断不能**。
+
+**Ask**: 実装と評価を凍結してから論文を書く。改訂のたびに本質的主張が変わるなら、それは論文ではなく WIP。
+
+### MODERATE
+
+- **mod-1 Forecast vs Realized**: SLD_FCST は予測値で滑らか。realized (ENE_HASP) で再検証
+- **mod-2 再現性**: CAISO API 仕様変更耐性ゼロ。Zenodo / OSF DOI で snapshot deposit
+- **mod-3 B5 strawman**: PDE control / nonlinear filtering 含まない簡易版を CPCM 比較として使用 → §3.4 で B5 = "ablation" と honestly に位置づけ
+- **mod-4 burst 量の経験的根拠不足**: `burst = (commute=SLA, weather=0.30·SLA, ...)` の割合は arbitrary。実 VPP 経験分布 or sensitivity sweep 必要
+- **mod-5 直交性 ablation 欠如**: M0 = "min cost s.t. capacity coverage only" 比較が必要
+- **mod-6 LV demo feeder で「deployable」主張**: IEEE 123-bus MV または SimBench MV feeder に拡張
+- **mod-7 計算時間 "400× 高速" は不公平比較**: deterministic CTOP vs uncertainty-set SP/DRO は問題が違う。同じ uncertainty model 下で再比較
+
+### MINOR
+
+- **min-1 `weather` default**: CAISO 系統 spike は典型的に commute (duck curve)。default を commute に
+- **min-2 Theorem 2 実測 5x ギャップ**: 事後説明的。$N=5000$ 検証完了まで定理 declare 保留
+- **min-3 `feeder_active_pool` 決定論的 first-N**: ランダム性 sensitivity を §5.1.2 に明示
+- **min-4 train/test split の clamp**: 実データ 7 日では train=6/test=1、OOD 検証は実質不能。明記要
+
+### 最低限の Phase 2 ToDo (再投稿可能水準)
+
+1. **CAISO ENE_HASP realized load を ≥ 30 日取得**、kerber_dorf 以外の **MV feeder** で **M1/M4b/B1/B4/B6 全比較** + mean ± 95% CI
+2. **Pecan Street / AEMO DER 個別 availability** を実取得、trigger axis の semantic と整合
+3. §3 に DER siting / VVO 文献群を追加、positioning 書き直し
+4. Thm 1 削除、Thm 3 を直交性活用 bound に再構築
+5. 実装と評価を凍結してから論文を書く
+
+これは Phase D 拡張群の追加 sweep では解決せず、**実データ source の選定変更 + 文献 positioning の根本書換 + 統計設計の見直し** が必要。本セッションでは **try12 として別 cycle で扱うべき大きさ**。
+
+### 本査読の判定根拠
+
+- (Phase D 後判定) 条件付き合格 (Phase D 拡張で投稿水準到達見込み) → (本査読) Major Revision
+- 差分: Phase D 拡張は技術 tooling は揃えたが、**論文全体の一貫性 / semantic / 統計設計 / 文献 positioning** に手を入れていない。これらは tooling の追加では解決しない論文構築品質の問題
+
+---
+
 ## 査読まとめ
 
 - **A 合格** (gridflow を contribution として主張せず、ideation 全 Rule 経由、Novelty Gate 9/9)
