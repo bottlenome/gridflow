@@ -57,6 +57,7 @@ from .feeder_config import FEEDER_TRAFO_MVA, feeder_active_pool, get_feeder_conf
 from .feeders import map_pool_to_feeder
 from .grid_metrics import GRID_METRICS
 from .grid_simulator import grid_simulate, to_grid_experiment_result
+from .sdp_full_milp import solve_sdp_full
 from .sdp_grid_aware import solve_sdp_grid_aware, solve_sdp_grid_aware_soft
 from .sdp_optimizer import (
     solve_sdp_greedy,
@@ -78,7 +79,7 @@ from .trace_synthesizer import (
 from .vpp_metrics import VPP_METRICS
 from .vpp_simulator import all_standby_dispatch_policy
 
-METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7", "M7-soft",
+METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7", "M7-soft", "M8",
            "B1", "B2", "B3", "B4", "B5", "B6")
 
 TRACES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8")
@@ -87,7 +88,8 @@ FEEDERS = tuple(FEEDER_TRAFO_MVA.keys())
 
 # Methods that skip at scale=5000 (too slow)
 SKIP_AT_5000 = frozenset({
-    "M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6", "M7", "M7-soft", "B2", "B3",
+    "M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6",
+    "M7", "M7-soft", "M8", "B2", "B3",
 })
 
 
@@ -194,6 +196,37 @@ def _solve(method: str, pool, active_ids, trace, *, burst, sla_kw, seed,
                 "M7-soft MILP infeasible under K3 orthogonality + capacity coverage"
             )
         return sol.standby_ids, sol.objective_cost, "M7-soft", all_standby_dispatch_policy, slack_extras
+    if method == "M8":
+        if bus_map is None or feeder_name is None:
+            raise ValueError("M8 requires bus_map and feeder_name")
+        full = solve_sdp_full(
+            pool, bus_map=bus_map, feeder_name=feeder_name,
+            burst_kw=burst, sla_target_kw=sla_kw,
+            basis=TRIGGER_BASIS_K3,
+            v_max_pu=1.05, v_min_pu=0.95, line_max_pct=100.0,
+            mode="M8-full",
+        )
+        m8_extras: dict = {
+            "feasible": full.feasible,
+            # The MILP picks both active and standby; downstream
+            # ``run_one_cell`` must use this active assignment for the
+            # simulation, not the legacy ``feeder_active_pool`` default.
+            "active_ids_override": frozenset(full.active_ids),
+            "active_cost": full.active_cost,
+            "standby_cost": full.standby_cost,
+            "m8_worst_v_min_pu": full.worst_v_min_pu,
+        }
+        if not full.feasible:
+            m8_extras["infeasibility_reason"] = (
+                "M8 joint MILP infeasible under V_max=1.05 / V_min=0.95 / L_max=100%"
+            )
+        return (
+            full.standby_ids,
+            full.objective_cost,
+            "M8-full",
+            all_standby_dispatch_policy,
+            m8_extras,
+        )
     if method == "B1":
         sol = solve_b1_static_overprov(pool, active_ids, overprov_factor=0.30)
         return sol.standby_ids, sol.objective_cost, "B1", all_standby_dispatch_policy, extras
@@ -248,6 +281,9 @@ def run_one_cell(args: tuple) -> dict:
         feasible = bool(extras.get("feasible", True))
         infeasibility_reason = extras.get("infeasibility_reason")
 
+        # M8 picks the active pool itself; honour its assignment when present.
+        active_ids_for_sim = extras.get("active_ids_override", active_ids)
+
         # Slack stats from M7-soft (or any future soft variant) flow into
         # ``metrics`` so they appear alongside voltage/SLA columns in the CSV.
         soft_metric_keys = (
@@ -256,6 +292,9 @@ def run_one_cell(args: tuple) -> dict:
             "line_slack_total_pct",
             "line_slack_max_pct",
             "soft_penalty_lambda",
+            "active_cost",
+            "standby_cost",
+            "m8_worst_v_min_pu",
         )
         soft_metrics = {
             k: extras[k] for k in soft_metric_keys if k in extras
@@ -282,14 +321,14 @@ def run_one_cell(args: tuple) -> dict:
             }
 
         run = grid_simulate(
-            pool=pool, active_ids=active_ids,
+            pool=pool, active_ids=active_ids_for_sim,
             standby_ids=frozenset(standby_ids),
             trace=trace, feeder_name=feeder, bus_map=bus_map,
             dispatch_policy=dispatch_policy,
             sample_every=24,
         )
         result = to_grid_experiment_result(
-            run, pool=pool, active_ids=active_ids,
+            run, pool=pool, active_ids=active_ids_for_sim,
             standby_ids=frozenset(standby_ids), trace=trace,
             experiment_id=f"{method}_{trace_id}_{feeder}_n{scale}_s{seed}",
             scenario_pack_id="try11_FM2",

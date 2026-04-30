@@ -42,6 +42,10 @@ SUMMARISED_METRICS: tuple[str, ...] = (
     "voltage_slack_max_pu",
     "line_slack_total_pct",
     "line_slack_max_pct",
+    # Phase D-3 (M8) joint-MILP diagnostics. Empty for fixed-active variants.
+    "active_cost",
+    "standby_cost",
+    "m8_worst_v_min_pu",
 )
 
 
