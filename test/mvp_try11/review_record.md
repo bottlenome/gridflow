@@ -74,3 +74,69 @@
 
 ---
 
+## B. 学術品質 (査読 §4.2 B)
+
+### B-1 問題定義が査読論文水準で明確か?
+
+**判定: ✅ 合格**
+
+§1 Introduction で:
+- 課題 (重尾 burst churn) を §1.1 で具体的トリガー名 + 物理メカニズムで記述
+- §1.2 で既存 6 系統の限界を表で構造化
+- §1.4 で 4 つの contribution を箇条書き
+- §3.4 で最重要先行 (CPCM) との 5 軸構造差分を表で明示
+
+§3.1-3.4 で系統 A-F 各々に代表文献を引用。
+
+### B-2 因果トリガー基底の妥当性
+
+**判定: ⚠️ MODERATE 指摘 (mod-1)**
+
+論文 §4.1 で K=4 基底 (commute / weather / market / comm_fault) を提示し、§5.1.1 で各 DER 種別に default 曝露を割り当てるが、**この基底が "physically enumerable" であるという主張の根拠**が論文中で明示されていない。査読者は「regulatory 軸 (C4) を含めれば K=5、その他にもあるかもしれない」と反論可能。
+
+**修正提案**: §4.1 に "trigger basis 設計指針" のサブセクションを追加し、(a) どの粒度で基底軸を切るか、(b) 新規軸出現時の検出 + 拡張プロトコル (§6.4 を強化) を文章化。
+
+### B-3 SDP MILP の最適性
+
+**判定: ✅ 合格**
+
+§4.4 で MILP の standard form (binary + linear constraint) を明示。CBC は exact solver なので、与えられた基底・burst 値下で大域最適解を返す。これは MILP の標準性質で additional 証明不要。greedy (M4b) は heuristic と明示。
+
+---
+
+## C. 整合性 (査読 §4.2 C)
+
+### C-1 ideation_record と report.md の主張一貫性
+
+**判定: ✅ 合格**
+
+`ideation_record.md` §6 (Rule 9 v2) と report.md §4.6 (sentinel 選定経路) が **5 候補 + invariant 表 + 機械的脱落** で一致。S8 (= trigger-orthogonal portfolio under heavy-tailed burst churn) と report §1.3 が一致。
+
+### C-2 §4.5b CPCM 構造差分と §6 実験結果の整合
+
+**判定: ⚠️ MODERATE 指摘 (mod-2)**
+
+§4.5b (a) で「CPCM は filtering で driver 推定、SDP は物理 enumerate」と主張し、§6.1 F3 で「B5 (簡易 causal portfolio) は強制 diversification で破綻」と報告したが、**B5 実装は CPCM ではなく Lopez de Prado 流の PC アルゴリズム簡易版** (`baselines/b5_financial_causal.py` の docstring 参照)。CPCM 自体の VPP への適用は本研究で未実装。
+
+**修正提案**:
+- §3.4.2 末尾と §5.1.6 baseline 表に「B5 は CPCM の核要素である PDE control / nonlinear filtering を**含まない**簡易版」と明記
+- §9.1 future work に「CPCM full implementation の VPP 適用」を追加
+
+### C-3 §1.4 主要主張と §6.1 結果の整合
+
+**判定: ⚠️ MAJOR 指摘 (M-1, ←既出)**
+
+§1.4 contribution 4 は「baseline と同 cost で 0.19% 違反」「label noise 10% 下で 0.15%」を実証主張しており、これは §6.1 F2/F4 と整合する。しかし **論文タイトル + abstract の暗黙トーン**は SDP の優位性を示唆しており、reviewer から「同等性しか示していない」と批判される余地。
+
+**修正提案** (M-1):
+- abstract 末尾を「**構造的保証** (= label noise 頑健性 + detection-friendly OOD failure) を獲得しつつ baseline と同 cost / 同性能を達成」と慎重化
+- §1.4 contribution 4 を「Pareto-optimal な ¥18,000-0.19% 点に SDP が到達することを実証」と表現
+
+### C-4 trace 設計と claim の整合
+
+**判定: ✅ 合格**
+
+§5.1.4 で C1-C6 と「外挿 (1)/(2)」の対応を明示。§6.4 で C4 を "外挿 (2) graceful failure" として独立分析。
+
+---
+
