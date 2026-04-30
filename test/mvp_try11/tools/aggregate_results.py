@@ -37,6 +37,11 @@ SUMMARISED_METRICS: tuple[str, ...] = (
     "max_line_load_pct",
     "min_voltage_pu",
     "max_voltage_pu",
+    # Phase D-2 (M7-soft) slack diagnostics. Empty for hard variants.
+    "voltage_slack_total_pu",
+    "voltage_slack_max_pu",
+    "line_slack_total_pct",
+    "line_slack_max_pct",
 )
 
 
@@ -62,10 +67,19 @@ def aggregate(records: list[dict[str, object]]) -> list[dict[str, object]]:
 
     rows: list[dict[str, object]] = []
     for (feeder, label), bucket in sorted(groups.items()):
+        n_infeasible = sum(1 for r in bucket if r.get("infeasible"))
+        n_errors = sum(1 for r in bucket if r.get("error"))
+        n_feasible = len(bucket) - n_infeasible - n_errors
         row: dict[str, object] = {
             "feeder": feeder,
             "method_label": label,
             "n_records": len(bucket),
+            "n_feasible": n_feasible,
+            "n_infeasible": n_infeasible,
+            "n_errors": n_errors,
+            "feasible_ratio": (
+                n_feasible / len(bucket) if len(bucket) else 0.0
+            ),
         }
         for metric in SUMMARISED_METRICS:
             values: list[float] = []
@@ -121,20 +135,26 @@ def main() -> int:
     print(f"wrote {len(rows)} rows to {out_path}")
 
     # Console preview: focus on the dispatch-induced column so reviewers
-    # spot the controller's actual responsibility at a glance.
+    # spot the controller's actual responsibility at a glance, and add a
+    # feasibility column so M7-strict's infeasible cells are visible.
     print()
     header = (
-        f"{'feeder':<14}{'method':<20}{'voltage_combined_mean':>22}"
-        f"{'baseline_only_mean':>22}{'dispatch_induced_mean':>24}"
+        f"{'feeder':<14}{'method':<20}"
+        f"{'feas/total':>14}"
+        f"{'voltage_combined':>20}"
+        f"{'baseline_only':>16}"
+        f"{'dispatch_induced':>20}"
     )
     print(header)
     print("-" * len(header))
     for row in rows:
+        feas = f"{row['n_feasible']}/{row['n_records']}"
         print(
             f"{row['feeder']:<14}{row['method_label']:<20}"
-            f"{_fmt(row['voltage_violation_ratio_mean']):>22}"
-            f"{_fmt(row['voltage_violation_baseline_only_mean']):>22}"
-            f"{_fmt(row['voltage_violation_dispatch_induced_mean']):>24}"
+            f"{feas:>14}"
+            f"{_fmt(row['voltage_violation_ratio_mean']):>20}"
+            f"{_fmt(row['voltage_violation_baseline_only_mean']):>16}"
+            f"{_fmt(row['voltage_violation_dispatch_induced_mean']):>20}"
         )
     return 0
 

@@ -57,7 +57,7 @@ from .feeder_config import FEEDER_TRAFO_MVA, feeder_active_pool, get_feeder_conf
 from .feeders import map_pool_to_feeder
 from .grid_metrics import GRID_METRICS
 from .grid_simulator import grid_simulate, to_grid_experiment_result
-from .sdp_grid_aware import solve_sdp_grid_aware
+from .sdp_grid_aware import solve_sdp_grid_aware, solve_sdp_grid_aware_soft
 from .sdp_optimizer import (
     solve_sdp_greedy,
     solve_sdp_soft,
@@ -78,7 +78,7 @@ from .trace_synthesizer import (
 from .vpp_metrics import VPP_METRICS
 from .vpp_simulator import all_standby_dispatch_policy
 
-METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7",
+METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7", "M7-soft",
            "B1", "B2", "B3", "B4", "B5", "B6")
 
 TRACES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8")
@@ -86,7 +86,9 @@ TRACES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8")
 FEEDERS = tuple(FEEDER_TRAFO_MVA.keys())
 
 # Methods that skip at scale=5000 (too slow)
-SKIP_AT_5000 = frozenset({"M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6", "M7", "B2", "B3"})
+SKIP_AT_5000 = frozenset({
+    "M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6", "M7", "M7-soft", "B2", "B3",
+})
 
 
 def _make_trace(trace_id: str, pool, seed: int, sla_kw: float):
@@ -111,63 +113,106 @@ def _make_trace(trace_id: str, pool, seed: int, sla_kw: float):
 
 def _solve(method: str, pool, active_ids, trace, *, burst, sla_kw, seed,
            bus_map=None, feeder_name=None):
+    """Run the design optimisation for one method.
+
+    Returns ``(standby_ids, design_cost, method_label, dispatch_policy, extras)``.
+
+    ``extras`` carries optional diagnostics (currently ``feasible`` and the
+    M7-soft slack stats when applicable). Callers must always unpack the
+    5-tuple; for hard methods the dict is ``{"feasible": True}``.
+    """
+    feasible = True
+    extras: dict = {"feasible": True}
     if method == "M1":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M1")
-        return sol.standby_ids, sol.objective_cost, "M1", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M1", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M2a":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K2, mode="M2a")
-        return sol.standby_ids, sol.objective_cost, "M2a-K2", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M2a-K2", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M2b":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M2b")
-        return sol.standby_ids, sol.objective_cost, "M2b-K3", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M2b-K3", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M2c":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K4, mode="M2c")
-        return sol.standby_ids, sol.objective_cost, "M2c-K4", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M2c-K4", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M3b":
         sol = solve_sdp_soft(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M3b")
-        return sol.standby_ids, sol.objective_cost, "M3b-soft", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M3b-soft", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M3c":
         sol = solve_sdp_tolerant(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M3c")
-        return sol.standby_ids, sol.objective_cost, "M3c-tolerant", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M3c-tolerant", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M4b":
         sol = solve_sdp_greedy(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M4b")
-        return sol.standby_ids, sol.objective_cost, "M4b-greedy", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M4b-greedy", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M5":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M5")
         policy = naive_nn_dispatch_policy(trace=trace, seed=seed)
-        return sol.standby_ids, sol.objective_cost, "M5-NN", policy
+        return sol.standby_ids, sol.objective_cost, "M5-NN", policy, {"feasible": sol.feasible}
     if method == "M6":
         perturbed = perturb_pool_label_noise(pool, noise_rate=0.10, seed=seed + 99)
         sol = solve_sdp_strict(perturbed, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M6")
-        return sol.standby_ids, sol.objective_cost, "M6-noise10", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "M6-noise10", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "M7":
         if bus_map is None or feeder_name is None:
             raise ValueError("M7 requires bus_map and feeder_name")
+        # Phase D-2: ANSI C84.1 / IEEE 1547 strict envelope. Cells where
+        # this is infeasible are reported honestly in the record (the
+        # earlier relaxed V_max=1.10 / L_max=120% hack was retracted).
         sol = solve_sdp_grid_aware(
             pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
             basis=TRIGGER_BASIS_K3,
-            v_max_pu=1.10, line_max_pct=120.0,  # relaxed bounds for synthetic feeders
-            mode="M7-grid",
+            v_max_pu=1.05, line_max_pct=100.0,
+            mode="M7-strict-grid",
         )
-        return sol.standby_ids, sol.objective_cost, "M7-grid", all_standby_dispatch_policy
+        return (
+            sol.standby_ids,
+            sol.objective_cost,
+            "M7-strict",
+            all_standby_dispatch_policy,
+            {
+                "feasible": sol.feasible,
+                "infeasibility_reason": (
+                    None if sol.feasible
+                    else "M7 MILP infeasible under V_max=1.05 / L_max=100%"
+                ),
+            },
+        )
+    if method == "M7-soft":
+        if bus_map is None or feeder_name is None:
+            raise ValueError("M7-soft requires bus_map and feeder_name")
+        soft = solve_sdp_grid_aware_soft(
+            pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
+            basis=TRIGGER_BASIS_K3,
+            v_max_pu=1.05, line_max_pct=100.0,
+            mode="M7-soft",
+        )
+        sol = soft.solution
+        slack_extras: dict = {"feasible": sol.feasible}
+        slack_extras.update(soft.metric_dict())
+        if not sol.feasible:
+            slack_extras["infeasibility_reason"] = (
+                "M7-soft MILP infeasible under K3 orthogonality + capacity coverage"
+            )
+        return sol.standby_ids, sol.objective_cost, "M7-soft", all_standby_dispatch_policy, slack_extras
     if method == "B1":
         sol = solve_b1_static_overprov(pool, active_ids, overprov_factor=0.30)
-        return sol.standby_ids, sol.objective_cost, "B1", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B1", all_standby_dispatch_policy, extras
     if method == "B2":
         sol = solve_b2_stochastic_program(pool, active_ids, burst, sla_target_kw=sla_kw, seed=seed)
-        return sol.standby_ids, sol.objective_cost, "B2", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B2", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "B3":
         sol = solve_b3_wasserstein_dro(pool, active_ids, burst, sla_target_kw=sla_kw, seed=seed)
-        return sol.standby_ids, sol.objective_cost, "B3", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B3", all_standby_dispatch_policy, {"feasible": sol.feasible}
     if method == "B4":
         sol = solve_b4_markowitz(pool, active_ids, trace, sla_target_kw=sla_kw)
-        return sol.standby_ids, sol.objective_cost, "B4", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B4", all_standby_dispatch_policy, extras
     if method == "B5":
         sol = solve_b5_financial_causal(pool, active_ids, trace, sla_target_kw=sla_kw)
-        return sol.standby_ids, sol.objective_cost, "B5", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B5", all_standby_dispatch_policy, extras
     if method == "B6":
         sol = solve_b6_naive_nn(pool, active_ids, trace, sla_target_kw=sla_kw, seed=seed)
-        return sol.standby_ids, sol.objective_cost, "B6", all_standby_dispatch_policy
+        return sol.standby_ids, sol.objective_cost, "B6", all_standby_dispatch_policy, extras
+    _ = feasible  # quieten linter; loop above is exhaustive
     raise ValueError(f"unknown method: {method}")
 
 
@@ -194,12 +239,47 @@ def run_one_cell(args: tuple) -> dict:
         trace = _make_trace(trace_id, pool, seed, sla_kw)
 
         design_t0 = time.perf_counter()
-        standby_ids, design_cost, method_label, dispatch_policy = _solve(
+        standby_ids, design_cost, method_label, dispatch_policy, extras = _solve(
             method, pool, active_ids, trace,
             burst=burst, sla_kw=sla_kw, seed=seed,
             bus_map=bus_map, feeder_name=feeder,
         )
         design_solve_time = time.perf_counter() - design_t0
+        feasible = bool(extras.get("feasible", True))
+        infeasibility_reason = extras.get("infeasibility_reason")
+
+        # Slack stats from M7-soft (or any future soft variant) flow into
+        # ``metrics`` so they appear alongside voltage/SLA columns in the CSV.
+        soft_metric_keys = (
+            "voltage_slack_total_pu",
+            "voltage_slack_max_pu",
+            "line_slack_total_pct",
+            "line_slack_max_pct",
+            "soft_penalty_lambda",
+        )
+        soft_metrics = {
+            k: extras[k] for k in soft_metric_keys if k in extras
+        }
+
+        if not feasible:
+            elapsed = time.perf_counter() - started
+            return {
+                "feeder": feeder,
+                "scale": scale,
+                "trace_id": trace_id,
+                "method": method,
+                "method_label": method_label,
+                "seed": seed,
+                "design_cost": None,
+                "n_standby": 0,
+                "design_solve_time_s": round(design_solve_time, 3),
+                "elapsed_s": round(elapsed, 3),
+                "infeasible": True,
+                "infeasibility_reason": infeasibility_reason
+                or "design optimisation reported infeasible",
+                "metrics": dict(soft_metrics),
+                "error": None,
+            }
 
         run = grid_simulate(
             pool=pool, active_ids=active_ids,
@@ -217,6 +297,8 @@ def run_one_cell(args: tuple) -> dict:
         )
         harness = BenchmarkHarness(metrics=VPP_METRICS + GRID_METRICS)
         summary = harness.evaluate(result)
+        metrics_out: dict = dict(summary.values)
+        metrics_out.update(soft_metrics)
 
         elapsed = time.perf_counter() - started
         return {
@@ -230,7 +312,9 @@ def run_one_cell(args: tuple) -> dict:
             "n_standby": len(standby_ids),
             "design_solve_time_s": round(design_solve_time, 3),
             "elapsed_s": round(elapsed, 3),
-            "metrics": dict(summary.values),
+            "infeasible": False,
+            "infeasibility_reason": None,
+            "metrics": metrics_out,
             "error": None,
         }
     except Exception as e:
@@ -320,21 +404,26 @@ def main() -> int:
         "elapsed_s": round(total_elapsed, 1),
         "n_cells": n,
         "n_errors": sum(1 for r in records if r.get("error")),
+        "n_infeasible": sum(1 for r in records if r.get("infeasible")),
     }
     out_json.write_text(json.dumps(out, indent=2, sort_keys=True), encoding="utf-8")
 
     metric_names = sorted({m for r in records for m in r.get("metrics", {})})
     with out_csv.open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
-        w.writerow(["feeder", "scale", "trace_id", "method", "method_label", "seed",
-                    "design_cost", "n_standby", "design_solve_time_s", "elapsed_s",
-                    "error", *metric_names])
+        w.writerow([
+            "feeder", "scale", "trace_id", "method", "method_label", "seed",
+            "design_cost", "n_standby", "design_solve_time_s", "elapsed_s",
+            "infeasible", "infeasibility_reason", "error", *metric_names,
+        ])
         for r in records:
             w.writerow(
                 [r.get("feeder"), r.get("scale"), r.get("trace_id"),
                  r.get("method"), r.get("method_label"), r.get("seed"),
                  r.get("design_cost"), r.get("n_standby"),
                  r.get("design_solve_time_s"), r.get("elapsed_s"),
+                 r.get("infeasible", False),
+                 r.get("infeasibility_reason", "") or "",
                  r.get("error", ""),
                  *(r.get("metrics", {}).get(n, "") for n in metric_names)]
             )
