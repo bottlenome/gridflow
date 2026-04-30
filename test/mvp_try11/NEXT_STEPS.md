@@ -599,3 +599,166 @@ def run_one_envelope_cell(args):
 1-2 日 (sweep 1-3 時間 + 集計 + 図 + 論文執筆)
 
 ---
+
+## 7. Phase D-5: 実データ取得 (C2 真の解消)
+
+**目的**: PWRS reviewer C2 (合成のみは不可) の真の解消には **実データを使った
+実験結果** が必須。本コミット時点では framework のみで、実データ取得は未達。
+
+### 7.1 取得対象 (優先度順)
+
+| # | dataset | 取得難度 | 期待効果 |
+|---|---|---|---|
+| 1 | **CAISO 5-min system load** | 易 (公開 API) | trigger trace の統計検証 |
+| 2 | **AEMO South Australia VPP report** | 易 (PDF 抽出) | VPP availability 直接検証 |
+| 3 | **Pecan Street residential EV** | 中 (academic registration) | DER 個別 churn 直接検証 |
+| 4 | NREL ResStock | 中 (large download) | 補助検証 |
+| 5 | JEPX 30-min spot price | 易 (CSV download) | market trigger 検証 |
+
+### 7.2 各取得手順
+
+#### 7.2.1 CAISO (最優先、公開 API)
+
+URL pattern (本実装の loader docstring 内既述):
+```
+https://oasis.caiso.com/oasisapi/SingleZip
+   ?queryname=PRC_RTPD_LMP
+   &startdatetime=20240101T07:00-0000
+   &enddatetime=20240108T07:00-0000
+   &resultformat=6
+```
+
+**取得方法 (次セッションで実装)**:
+```python
+# tools/fetch_caiso.py
+import requests
+import zipfile
+import io
+import csv
+
+def fetch_caiso_load(start_iso: str, end_iso: str, out_path: Path):
+    # PRC_RTPD_LMP は LMP 価格データ; system load は SLD_FCST 等
+    # 正確な query name を CAISO ドキュメントで確認:
+    # https://www.caiso.com/Documents/OASISAPISpecification.pdf
+
+    url = (
+        f"https://oasis.caiso.com/oasisapi/SingleZip"
+        f"?queryname=ENE_HASP&startdatetime={start_iso}&enddatetime={end_iso}"
+        f"&resultformat=6"
+    )
+    r = requests.get(url, timeout=60)
+    r.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        for name in zf.namelist():
+            if name.endswith(".csv"):
+                # parse and convert to gridflow loader format
+                ...
+```
+
+**注意点**:
+- CAISO は 30 日 max per query → 月毎にループ
+- `resultformat=6` で CSV、それ以外で XML
+- rate limit: 60 query / hour (cron で分割)
+
+**期待される CSV format** (gridflow loader 用に変換):
+```
+ts_iso,system_load_mw
+2024-01-01T00:00:00Z,28100.5
+2024-01-01T00:05:00Z,28050.0
+...
+```
+
+#### 7.2.2 AEMO South Australia VPP
+
+AEMO は四半期報告書 (PDF) で VPP データを公開。直接 CSV はないが:
+
+**取得方法**:
+1. https://aemo.com.au/initiatives/major-programs/nem-distributed-energy-resources-der-program/der-demonstrations/virtual-power-plant-vpp-demonstrations
+   から最新 PDF を DL
+2. Tabular extraction (camelot-py / tabula-py) で表形式抽出
+3. ts_iso, n_units_online, total_capacity_kw, frequency_hz の列を生成
+
+**代替案**: AEMO Data Dashboard (https://aemo.com.au/en/energy-systems/electricity/national-electricity-market-nem/data-nem)
+の DER register CSV を使う (= aggregated, より低時間粒度だが直接 CSV)。
+
+#### 7.2.3 Pecan Street residential EV
+
+**重要: Academic registration が必要**。次セッションで:
+
+1. PI / lab account で https://www.pecanstreet.org/dataport/ 登録
+2. Data Use Agreement (DUA) 締結
+3. Residential EV charging dataset (1-15 households, 5-min, 1 month) を DL
+4. CSV を $GRIDFLOW_DATASET_ROOT/pecanstreet/residential_ev/v1/data.csv に配置
+
+**注意**: Pecan Street は **redistribution 禁止** (Proprietary-Research)。論文には
+集計値のみ公開 (個別 household ID は隠す)。
+
+#### 7.2.4 JEPX spot price
+
+**最も簡単**: https://www.jepx.org/electricpower/market-data/spot/ から CSV
+直接 DL (CC-BY-4.0)。
+
+```bash
+curl -O "https://www.jepx.org/.../<year>_spot.csv"
+# Excel-style 列を ts_iso, spot_price_jpy_per_kwh に変換
+```
+
+#### 7.2.5 NREL ResStock
+
+**大規模** (TB スケール)。サブセット (数 household × 1 月) を BuildStock LDB
+からピンポイント取得。
+
+### 7.3 取得後の検証手順
+
+#### Step 1: Loader smoke test (実データで)
+
+```bash
+# 各 source の load() が DatasetTimeSeries を返すことを確認
+PYTHONPATH=src .venv/bin/python -c "
+from gridflow.adapter.dataset import CAISOLoader
+from gridflow.domain.dataset import DatasetSpec
+ts = CAISOLoader().load(DatasetSpec(dataset_id='caiso/system_load_5min/v1'))
+print(f'n_steps={ts.n_steps}, sha256={ts.metadata.sha256[:10]}')
+"
+```
+
+#### Step 2: try11 sweep を実データで再実行
+
+`run_phase1_multifeeder.py` を改修し、trace を実データから生成:
+
+```python
+# CAISO load を normalize して active_fraction にマッピング
+real_trace = build_real_trace_from_caiso(...)
+# 既存の synth_c1_single_trigger と互換 ChurnTrace で出力
+```
+
+#### Step 3: Real-data results を report に追加
+
+新節 §6.6 "Real-Data Validation":
+
+> CAISO 2024 Q1 system load (n=8640 timesteps) と AEMO Tesla VPP report
+> (n=8640) の実データで try11 sweep を再実行。M7 の SLA 違反 X% (vs 合成
+> Y%)、voltage 違反 X% (合成 Y%)。
+
+### 7.4 完了基準
+
+- 5 dataset のうち少なくとも **3 source** で実 CSV 取得
+- 各 source で `data.csv + metadata.json` が `$GRIDFLOW_DATASET_ROOT/` に配置
+- sha256 が contributor 署名つきで `docs/dataset_catalog.md` に登録
+- try11 sweep を実データで再実行、結果を report §6.6 に組込
+
+### 7.5 取得不可シナリオの対処
+
+PWRS reviewer は **少なくとも 1 つの実データ** を要求するので、最低限:
+
+- CAISO (= 公開 API、rate limit 内で fetch 可) を **必ず** 取得
+- 残りは contributor を募る (= GitHub PR で受付)
+
+### 7.6 工数目安
+
+- CAISO 取得 + sweep 再実行: 1 日
+- AEMO PDF 抽出 + sweep: 1-2 日
+- Pecan Street registration → 取得 → sweep: 1 週間 (registration が律速)
+- 全 5 source: 2 週間
+
+---
