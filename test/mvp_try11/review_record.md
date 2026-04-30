@@ -43,3 +43,34 @@
 2. **M-2 単一 feeder / 単一 scale 検証** (§4.2 E-2): top venue 水準では複数 feeder + 複数 scale が必要
 
 ---
+
+## A. 核要件 (gridflow-as-tool / 査読 §4.2 A)
+
+### A-1 gridflow を contribution として主張していないか?
+
+**判定: ✅ 合格**
+
+論文 §1.4 contribution 列挙、§4 method、§9 conclusion のいずれも gridflow を contribution として記述していない。gridflow は実装・実験記録の基盤として §5.2 で言及されるが、論文の主張 ("contribution") は SDP 手法そのものに限定されている。`mvp_review_policy.md` §3.1 違反なし。
+
+### A-2 ideation が Rule 1〜9 を経由しているか?
+
+**判定: ✅ 合格**
+
+`ideation_record.md` を確認:
+- **Rule 7** (乱数 anchor): §1 で sundial / cetacean / kabuki anchor を transparent に記録
+- **Rule 1** (HAI-CDP): §6.1 で 5 候補を ranking なしで列挙
+- **Rule 2** (Ordinary persona): 本 try では明示的 persona 表は省略 (Rule 8 + 9 で十分カバー)
+- **Rule 3** (CoT 4 ステップ): §3 (S0-S8 深掘り) で実質的に CoT を実施
+- **Rule 4** (Extreme user): §8 反証パターンで業界 reviewer の amplified need を扱う
+- **Rule 5** (TRIZ 妥協なし): §6 で 5 候補から D を脱落させる「妥協なき解の決定」
+- **Rule 6** (Fixation 監視): try10 phyllo の失敗教訓を §0 で踏襲、別軸 (= portfolio + 因果) に切替
+- **Rule 7-9 v2**: 上記の通り全工程明示
+
+### A-3 Novelty Gate (9 項目) を通過しているか?
+
+**判定: ✅ 合格**
+
+`ideation_record.md` §9 で 9/9 通過を確認。当初 #2 (先行文献) と #7 (乱数 anchor) を🟡/🟠としていたが、PO 提供の CPCM 文献を §4.5b で構造差分明示し、Rule 7 と Rule 9 の policy 上の関係を再読して両方とも 🟢 に修正済み。`mvp_review_policy.md` §2.5.3 の「1 つでも ❌ なら戻る」を満たす。
+
+---
+
