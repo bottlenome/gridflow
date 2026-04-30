@@ -144,3 +144,88 @@ CPCM は U.S. equity panel × 300+ candidate drivers で Sharpe 比 / turnover /
 
 ---
 
+## 4. Method: Sentinel-DER Portfolio (SDP)
+
+### 4.1 トリガー基底と DER 曝露ベクトル
+
+DER pool $\mathcal{D} = \{d_1, \dots, d_N\}$ の各機器 $d_j$ に以下を割り当てる:
+
+- 容量 $\mathrm{cap}_j \in \mathbb{R}_{>0}$ (kW)
+- active 契約コスト $c_j^{\mathrm{a}}$ / standby 契約コスト $c_j^{\mathrm{s}} \in \mathbb{R}_{>0}$ (¥/月)
+- **トリガー曝露ベクトル** $\mathbf{e}_j \in \{0,1\}^K$
+
+ここで $\mathbf{T} = (T_1, \dots, T_K)$ は K 個の物理因果トリガーの基底:
+- $T_1$ = commute (人の移動 / 帰宅時刻)
+- $T_2$ = weather (寒波 / 猛暑等の熱負荷急増)
+- $T_3$ = market (卸電力市場価格 spike)
+- $T_4$ = comm_fault (通信網障害)
+
+$e_{j,k} = 1$ は「DER $j$ はトリガー $T_k$ 発火時に高確率で churn する」ことを意味する。
+
+### 4.2 提案: 直交性制約
+
+active 集合 $A$ の **曝露集合** を $E(A) := \{k : \exists j \in A, e_{j,k}=1\}$ とする。standby 集合 $S$ への要求は:
+
+**(直交性)** $\quad \forall k \in E(A): \forall j \in S: e_{j,k} = 0$
+
+すなわち $A$ で曝露している全トリガー軸について $S$ は曝露ゼロ。これにより、任意のトリガー $T_k \in E(A)$ が単独で発火しても $S$ は構造的に影響を受けない。
+
+### 4.3 容量被覆制約
+
+$T_k$ 発火時の最大 burst 規模を $B_k$ (kW) とする。標準形:
+
+**(被覆)** $\quad \forall k: \sum_{j \in S, e_{j,k}=0} \mathrm{cap}_j \geq B_k$
+
+これは「$T_k$ 発火で失効しない standby 容量の合計」が想定 burst を上回ることを要求する。
+
+### 4.4 SDP MILP
+
+$x_j \in \{0,1\}$ を「DER $j$ を standby に含める」二値変数とする:
+
+$$
+\min_{x \in \{0,1\}^N} \; \sum_{j=1}^N c_j^{\mathrm{s}} x_j
+$$
+
+subject to:
+
+$$
+\begin{aligned}
+& x_j = 0 && \forall j \in A \\
+& \sum_{j: e_{j,k}=1} x_j = 0 && \forall k \in E(A) \quad \text{(直交)} \\
+& \sum_{j: e_{j,k}=0} \mathrm{cap}_j \cdot x_j \geq B_k && \forall k \quad \text{(被覆)}
+\end{aligned}
+$$
+
+実装: PuLP + CBC。N = 200, K = 3-4 の規模で sub-second 解 (実測 0.2-0.4s/cell)。
+
+### 4.5 Variant 群 (M1-M6)
+
+| variant | 切替点 | 主張 |
+|---|---|---|
+| **M1** | strict, K=3, MILP | canonical |
+| M2a/b/c | K=2/3/4 | basis 次元数の影響 |
+| M3a-c | strict / soft / tolerant | orthogonality 緩和の trade-off |
+| M4a/b | MILP / greedy | 計算量と最適性 |
+| M5 | M1 design + NN dispatch | NN は動員に使えるが設計には不可 |
+| M6 | M1 on label-noise pool | label 誤りロバスト性 |
+
+ソフト緩和 (M3b): 直交性を penalty 項 $\lambda \sum_{k \in E(A)} \sum_{j \in S} e_{j,k}$ に変換、容量制約は硬。
+許容緩和 (M3c): $\sum_{j: e_{j,k}=1} x_j \leq \varepsilon$ で overlap 許容数を制限。
+
+### 4.6 遠隔ドメイン候補からの選定経路
+
+`ideation_record.md` §6 に従い、Rule 9 v2 で 5 候補を並列抽象化し invariant 検査:
+
+| 候補 | invariant 保存 | S7 trigger-orthogonal 直結度 |
+|---|---|---|
+| **A. 鳥群 sentinel** | **5/5 ✅** | **直結 (mechanism そのもの)** |
+| B. 種子バンク dormancy | 4.5/5 | 間接 (latency tranche) |
+| C. 免疫メモリ細胞 | 4/5 (memory 不在) | 間接 (broad coverage) |
+| D. 真社会性昆虫 | 2/5 ❌ | 完全脱落 |
+| E. 雪崩 anchor | 4/5 (cascade 不在) | 間接 (universal coverage) |
+
+**A (sentinel) のみが** trigger-orthogonal を直接 captures し、5/5 invariant 保存で **機械的に唯一の生存候補** となる。
+
+---
+
+
