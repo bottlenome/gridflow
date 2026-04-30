@@ -40,6 +40,11 @@ from pathlib import Path
 
 CAISO_OASIS_URL = "https://oasis.caiso.com/oasisapi/SingleZip"
 DEFAULT_QUERY_NAME = "SLD_FCST"  # System-Load forecast; alt: ENE_HASP
+DEFAULT_VERSION = 1  # OASIS API requires an explicit ``version=`` parameter
+DEFAULT_TAC_AREA = "CA ISO-TAC"  # ISO-wide aggregate; sub-areas: AVA, AVRN, ...
+DEFAULT_MARKET_RUN_ID = "RTM"  # 5-minute / 15-minute real-time market forecast.
+# Alternatives: "ACTUAL" (hourly realised), "DAM" (day-ahead),
+# "2DA" (2-day-ahead), "7DA" (7-day-ahead).
 MAX_DAYS_PER_QUERY = 30
 RATE_LIMIT_SECONDS = 1.5
 REQUEST_TIMEOUT_S = 60
@@ -65,36 +70,96 @@ def _fetch_one_chunk(
     chunk_start: datetime,
     chunk_end: datetime,
     query_name: str = DEFAULT_QUERY_NAME,
+    version: int = DEFAULT_VERSION,
+    tac_area: str | None = DEFAULT_TAC_AREA,
+    market_run_id: str | None = DEFAULT_MARKET_RUN_ID,
+    label_substring: str | None = None,
 ) -> list[tuple[str, float]]:
-    """Fetch one chunk and parse to ``[(ts_iso, value_mw), ...]``."""
+    """Fetch one chunk and parse to ``[(ts_iso, value_mw), ...]``.
+
+    OASIS ``SLD_FCST`` rows fan out across:
+      * ``TAC_AREA_NAME``  — control areas (CA ISO-TAC = ISO aggregate,
+        plus sub-areas AVA, AVRN, BPA, ...).
+      * ``MARKET_RUN_ID``  — RTM (5/15-min real-time), DAM (day-ahead),
+        2DA, 7DA, ACTUAL (hourly realised).
+      * ``LABEL``          — within RTM there are both 5-min and 15-min
+        forecast rows; the canonical 5-min trace needs
+        ``label_substring="5Min"``.
+
+    ``tac_area`` / ``market_run_id`` / ``label_substring`` filter the
+    rows; pass ``None`` (or ``"ALL"`` from the CLI) to keep everything.
+    """
     url = (
         f"{CAISO_OASIS_URL}?queryname={query_name}"
         f"&startdatetime={_iso_z(chunk_start)}"
         f"&enddatetime={_iso_z(chunk_end)}"
         f"&resultformat=6"  # CSV
+        f"&version={version}"
     )
     print(f"  GET {url}", file=sys.stderr)
     req = urllib.request.Request(url, headers={"User-Agent": "gridflow/0.1"})
-    try:
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_S) as resp:
-            payload = resp.read()
-    except urllib.error.HTTPError as e:
-        raise RuntimeError(f"CAISO HTTP {e.code} for {url}") from e
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"CAISO URL error for {url}: {e.reason}") from e
+    payload: bytes | None = None
+    last_err: Exception | None = None
+    # Retry policy: 403 / 429 / 5xx are typically rate-limit / transient.
+    # Back off exponentially up to ~5 minutes total.
+    for attempt, sleep_s in enumerate((0, 30, 60, 120, 240), start=1):
+        if sleep_s > 0:
+            print(
+                f"    rate-limited; sleeping {sleep_s}s before attempt {attempt}",
+                file=sys.stderr,
+            )
+            time.sleep(sleep_s)
+        try:
+            with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT_S) as resp:
+                payload = resp.read()
+            break
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code in (403, 429) or 500 <= e.code < 600:
+                continue
+            raise RuntimeError(f"CAISO HTTP {e.code} for {url}") from e
+        except urllib.error.URLError as e:
+            last_err = e
+            continue
+    if payload is None:
+        raise RuntimeError(
+            f"CAISO request failed after retries: {last_err}; URL={url}"
+        )
 
     # Response is a ZIP with one or more CSV files; parse and merge
     rows: list[tuple[str, float]] = []
     with zipfile.ZipFile(io.BytesIO(payload)) as zf:
         for name in zf.namelist():
             if not name.lower().endswith(".csv"):
+                # OASIS returns *.xml on errors; surface a helpful message.
+                if name.lower().endswith(".xml"):
+                    with zf.open(name) as fh:
+                        body = fh.read().decode("utf-8", errors="replace")
+                    raise RuntimeError(
+                        f"CAISO returned an XML error payload (file={name}):\n"
+                        f"{body[:1500]}"
+                    )
                 continue
             with zf.open(name) as fh:
                 reader = csv.DictReader(io.TextIOWrapper(fh, encoding="utf-8"))
                 for row in reader:
-                    # The exact column names vary by query_name. The
-                    # canonical OASIS schema for SLD_FCST is
-                    # INTERVALSTARTTIME_GMT (ISO) and MW (load value).
+                    # SLD_FCST: INTERVALSTARTTIME_GMT, TAC_AREA_NAME,
+                    # MARKET_RUN_ID, LABEL, MW, ...
+                    if (
+                        tac_area is not None
+                        and (row.get("TAC_AREA_NAME") or "").strip() != tac_area
+                    ):
+                        continue
+                    if (
+                        market_run_id is not None
+                        and (row.get("MARKET_RUN_ID") or "").strip() != market_run_id
+                    ):
+                        continue
+                    if (
+                        label_substring is not None
+                        and label_substring not in (row.get("LABEL") or "")
+                    ):
+                        continue
                     ts_raw = (
                         row.get("INTERVALSTARTTIME_GMT")
                         or row.get("OPR_DT")
@@ -119,8 +184,18 @@ def fetch_caiso_load(
     end: date,
     *,
     query_name: str = DEFAULT_QUERY_NAME,
+    version: int = DEFAULT_VERSION,
+    tac_area: str | None = DEFAULT_TAC_AREA,
+    market_run_id: str | None = DEFAULT_MARKET_RUN_ID,
+    label_substring: str | None = None,
 ) -> list[tuple[str, float]]:
-    """Fetch the load series for ``[start, end)`` and return rows."""
+    """Fetch the load series for ``[start, end)`` and return rows.
+
+    Filters: ``tac_area`` (default ``"CA ISO-TAC"`` = ISO aggregate),
+    ``market_run_id`` (default ``"RTM"`` = 5/15-min real-time),
+    ``label_substring`` (default ``None``; pass ``"5Min"`` to pick
+    only RTM 5-minute rows when both 5-min and 15-min are present).
+    """
     rows: list[tuple[str, float]] = []
     for i, (chunk_s, chunk_e) in enumerate(_chunk_ranges(start, end)):
         if i > 0:
@@ -130,6 +205,10 @@ def fetch_caiso_load(
                 datetime.combine(chunk_s, datetime.min.time()),
                 datetime.combine(chunk_e, datetime.min.time()),
                 query_name=query_name,
+                version=version,
+                tac_area=tac_area,
+                market_run_id=market_run_id,
+                label_substring=label_substring,
             )
         )
     rows.sort(key=lambda r: r[0])
@@ -137,12 +216,21 @@ def fetch_caiso_load(
 
 
 def write_csv(rows: list[tuple[str, float]], out_path: Path) -> None:
-    """Write rows in the schema CAISOLoader expects."""
+    """Write rows in the schema CAISOLoader expects.
+
+    OASIS RTM 5Min responses include multiple ``EXECUTION_TYPE`` rows
+    per ``INTERVALSTARTTIME_GMT`` (pre-dispatch and dispatch); we
+    average them so the output has exactly one MW value per timestamp.
+    """
+    bucket: dict[str, list[float]] = {}
+    for ts, mw in rows:
+        bucket.setdefault(ts, []).append(mw)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(["ts_iso", "system_load_mw"])
-        writer.writerows(rows)
+        for ts in sorted(bucket):
+            writer.writerow([ts, f"{sum(bucket[ts]) / len(bucket[ts]):.4f}"])
 
 
 def main() -> int:
@@ -150,6 +238,23 @@ def main() -> int:
     parser.add_argument("--start", required=True, help="YYYY-MM-DD inclusive")
     parser.add_argument("--end", required=True, help="YYYY-MM-DD exclusive")
     parser.add_argument("--query", default=DEFAULT_QUERY_NAME)
+    parser.add_argument("--version", type=int, default=DEFAULT_VERSION)
+    parser.add_argument(
+        "--tac-area",
+        default=DEFAULT_TAC_AREA,
+        help='Control-area filter (default "CA ISO-TAC"). Pass "ALL" to keep every row.',
+    )
+    parser.add_argument(
+        "--market-run-id",
+        default=DEFAULT_MARKET_RUN_ID,
+        help='Market-run filter (default "RTM"). Pass "ALL" to keep every row.',
+    )
+    parser.add_argument(
+        "--label-substring",
+        default="5Min",
+        help='LABEL substring filter (default "5Min" for 5-minute RTM). '
+        'Pass "ALL" to keep every label.',
+    )
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args()
 
@@ -163,11 +268,30 @@ def main() -> int:
             "with CAISO rate limits"
         )
 
+    tac_area: str | None = (
+        None if args.tac_area.upper() == "ALL" else args.tac_area
+    )
+    market_run_id: str | None = (
+        None if args.market_run_id.upper() == "ALL" else args.market_run_id
+    )
+    label_substring: str | None = (
+        None if args.label_substring.upper() == "ALL" else args.label_substring
+    )
     print(
-        f"[fetch_caiso] {args.query} from {start} to {end} → {args.out}",
+        f"[fetch_caiso] {args.query} v{args.version} from {start} to {end} "
+        f"tac_area={tac_area or 'ALL'} mri={market_run_id or 'ALL'} "
+        f"label~={label_substring or 'ALL'} → {args.out}",
         file=sys.stderr,
     )
-    rows = fetch_caiso_load(start, end, query_name=args.query)
+    rows = fetch_caiso_load(
+        start,
+        end,
+        query_name=args.query,
+        version=args.version,
+        tac_area=tac_area,
+        market_run_id=market_run_id,
+        label_substring=label_substring,
+    )
     if not rows:
         print(
             "[fetch_caiso] no rows returned — query name may not match the "

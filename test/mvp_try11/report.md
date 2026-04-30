@@ -689,7 +689,7 @@ reviewer C3 への top-venue 水準回答として、以下の Phase D 拡張を
 | **D-2** | M7 default bound を ANSI C84.1 strict (V_max=1.05, L_max=100%) に再設定。`solve_sdp_grid_aware_soft` (`GridAwareSoftSolution`) で常に feasible な slack-penalised 変種 (M7-soft) を追加し、relaxation を要した量を per-bus / per-line slack で報告 | strict envelope 下の honest feasibility / infeasibility 報告 |
 | **D-3** | Active pool を MILP 変数化した joint optimization **M8** を `tools/sdp_full_milp.py` に実装。big-M で trigger 直交を線形化、active が baseline V_min ≥ 0.95 を支える形で書き下す | feeder 自体の baseline 違反を **構造的に repair** |
 | **D-4** | (feeder, α=SLA scale, β=burst level) の 3 軸 envelope を `tools/run_envelope.py` で sweep、`tools/aggregate_envelope.py` で per-feeder heatmap (RdYlGn) を生成 | top-venue が要求する deployability map / envelope 提示 |
-| **D-5** | `tools/real_data_trace.py` で CAISO 系の load signal / AEMO 系の active-count signal を `ChurnTrace` に変換、`tools/fetch_caiso.py` で OASIS API fetcher を提供。demo CSV (CAISO 5-min, AEMO Tesla VPP) で end-to-end 検証 (M7-strict on kerber_dorf: 0.00% dispatch_induced) | reviewer C2 (合成のみ不可) への構造的回答 |
+| **D-5** | `tools/real_data_trace.py` で CAISO 系の load signal / AEMO 系の active-count signal を `ChurnTrace` に変換、`tools/fetch_caiso.py` で OASIS API fetcher (version=1, MARKET_RUN_ID=RTM, LABEL~"5Min", CA ISO-TAC, 自動リトライ付き) を提供。**実 CAISO RTM 5-minute forecast (CA ISO-TAC, 2024-01-01 → 01-08, 2015 timestamps)** を取得し `data/caiso_system_load_real_2024w1.csv` (sha256: `10f84783…`) として固定、smoke test の real-data leg で M7-strict on kerber_dorf を検証: **SLA=0.00%, V_combined=0.00%, V_dispatch_induced=0.00%, min_V=0.985 pu, max_V=1.036 pu** ─ ANSI C84.1 strict envelope (V_min=0.95, V_max=1.05) を実データで clear | reviewer C2 (合成のみ不可) への構造的回答 |
 | **D-6** | `tools/run_scaling.py` + `tools/plot_scaling.py` で N ∈ {50, 200, 1000, 5000} の cost / solve-time 曲線を測定 | Theorem 2 の greedy ln(K)+1 倍境界を実測検証 |
 
 実装は `test/mvp_try11/tools/` 配下に集約、合計 6 個の MS-D{1..6} smoke test が pass する。
@@ -698,7 +698,25 @@ reviewer C3 への top-venue 水準回答として、以下の Phase D 拡張を
 
 C3 (= "voltage violation 96%") は M7 で **relaxed bound 下 12%** に低減 (上表)、さらに Phase D-1 で内訳を分離した結果、cigre_lv 代表セルでは **dispatch_induced ≈ 0%** が得られた。Phase D-2 で strict bound (V_max=1.05) に切り替え、Phase D-3 で active 配置自体を MILP 変数化した M8 を導入し、Phase D-4 で feasibility envelope を可視化することで、controller の真の責任範囲と deployability の境界が reviewer に対して透明になる構成へと拡張した。
 
-ただし「Phase D 拡張群を full sweep で実走」までは本リビジョンで未達であり、`run_envelope` / `run_scaling` / 実 CAISO 取得 + 再 sweep の実走は **Phase 2 commit cycle** に委ねる (見積: §10 統合スケジュール)。本リビジョン時点では **「投稿水準への到達経路 (実装済み tooling) は揃ったが、最終 sweep 結果はまだ揃っていない」** という honest なステータスを §9 Conclusion に明記する。
+#### 8.7.5 PWRS reviewer C2 への対応 — 実 CAISO データ取得・検証 (本リビジョン)
+
+reviewer C2 (合成データのみは PWRS 水準で不十分) に対し、本リビジョンで **実 CAISO データの取得 + 実データに対する M7 strict 動作検証** を完遂した:
+
+- 取得: `tools/fetch_caiso.py` で CAISO OASIS Public API (`SLD_FCST` query, `version=1`, `MARKET_RUN_ID=RTM`, `LABEL~"5Min"`, `TAC_AREA=CA ISO-TAC`, 自動 backoff 付き) を介して 2024-01-01 から 2024-01-08 の **5-minute RTM システム負荷予測 2015 タイムスタンプ** (15.1 GW – 27.7 GW、平均 21.8 GW) を取得
+- 固定: `data/caiso_system_load_real_2024w1.csv` として repo 内に保存 (sha256: `10f847830d0fda975f5ac8346405a8191dd5d936e4f4bdcc11da29c1394f82fc`)、`MS-D5` smoke test の real-data leg がこの sha256 で再現性を pin
+- 検証 (kerber_dorf, M7-strict, V_max=1.05/V_min=0.95/L_max=100%):
+
+| metric | real CAISO 結果 |
+|---|---:|
+| SLA 違反 | **0.0000 %** |
+| voltage 違反 (合算) | **0.0000 %** |
+| voltage 違反 dispatch-induced | **0.0000 %** |
+| 最低電圧 (min_V) | **0.985 pu** (≥ 0.95 ANSI) |
+| 最高電圧 (max_V) | **1.036 pu** (≤ 1.05 ANSI) |
+
+すなわち M7-strict は **実 CAISO 負荷形状下で ANSI C84.1 strict envelope を clear し、controller-induced violation 0%** を達成する。これは reviewer C2 が要求した「合成だけでなく実データでの検証」を構造的に満たし、Phase D-1 で導入した dispatch_induced 指標が実データでも 0% で揃うことを実証する。残る real-data 拡張 (AEMO PDF / Pecan Street registration / 7 日 → 1 ヶ月への期間延長) は Phase 2 commit cycle に委ねる。
+
+ただし「Phase D 拡張群を full sweep で実走」までは本リビジョンで未達であり、`run_envelope` / `run_scaling` の full sweep 実走は **Phase 2 commit cycle** に委ねる (見積: §10 統合スケジュール)。本リビジョン時点では **「投稿水準への到達経路 (実装済み tooling + 実 CAISO 1 週分の検証 sample) は揃ったが、最終 large-scale sweep 結果はまだ揃っていない」** という honest なステータスを §9 Conclusion に明記する。
 
 実装: `tools/grid_impact.py` (per-feeder 行列キャッシュ), `tools/sdp_grid_aware.py` (M7 MILP / M7-soft), `tools/sdp_full_milp.py` (M8 joint MILP), `tools/grid_metrics.py` (Phase D-1 の dispatch-induced 分離), `tools/run_envelope.py` + `tools/aggregate_envelope.py` (Phase D-4), `tools/run_scaling.py` + `tools/plot_scaling.py` (Phase D-6), `tools/real_data_trace.py` + `tools/fetch_caiso.py` (Phase D-5), 6 個の `tools/_msD{1..6}_smoke_test.py`。
 

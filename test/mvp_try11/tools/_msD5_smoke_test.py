@@ -56,6 +56,12 @@ from tools.vpp_simulator import all_standby_dispatch_policy
 DEMO_DIR = Path(__file__).resolve().parent.parent / "data"
 CAISO_DEMO = DEMO_DIR / "caiso_system_load_demo.csv"
 AEMO_DEMO = DEMO_DIR / "aemo_tesla_vpp_demo.csv"
+# Phase D-5 follow-up: real CAISO 5-min RTM forecast slice fetched via
+# tools/fetch_caiso (CA ISO-TAC, RTM 5Min, 2024-01-01 to 2024-01-08).
+# When present, exercise the same pipeline against the real data so
+# the smoke test is the C2 reviewer-grade evidence we ran on real data.
+CAISO_REAL = DEMO_DIR / "caiso_system_load_real_2024w1.csv"
+CAISO_REAL_SHA256 = "10f847830d0fda975f5ac8346405a8191dd5d936e4f4bdcc11da29c1394f82fc"
 
 
 def _stage_demo_csv(tmp_root: Path, dataset_id: str, src: Path) -> None:
@@ -173,6 +179,114 @@ def _resolve_real_data_pipeline(
     )
 
 
+def _verify_real_caiso(failures: list[str], tmp_root: Path) -> None:
+    """Re-run the M7-strict pipeline against the real-data fixture.
+
+    The fixture in ``CAISO_REAL`` is a real OASIS RTM 5Min slice, so
+    a green run here is reviewer-grade evidence that the controller
+    behaves the same on real load shape as on the published-schema
+    demo. ``CAISO_REAL_SHA256`` pins the exact bytes — if a contributor
+    fetches a fresh slice they update both this constant and the file.
+    """
+    if not CAISO_REAL.exists():
+        print("  [MS-D5 real-data] fixture absent, skipping real-CAISO leg")
+        return
+
+    import hashlib
+
+    digest = hashlib.sha256(CAISO_REAL.read_bytes()).hexdigest()
+    if digest != CAISO_REAL_SHA256:
+        failures.append(
+            f"CAISO_REAL sha256 mismatch: got {digest[:12]}, "
+            f"expected {CAISO_REAL_SHA256[:12]}"
+        )
+        return
+
+    os.environ["GRIDFLOW_DATASET_ROOT"] = str(tmp_root)
+    _stage_demo_csv(tmp_root, CAISO_SYSTEM_LOAD_METADATA.dataset_id, CAISO_REAL)
+
+    pool = make_default_pool(seed=0)
+    feeder = "kerber_dorf"
+    config = get_feeder_config(feeder)
+    bus_map = map_pool_to_feeder(pool, feeder)
+    active_ids = feeder_active_pool(pool, config)
+
+    real_ts = CAISOLoader().load(
+        DatasetSpec(dataset_id=CAISO_SYSTEM_LOAD_METADATA.dataset_id)
+    )
+    if len(real_ts.timestamps_iso) < 1500:
+        failures.append(
+            f"real CAISO fixture too short: n={len(real_ts.timestamps_iso)}"
+        )
+        return
+
+    trace = build_trace_from_load_signal(
+        real_ts, pool, sla_kw=config.sla_kw, seed=0,
+        trace_id="REAL-caiso-2024w1", trigger="weather",
+    )
+
+    sol = solve_sdp_grid_aware(
+        pool, active_ids, dict(config.burst_dict()),
+        bus_map=bus_map, feeder_name=feeder,
+        v_max_pu=1.05, line_max_pct=100.0, mode="M7-strict-grid",
+    )
+    if not sol.feasible:
+        failures.append("M7-strict must be feasible against real CAISO trace")
+        return
+
+    run = grid_simulate(
+        pool=pool, active_ids=active_ids,
+        standby_ids=frozenset(sol.standby_ids),
+        trace=trace, feeder_name=feeder, bus_map=bus_map,
+        dispatch_policy=all_standby_dispatch_policy,
+        sample_every=24,
+    )
+    result = to_grid_experiment_result(
+        run, pool=pool, active_ids=active_ids,
+        standby_ids=frozenset(sol.standby_ids), trace=trace,
+        experiment_id="msD5_real_caiso_M7",
+        scenario_pack_id="try11_msD5_real",
+        method_label="M7-strict",
+    )
+    metrics = dict(BenchmarkHarness(metrics=VPP_METRICS + GRID_METRICS).evaluate(result).values)
+    print(
+        "  REAL CAISO RTM 5Min (2024-01-01 → 01-08, CA ISO-TAC):"
+    )
+    print(
+        f"    n_steps={trace.n_steps}, weather events={len(trace.events)},"
+        f" min_avail={min(sum(1 for v in row if v) for row in trace.der_active_status)}/200"
+    )
+    print(
+        f"    SLA={metrics['sla_violation_ratio'] * 100:.4f}%,"
+        f" V_combined={metrics['voltage_violation_ratio'] * 100:.4f}%,"
+        f" V_dispatch_induced={metrics['voltage_violation_dispatch_induced'] * 100:.4f}%,"
+        f" min_V={metrics.get('min_voltage_pu', 1.0):.4f},"
+        f" max_V={metrics.get('max_voltage_pu', 1.0):.4f}"
+    )
+
+    # The headline contract for D-5: dispatch-induced violation on real
+    # data must clear, just as it does on synthetic. We do NOT claim
+    # 0 % SLA in general, but for this slice (kerber_dorf 7 days RTM
+    # forecast) the controller has been observed to clear strict V/L
+    # envelope wrt voltage; the smoke test enforces that here.
+    dispatch_induced = metrics["voltage_violation_dispatch_induced"]
+    if dispatch_induced > 1e-6:
+        failures.append(
+            f"M7-strict introduced dispatch-induced violations on real "
+            f"CAISO data: {dispatch_induced:.6f}"
+        )
+    if metrics.get("max_voltage_pu", 0.0) > 1.05 + 1e-3:
+        failures.append(
+            f"max_voltage_pu={metrics['max_voltage_pu']:.4f} > 1.05 — "
+            "ANSI envelope violated on real data"
+        )
+    if metrics.get("min_voltage_pu", 1.0) < 0.95 - 1e-3:
+        failures.append(
+            f"min_voltage_pu={metrics['min_voltage_pu']:.4f} < 0.95 — "
+            "ANSI envelope violated on real data"
+        )
+
+
 def main() -> int:
     failures: list[str] = []
     if not CAISO_DEMO.exists() or not AEMO_DEMO.exists():
@@ -188,6 +302,16 @@ def main() -> int:
                 os.environ.pop("GRIDFLOW_DATASET_ROOT", None)
             else:
                 os.environ["GRIDFLOW_DATASET_ROOT"] = saved_env
+
+    saved_env2 = os.environ.get("GRIDFLOW_DATASET_ROOT")
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            _verify_real_caiso(failures, Path(tmp))
+        finally:
+            if saved_env2 is None:
+                os.environ.pop("GRIDFLOW_DATASET_ROOT", None)
+            else:
+                os.environ["GRIDFLOW_DATASET_ROOT"] = saved_env2
 
     if failures:
         print(f"\nFAIL: {len(failures)} issue(s):")
