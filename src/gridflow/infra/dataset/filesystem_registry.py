@@ -12,10 +12,10 @@ Both implementations satisfy ``gridflow.domain.dataset.DatasetRegistry``.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import asdict
 from pathlib import Path
-from typing import Mapping
+from typing import Any
 
 from gridflow.domain.dataset import (
     DatasetLicense,
@@ -24,8 +24,8 @@ from gridflow.domain.dataset import (
 from gridflow.domain.dataset.dataset import LICENSE_NAMES
 
 
-def _metadata_to_jsonable(m: DatasetMetadata) -> dict:
-    d = asdict(m)
+def _metadata_to_jsonable(m: DatasetMetadata) -> dict[str, object]:
+    d: dict[str, object] = asdict(m)
     # Enum → string for JSON
     d["license"] = m.license.value
     d["units"] = [list(pair) for pair in m.units]
@@ -33,14 +33,13 @@ def _metadata_to_jsonable(m: DatasetMetadata) -> dict:
     return d
 
 
-def _metadata_from_jsonable(d: Mapping) -> DatasetMetadata:
+def _metadata_from_jsonable(d: Mapping[str, Any]) -> DatasetMetadata:
     return DatasetMetadata(
         dataset_id=d["dataset_id"],
         title=d["title"],
         description=d["description"],
         source=d["source"],
-        license=DatasetLicense(d["license"]) if d["license"] in LICENSE_NAMES
-                else DatasetLicense.OTHER,
+        license=DatasetLicense(d["license"]) if d["license"] in LICENSE_NAMES else DatasetLicense.OTHER,
         retrieval_url=d["retrieval_url"],
         doi=d["doi"],
         retrieval_method=d["retrieval_method"],
@@ -61,9 +60,7 @@ class InMemoryDatasetRegistry:
     """
 
     def __init__(self, metadatas: Iterable[DatasetMetadata] = ()):
-        self._by_id: dict[str, DatasetMetadata] = {
-            m.dataset_id: m for m in metadatas
-        }
+        self._by_id: dict[str, DatasetMetadata] = {m.dataset_id: m for m in metadatas}
 
     def register(self, m: DatasetMetadata) -> None:
         self._by_id[m.dataset_id] = m
@@ -78,9 +75,7 @@ class InMemoryDatasetRegistry:
 
     def find_by_source(self, source: str) -> tuple[DatasetMetadata, ...]:
         s = source.lower()
-        return tuple(
-            m for m in self._by_id.values() if s in m.source.lower()
-        )
+        return tuple(m for m in self._by_id.values() if s in m.source.lower())
 
     def filter_by_license(self, *, redistributable: bool) -> tuple[DatasetMetadata, ...]:
         REDIST = {
@@ -93,9 +88,7 @@ class InMemoryDatasetRegistry:
             DatasetLicense.PUBLIC_DOMAIN,
         }
         if redistributable:
-            return tuple(
-                m for m in self._by_id.values() if m.license in REDIST
-            )
+            return tuple(m for m in self._by_id.values() if m.license in REDIST)
         return tuple(m for m in self._by_id.values() if m.license not in REDIST)
 
 
@@ -124,8 +117,8 @@ class FilesystemDatasetRegistry(InMemoryDatasetRegistry):
             except Exception as e:
                 # Skip corrupt entries but log via stderr to avoid swallow
                 import sys
-                print(f"[FilesystemDatasetRegistry] skipping {json_path}: {e}",
-                      file=sys.stderr)
+
+                print(f"[FilesystemDatasetRegistry] skipping {json_path}: {e}", file=sys.stderr)
 
     def write(self, m: DatasetMetadata) -> Path:
         """Persist metadata to disk, returning the path."""
