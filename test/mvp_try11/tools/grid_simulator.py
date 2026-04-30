@@ -35,6 +35,7 @@ from gridflow.usecase.result import ExperimentResult
 
 from .der_pool import DER
 from .feeders import DerBusMap, make_feeder
+from .grid_impact import get_impact_matrix
 from .trace_synthesizer import ChurnTrace
 from .vpp_simulator import all_standby_dispatch_policy
 
@@ -64,6 +65,11 @@ class GridRunResult:
         line_max_load_pct_sampled: Per-sampled-step max line loading (%).
         pf_diverged: Per-sampled-step bool — power flow diverged.
         train_steps / test_steps: Train/test split.
+        baseline_voltage_min_pu: V_min (pu) under existing load only (= no DER
+            injection). Time-independent constant computed from the feeder
+            grid_impact baseline. Shared across all sampled steps.
+        baseline_voltage_max_pu: V_max (pu) under existing load only.
+        baseline_line_load_pct: Max line loading (%) under existing load only.
     """
 
     n_steps: int
@@ -79,6 +85,9 @@ class GridRunResult:
     pf_diverged: tuple[bool, ...]
     train_steps: int
     test_steps: int
+    baseline_voltage_min_pu: float
+    baseline_voltage_max_pu: float
+    baseline_line_load_pct: float
 
 
 def grid_simulate(
@@ -185,6 +194,20 @@ def grid_simulate(
 
     train_steps = trace.train_days * 24 * 60 // trace.timestep_min
 
+    # Baseline (existing-load only, no DER injection) is time-independent
+    # under static-load pandapower runpp. Pull it from the cached impact
+    # matrix so we only pay for the baseline PF once per feeder.
+    impact = get_impact_matrix(feeder_name)
+    if impact.baseline_v_pu:
+        baseline_v_min = float(min(impact.baseline_v_pu))
+        baseline_v_max = float(max(impact.baseline_v_pu))
+    else:
+        baseline_v_min = 1.0
+        baseline_v_max = 1.0
+    baseline_line_max = (
+        float(max(impact.baseline_line_pct)) if impact.baseline_line_pct else 0.0
+    )
+
     return GridRunResult(
         n_steps=n_steps,
         sample_every=sample_every,
@@ -199,6 +222,9 @@ def grid_simulate(
         pf_diverged=tuple(pf_div_samples),
         train_steps=train_steps,
         test_steps=n_steps - train_steps,
+        baseline_voltage_min_pu=baseline_v_min,
+        baseline_voltage_max_pu=baseline_v_max,
+        baseline_line_load_pct=baseline_line_max,
     )
 
 
@@ -238,6 +264,9 @@ def to_grid_experiment_result(
     v_min_full = _expand_sampled(run.voltage_min_pu_sampled)
     v_max_full = _expand_sampled(run.voltage_max_pu_sampled)
     line_load_full = _expand_sampled(run.line_max_load_pct_sampled)
+    baseline_v_min_full = tuple(run.baseline_voltage_min_pu for _ in range(n_steps))
+    baseline_v_max_full = tuple(run.baseline_voltage_max_pu for _ in range(n_steps))
+    baseline_line_full = tuple(run.baseline_line_load_pct for _ in range(n_steps))
 
     load_results = (
         LoadResult(asset_id="__aggregate__",
@@ -250,6 +279,12 @@ def to_grid_experiment_result(
                    demands=v_max_full, supplied=v_max_full),
         LoadResult(asset_id="__line_load_max__",
                    demands=line_load_full, supplied=line_load_full),
+        LoadResult(asset_id="__voltage_baseline_min__",
+                   demands=baseline_v_min_full, supplied=baseline_v_min_full),
+        LoadResult(asset_id="__voltage_baseline_max__",
+                   demands=baseline_v_max_full, supplied=baseline_v_max_full),
+        LoadResult(asset_id="__line_load_baseline_max__",
+                   demands=baseline_line_full, supplied=baseline_line_full),
     )
 
     metadata = ExperimentMetadata(
