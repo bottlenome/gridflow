@@ -289,6 +289,156 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/dataset/ -q
 
 ---
 
+## E. リポジトリ現在状態 (snapshot at handover)
+
+### E.1 ブランチ・最新 commit
+
+```
+branch: claude/implement-phase2-Dr2jE
+upstream: origin/claude/implement-phase2-Dr2jE (= 全 commit push 済)
+最新 commit: f905a89 docs(try11): NEXT_STEPS chunk C-D — §C 必読リスト + §D 環境セットアップ手順
+```
+
+### E.2 直近コミット履歴 (重要 20 件)
+
+```
+f905a89 NEXT_STEPS chunk C-D
+12c8cd7 NEXT_STEPS chunk B (用語集)
+8abf5c9 NEXT_STEPS chunk A (背景・目的)
+5166c80 NEXT_STEPS chunk 7 (final): D-6 + D-7 + checklist + schedule
+28f2c15 NEXT_STEPS chunk 6: D-5 real-data acquisition
+7de24c7 NEXT_STEPS chunk 5: D-4 feasibility envelope
+1f1d067 NEXT_STEPS chunk 4: D-3 M8 active+standby joint MILP
+6babecc NEXT_STEPS chunk 3: D-2 tight bound + infeasibility
+2bda19c NEXT_STEPS chunk 2: D-1 voltage metric 二分解
+b5c8cfe NEXT_STEPS chunk 1: 現状の正直評価 + Phase D 概観
+95fc638 review_record final (= 倫理的に問題のある「合格」判定、D-7 で取消必須)
+5fc1239 MS-C3-5 + C2-7 report §8.0 + §8.7
+d9efaf0 MS-C3-4 M7 vs M1 sweep (= relaxed bound 利用、Phase D で再実装)
+cdc48bf MS-C2-6 real-data-shape pipeline
+10ca38a feat(dataset): scenario_bridge
+... (詳細は git log 参照)
+```
+
+### E.3 既知の **未コミット変更** (system-reminder で通知された linter 修正)
+
+**`tools/run_phase1_multifeeder.py` に以下が手動編集された** (lint or PO 修正):
+
+```python
+# 81: METHODS に "M7" が追加済み
+METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7",
+           "B1", "B2", "B3", "B4", "B5", "B6")
+
+# 89: SKIP_AT_5000 に "M7" が追加済み
+SKIP_AT_5000 = frozenset({..., "M7", ...})
+
+# 60: import 追加
+from .sdp_grid_aware import solve_sdp_grid_aware
+
+# 112-113: _solve シグネチャに bus_map / feeder_name を追加
+def _solve(method, pool, active_ids, trace, *, burst, sla_kw, seed,
+           bus_map=None, feeder_name=None):
+
+# 143-152: M7 case 追加 (V_max=1.10, line_max_pct=120 で relaxed)
+if method == "M7":
+    if bus_map is None or feeder_name is None:
+        raise ValueError("M7 requires bus_map and feeder_name")
+    sol = solve_sdp_grid_aware(
+        pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
+        basis=TRIGGER_BASIS_K3,
+        v_max_pu=1.10, line_max_pct=120.0,  # ← relaxed bound (Phase D で要修正)
+        mode="M7-grid",
+    )
+```
+
+これは前セッションで M7 を追加した版で、**意図的な変更** なので revert しない。
+**ただし `v_max_pu=1.10` と `line_max_pct=120.0` は Phase D-2 で `1.05` /
+`100.0` に修正必要** (= reviewer C3 真の解消)。
+
+### E.4 主要ファイルツリー
+
+```
+test/mvp_try11/
+├── NEXT_STEPS.md                  # 本書
+├── ideation_record.md             # Phase 0.5 (Rule 1-9 全経由)
+├── implementation_plan.md         # 元 Phase 1 計画
+├── theorems.md                    # Theorem 1-3
+├── report.md                      # 論文ドラフト (D-7 で再書き)
+├── review_record.md               # 査読記録 (D-7 で再書き)
+├── data/
+│   ├── caiso_system_load_demo.csv      # demo fixture (CAISO schema)
+│   └── aemo_tesla_vpp_demo.csv         # demo fixture (AEMO schema)
+├── results/
+│   ├── try11_FM2_results.json     # 360 cell sweep (M7 sweep が overwrite)
+│   ├── FM2_per_condition_metrics.csv
+│   ├── grid_impact_cache/
+│   │   ├── cigre_lv.json          # voltage/line impact 行列 cache
+│   │   ├── kerber_dorf.json
+│   │   └── kerber_landnetz.json
+│   └── plots/                      # 5 figures (D-7 で再生成必要)
+└── tools/
+    ├── der_pool.py
+    ├── trace_synthesizer.py        # C1-C8 全 trace
+    ├── feeders.py                  # 3 feeder + bus 配置
+    ├── feeder_config.py            # per-feeder SLA / burst
+    ├── grid_impact.py              # impact 行列
+    ├── grid_simulator.py           # PF + voltage / line metrics
+    ├── grid_metrics.py             # 5 grid metric (= D-1 で 2 個追加)
+    ├── sdp_optimizer.py            # M1/M3a-c/M4b
+    ├── sdp_grid_aware.py           # M7 (= D-2 で tight 化対象)
+    ├── vpp_simulator.py / vpp_metrics.py
+    ├── baselines/                  # B1-B6
+    ├── run_phase1_multifeeder.py   # main sweep runner
+    ├── make_plots.py               # matplotlib 5 図生成
+    └── _ms*_smoke_test.py          # 各 MS の smoke test
+
+src/gridflow/
+├── domain/dataset/                # DatasetMetadata / Spec / Loader Protocol
+├── adapter/dataset/                # 6 loaders + scenario_bridge
+└── infra/dataset/                  # InMemory + Filesystem Registry
+
+tests/dataset/                      # 41 test 全 pass
+docs/
+├── dataset_contribution.md         # 6-step PR rule
+└── dataset_catalog.md              # 登録カタログ
+```
+
+### E.5 機能している実装
+
+- ✅ 全 41 dataset test pass
+- ✅ 全 _ms*_smoke_test (MS-1〜MS-A4, MS-C3-1) pass
+- ✅ M7 grid-aware MILP は (relaxed bound 下で) feasible
+- ✅ 360 cell sweep で M7 vs M1 比較データ取得済み
+- ✅ matplotlib 5 図生成可能 (現在は古い数値を反映)
+
+### E.6 機能していない / 不完全な実装
+
+- ❌ **voltage_violation_ratio metric が混在**: dispatch-induced と
+  baseline-only を分離していない (= D-1 で修正)
+- ❌ **M7 が relaxed bound 使用**: V_max=1.10, line_max=120% で
+  運用基準逸脱 (= D-2 で修正)
+- ❌ **active pool が固定**: cigre_lv の baseline_v_min<0.95 を
+  解決できない (= D-3 で修正)
+- ❌ **実データ取得未完**: framework は完成したが CSV/API fetch は
+  403/503 で失敗、demo fixture のみ (= D-5 で取得)
+
+### E.7 commit ハッシュで参照する重要マイルストーン
+
+| commit | 内容 | 用途 |
+|---|---|---|
+| f54e128 | M1 270 cell F-M1 sweep (cost=18,000) | F-M1 baseline |
+| 6ad6ad0 | M1 1080 cell F-M2 sweep (cost=3,500) | F-M2 baseline |
+| d9efaf0 | M7 vs M1 360 cell sweep | C3 改善測定 |
+| 95fc638 | review_record final (= 倫理問題、取消対象) | D-7 修正対象 |
+| f905a89 | NEXT_STEPS chunk C-D | 本書最新 |
+
+```bash
+# 過去状態への戻り方:
+git diff f54e128..HEAD test/mvp_try11/results/  # F-M1 → 現在 の結果差分
+```
+
+---
+
 ## 0. 現状の正直な評価 (= 未解消の問題)
 
 ### 0.1 C3 の "解消" は不十分
