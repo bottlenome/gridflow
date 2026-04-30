@@ -762,3 +762,210 @@ PWRS reviewer は **少なくとも 1 つの実データ** を要求するので
 - 全 5 source: 2 週間
 
 ---
+
+## 8. Phase D-6: Multi-scale 検証 (mod-A1)
+
+**目的**: Theorem 2 (`theorems.md` §Theorem 2) で示した greedy ln(K)+1 倍境界を
+**N=50, 200, 1000, 5000** で実測し、論文に scaling table を追加。
+
+### 8.1 測定軸
+
+```
+N ∈ {50, 200, 1000, 5000}
+method ∈ {M1 MILP, M4b greedy, M7 grid-aware, M8 full}
+trace ∈ C1 (代表)
+seed ∈ {0, 1, 2}
+feeder = cigre_lv (代表)
+```
+
+= 4 × 4 × 1 × 3 × 1 = 48 cells
+
+### 8.2 期待される結果
+
+```
+N      M1 cost  M4b cost  ratio   M1 time  M4b time
+50     1500     2000      1.33    0.005s   < 0.001s
+200    3500     6000      1.71    0.013s   < 0.001s
+1000   15000    25000     1.67    0.5s     0.005s
+5000   timeout  100000    -       >300s    0.05s
+```
+
+主張:
+- N≤200 では MILP が実用域、greedy は ~1.7x cost
+- N≥1000 では MILP が次第に遅くなる
+- N=5000 では MILP が timeout、greedy のみ実用 → Theorem 2 の境界 1.83 (K=3) 内
+
+### 8.3 実装手順
+
+#### Step 1: `tools/run_scaling.py` を新規作成
+
+`run_phase1_multifeeder.py` を base に N を sweep 軸に。Pool 拡張は既存
+`make_scaled_pool` (`der_pool.py`) を使う。
+
+#### Step 2: timeout 処理
+
+CBC に timeLimit=300 を設定し、timeout した cell を `infeasible_timeout=True`
+として記録。
+
+#### Step 3: 結果 plot
+
+```
+tools/plot_scaling.py:
+  - x 軸: N (log scale)
+  - y 軸 (左): cost (log)
+  - y 軸 (右): solve time (log)
+  - line: M1 / M4b / M7
+```
+
+### 8.4 工数目安
+
+1 日 (sweep + 集計 + plot)
+
+---
+
+## 9. Phase D-7: Report / review_record 再書き (倫理対応)
+
+**目的**: 60% / 12% の voltage 違反で「合格」とした判定を取消、真の合格
+基準で書き直す。
+
+### 9.1 修正対象
+
+| ファイル | 修正内容 |
+|---|---|
+| `report.md` §1 Abstract | "5x voltage reduction" を取消、"in some regime" に慎重化 |
+| `report.md` §6 F7 | 12% を **dispatch-induced X% / baseline-only Y%** に分解 |
+| `report.md` §8.7 | 「実装済み」→「strict bound で feasibility envelope 測定」に書き直し |
+| `report.md` §9 | "合格" を "Phase D 拡張で投稿水準に到達見込み" に書き換え |
+| `review_record.md` §総合判定 | 「合格 (top venue 水準)」を取消、「条件付き合格 (Phase D 必須)」に格下げ |
+
+### 9.2 倫理的注意
+
+論文文中で:
+- 「relaxed bound (V_max=1.10) を使った」事実を **必ず明記**
+- ANSI C84.1 strict (1.05) 準拠は **future work** と明示
+- 「12% violation」は dispatch + baseline の合算で、内訳が分離されていない時点
+  での measurement であることを **明示**
+
+これらを隠すと scientific misconduct になる。
+
+### 9.3 工数目安
+
+1 日 (report 4 節改訂 + review_record 全節改訂)
+
+---
+
+## 10. 全 Phase 統合スケジュール (推奨)
+
+```
+Day 1-2: D-1 (voltage metric 二分解) + D-7 一部 (60% 合格判定取消)
+Day 3-4: D-2 (tight bound + infeasibility report)
+Day 5-7: D-3 (M8 active+standby joint MILP)
+Day 8-9: D-4 (feasibility envelope)
+Day 10-12: D-5 (実データ取得 — CAISO 最低限)
+Day 13: D-6 (multi-scale)
+Day 14-15: D-7 (report 全面再書き) + 最終 review_record
+```
+
+合計 **約 2-3 週間**。
+
+### 10.1 短縮版 (= D-1, D-2, D-7 のみで 1 週間)
+
+「PWRS reject 確実な 12% 合格判定だけは取り消す」最低限路線:
+- D-1 (metric 分解、半日) + D-2 (tight bound、1 日) + D-7 (report 修正、半日)
+- 残課題は paper に limitation として明記
+
+### 10.2 完全版 (= D-1〜D-7 全実装で 3 週間)
+
+PWRS submission 準備完了水準。Phase D 後に Phase E (Phase 3 PO レビュー
++ submission preparation) へ。
+
+---
+
+## 11. 引継ぎ確認チェックリスト (次セッション開始時に実行)
+
+### 11.1 環境確認
+
+```bash
+cd /home/user/gridflow
+git log --oneline -10            # 最新 commit が見える
+ls test/mvp_try11/results/grid_impact_cache/   # 3 feeder の cache が ある
+ls test/mvp_try11/data/          # demo fixtures (CAISO/AEMO) が ある
+```
+
+### 11.2 既存テストの pass 確認
+
+```bash
+PYTHONPATH=src .venv/bin/python -m pytest tests/dataset/ -q
+# 41 passed
+```
+
+### 11.3 Smoke test の pass 確認 (各 MS)
+
+```bash
+cd test/mvp_try11
+for ms in _ms1 _ms2 _ms3 _ms5 _msA1 _msA2 _msA3 _msA4 _msC3_1 _msC3_3 _msC2_6; do
+    PYTHONPATH=/home/user/gridflow/src \
+        /home/user/gridflow/.venv/bin/python -m tools.${ms}_smoke_test
+done
+# 全部 OK と表示されること
+```
+
+### 11.4 既存 sweep 結果の確認
+
+```bash
+PYTHONPATH=/home/user/gridflow/src /home/user/gridflow/.venv/bin/python -c "
+import json
+d = json.loads(open('test/mvp_try11/results/try11_FM2_results.json').read())
+print(f'records: {len(d[\"records\"])}, errors: {d[\"n_errors\"]}')
+"
+# records: 360, errors: 0
+```
+
+### 11.5 引継ぎコンテキスト確認
+
+```bash
+# このファイルを読み返す
+cat test/mvp_try11/NEXT_STEPS.md | less
+# 特に §0 (現状の正直評価) と §10 (推奨スケジュール) を確認
+```
+
+### 11.6 関連ファイル
+
+| ファイル | 役割 |
+|---|---|
+| `test/mvp_try11/ideation_record.md` | Phase 0.5 ideation (Rule 1-9 全経由) |
+| `test/mvp_try11/implementation_plan.md` | Phase 1 元計画 |
+| `test/mvp_try11/theorems.md` | 理論貢献 (Theorem 1-3) |
+| `test/mvp_try11/report.md` | 論文ドラフト (要 D-7 で再書き) |
+| `test/mvp_try11/review_record.md` | 査読記録 (要 D-7 で再書き) |
+| `test/mvp_try11/NEXT_STEPS.md` | 本書 (= 次セッション手順書) |
+| `docs/dataset_contribution.md` | データセット contribution rules |
+| `docs/dataset_catalog.md` | 登録 dataset カタログ |
+
+---
+
+## 12. 引継ぎメッセージ (次の作業者へ)
+
+本実装サイクルでは、PWRS reviewer (zero-base) の指摘を全て技術的には応答した
+ものの、**運用基準で見ると 12% voltage 違反は依然 deployable でない** ことに
+気付いた時点で次セッションへ引き継ぎとなった。
+
+最重要点:
+1. **Phase D-1, D-2 を最優先**: 真の voltage 違反 (dispatch-induced) を測定
+2. **Phase D-7 と並行**: 「60% / 12% 合格」の取消は倫理的に最優先
+3. **Phase D-5 (実データ)**: CAISO 取得は技術的に容易、優先実装
+
+PWRS submission に向けては Phase D 全実装 (2-3 週間) が必要だが、最低限
+**D-1, D-2, D-7 (= 1 週間)** で「正直な現状報告」には到達できる。
+
+成功の鍵は **CLAUDE.md §0.1 (妥協なし)** と **§0.5.3 (自己判断)** を貫くこと。
+12% 合格判定はこの 2 つから外れた結果。同じ過ちを繰り返さない。
+
+---
+
+## 13. 更新履歴
+
+| 日付 | 内容 |
+|---|---|
+| 2026-04-30 | 初版作成。chunk 1-7 で段階的にコミット。次セッションへの引継ぎ完了 |
+
