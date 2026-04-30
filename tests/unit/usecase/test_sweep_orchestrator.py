@@ -78,6 +78,26 @@ class _FakeConnector:
         self._pack = None
 
 
+class _ThresholdCounter:
+    """Counts how many voltages are strictly below ``threshold``.
+
+    Exposed at module level so the metric plugin loader (which imports
+    by ``module:ClassName``) can reach it via ``test_sweep_orchestrator``.
+    Used to verify §5.1.1 Option A — that a metric-targeted axis
+    re-instantiates the metric per child with the new kwargs.
+    """
+
+    name = "threshold_counter"
+    unit = "count"
+
+    def __init__(self, *, threshold: float = 0.0) -> None:
+        self.threshold = threshold
+
+    def calculate(self, result) -> float:  # type: ignore[no-untyped-def]
+        voltages = tuple(v for nr in result.node_results for v in nr.voltages)
+        return float(sum(1 for v in voltages if v < self.threshold))
+
+
 def _make_pack(pack_id: str = "base@1.0.0") -> ScenarioPack:
     name, version = pack_id.split("@")
     meta = PackMetadata(
@@ -284,3 +304,126 @@ class TestSweepOrchestratorRun:
                 if key == "pv_kw":
                     seen_kws.append(float(value))  # type: ignore[arg-type]
         assert sorted(seen_kws) == [100.0, 200.0, 300.0]
+
+    def test_per_experiment_metrics_are_recorded(self, tmp_path: Path) -> None:
+        """§5.1.2: SweepResult must carry per-child raw metric values in
+        column-oriented form so downstream analysis (histogram /
+        quantile / bootstrap) gets O(1) lookup + O(N) iterate per
+        metric without re-opening every child ExperimentResult JSON."""
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=400.0, step=100.0),),
+            aggregator_name="statistics",
+        )
+        result = sweep.run(plan)
+        assert len(result.experiment_ids) == 3
+        # Column-oriented: outer is metric_name → vector of N floats.
+        # Both built-in metrics (voltage_deviation, runtime) appear.
+        column_dict = dict(result.per_experiment_metrics)
+        assert "voltage_deviation" in column_dict
+        assert "runtime" in column_dict
+        assert len(column_dict["voltage_deviation"]) == 3
+        assert len(column_dict["runtime"]) == 3
+        # Sorted by metric name (deterministic canonical form).
+        names = [name for name, _ in result.per_experiment_metrics]
+        assert names == sorted(names)
+
+    def test_metric_targeted_axis_reinstantiates_metric_per_child(self, tmp_path: Path) -> None:
+        """§5.1.1 Option A: axes with ``target='metric:<name>'`` override
+        that metric's kwargs per child without re-running the simulation."""
+        from gridflow.usecase.evaluation import MetricSpec
+
+        reg, _, fake = _make_orchestrator_fixture(tmp_path)
+        # Rebuild the sweep orchestrator with an explicit metric_specs
+        # referencing a plugin metric whose threshold we'll sweep.
+        from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+        from gridflow.usecase.orchestrator import Orchestrator
+
+        runner = InProcessOrchestratorRunner(connector_factories={"fake": lambda: fake})
+        orch = Orchestrator(registry=reg, runner=runner)
+        agg_reg = AggregatorRegistry()
+        agg_reg.register(StatisticsAggregator())
+        plugin_spec = f"{__name__}:_ThresholdCounter"
+        sweep = SweepOrchestrator(
+            registry=reg,
+            orchestrator=orch,
+            aggregator_registry=agg_reg,
+            connector_id="fake",
+            # Start with threshold=0 so we can see the override take effect.
+            metric_specs=(
+                MetricSpec(
+                    name="threshold_counter",
+                    plugin=plugin_spec,
+                    kwargs=(("threshold", 0.0),),
+                ),
+            ),
+        )
+        # Sweep pv_kw (→ changes voltage) and also sweep metric.threshold
+        # over 3 values. Expansion is cartesian: 2 pv_kws * 3 thresholds = 6 children.
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(
+                RangeAxis(name="pv_kw", start=100.0, stop=300.0, step=100.0),
+                RangeAxis(
+                    name="threshold",
+                    start=0.90,
+                    stop=1.00,
+                    step=0.03,
+                    target="metric:threshold_counter",
+                ),
+            ),
+            aggregator_name="statistics",
+        )
+        result = sweep.run(plan)
+        # 2 pv_kws * 4 thresholds (0.90, 0.93, 0.96, 0.99) = 8 children
+        assert len(result.experiment_ids) == 8
+        # Assignments carry the metric override.
+        some_metric_ov = [a.metric_params for a in result.assignments if a.metric_params]
+        assert len(some_metric_ov) == 8
+        # Each metric_params entry names our target metric and carries a
+        # single 'threshold' override key.
+        for mp in some_metric_ov:
+            assert len(mp) == 1
+            metric_name, kwargs = mp[0]
+            assert metric_name == "threshold_counter"
+            assert [k for k, _ in kwargs] == ["threshold"]
+
+    def test_metric_target_without_spec_raises(self, tmp_path: Path) -> None:
+        """Fail-fast when a metric-targeted axis names an unknown metric."""
+        from gridflow.domain.error import OrchestratorError
+
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(
+                ChoiceAxis(
+                    name="threshold",
+                    values=(0.9,),
+                    target="metric:unknown_metric",
+                ),
+            ),
+            aggregator_name="statistics",
+        )
+        with pytest.raises(OrchestratorError, match="unknown_metric"):
+            sweep.run(plan)
+
+    def test_assignments_are_recorded(self, tmp_path: Path) -> None:
+        """§5.1.2 (companion): SweepResult carries the parameter assignment
+        that produced each experiment so downstream tools can recover
+        *which* axis values produced which outcome."""
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=400.0, step=100.0),),
+            aggregator_name="statistics",
+        )
+        result = sweep.run(plan)
+        # Assignments are positionally aligned with experiment_ids and
+        # carry exactly the axis values the child saw.
+        pv_kws = [dict(a.pack_params)["pv_kw"] for a in result.assignments]
+        assert sorted(pv_kws) == [100.0, 200.0, 300.0]

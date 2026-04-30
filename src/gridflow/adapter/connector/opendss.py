@@ -50,21 +50,41 @@ class OpenDSSConnector(ConnectorInterface):
     # ------------------------------------------------------------------ life
 
     def initialize(self, pack: ScenarioPack) -> None:
-        # Resolve the master file first so missing-file errors don't require
-        # ``opendssdirect`` to be installed (simplifies unit testing).
-        master_name = str(get_param(pack.metadata.parameters, "master_file") or "IEEE13Nodeckt.dss")
-        master_path = pack.network_dir / master_name
-        if not master_path.exists():
-            raise OpenDSSError(
-                f"Master DSS file not found: {master_path}",
-                context={"pack_id": pack.pack_id, "master": str(master_path)},
-            )
+        # Phase 2 §5.1.3: if the pack references a CDL canonical network,
+        # materialise it to a .dss script and use that instead of the
+        # Phase 1 master_file. The ``cdl_network_file`` parameter takes
+        # precedence because it is the solver-agnostic form every new
+        # pack should use.
+        cdl_file = get_param(pack.metadata.parameters, "cdl_network_file")
+        cdl_script: str | None = None
+        if isinstance(cdl_file, str) and cdl_file:
+            cdl_script = self._compile_cdl_script(pack, cdl_file)
+            master_label = f"cdl:{cdl_file}"
+        else:
+            # Fallback: the Phase 1 contract — a literal master_file under network_dir.
+            master_name = str(get_param(pack.metadata.parameters, "master_file") or "IEEE13Nodeckt.dss")
+            master_path = pack.network_dir / master_name
+            if not master_path.exists():
+                raise OpenDSSError(
+                    f"Master DSS file not found: {master_path}",
+                    context={"pack_id": pack.pack_id, "master": str(master_path)},
+                )
+            master_label = str(master_path)
 
         driver = self._load_driver()
 
         try:
             driver.Basic.ClearAll()
-            driver.Command(f"Redirect [{master_path}]")
+            if cdl_script is not None:
+                # Feed the CDL-derived script line by line so a parse error in
+                # one command does not swallow the following context.
+                for line in cdl_script.splitlines():
+                    stripped = line.strip()
+                    if not stripped or stripped.startswith("!"):
+                        continue
+                    driver.Command(stripped)
+            else:
+                driver.Command(f"Redirect [{master_label}]")
             self._inject_runtime_pv(driver, pack)
             driver.Command("Solve")
             if not driver.Solution.Converged():
@@ -77,7 +97,7 @@ class OpenDSSConnector(ConnectorInterface):
         except Exception as exc:  # pragma: no cover - driver-specific failures
             raise OpenDSSError(
                 f"OpenDSS initialization failed: {exc}",
-                context={"pack_id": pack.pack_id, "master": str(master_path)},
+                context={"pack_id": pack.pack_id, "master": master_label},
                 cause=exc,
             ) from exc
 
@@ -85,7 +105,7 @@ class OpenDSSConnector(ConnectorInterface):
         voltages = tuple(driver.Circuit.AllBusMagPu())
         self._state = _SolveState(
             driver=driver,
-            master_file=str(master_path),
+            master_file=master_label,
             bus_names=bus_names,
             last_voltages=voltages,
         )
@@ -185,6 +205,36 @@ class OpenDSSConnector(ConnectorInterface):
             f"New Generator.PV_runtime bus1={bus_str} phases={phases} kv={kv} conn={conn} kW={kw_value} pf=1.0 Model=1"
         )
         driver.Command(cmd)
+
+    @staticmethod
+    def _compile_cdl_script(pack: ScenarioPack, cdl_file: str) -> str:
+        """Resolve the pack's CDL YAML and render it to an OpenDSS script.
+
+        Kept as a static helper so tests can exercise the CDL → .dss
+        rendering path without a live DSS driver. Delegates the actual
+        conversion to :meth:`OpenDSSTranslator.from_canonical` (the
+        spec-aligned bidirectional surface — 03b §3.5.4a).
+        """
+        from pathlib import Path
+
+        from gridflow.adapter.connector.opendss_translator import OpenDSSTranslator
+        from gridflow.adapter.network.cdl_yaml_loader import (
+            CDLNetworkLoadError,
+            load_cdl_network_from_yaml,
+        )
+
+        path = Path(cdl_file)
+        if not path.is_absolute():
+            path = pack.network_dir / cdl_file
+        try:
+            network = load_cdl_network_from_yaml(path)
+        except CDLNetworkLoadError as exc:
+            raise OpenDSSError(
+                f"failed to load CDL network from {path}: {exc}",
+                context={"pack_id": pack.pack_id, "cdl_file": str(path)},
+                cause=exc,
+            ) from exc
+        return OpenDSSTranslator.from_canonical(network, circuit_name=pack.name)
 
     def _load_driver(self) -> ModuleType | Any:
         try:

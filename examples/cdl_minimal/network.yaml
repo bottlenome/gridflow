@@ -1,0 +1,42 @@
+# Minimal 2-bus feeder described as CDL canonical network.
+# Both OpenDSSConnector and PandaPowerConnector can consume this via
+# pack.yaml's ``cdl_network_file`` parameter — Phase 2 §5.1.3.
+
+network:
+  name: minimal_cdl_feeder
+  base_voltage_kv: 12.47
+  base_frequency_hz: 60.0
+  source_bus: sourcebus
+
+nodes:
+  - id: sourcebus
+    name: Source
+    node_type: source
+    voltage_kv: 12.47
+  - id: loadbus
+    name: Load
+    node_type: bus
+    voltage_kv: 12.47
+
+edges:
+  - id: line_1
+    from: sourcebus
+    to: loadbus
+    edge_type: line
+    length_km: 1.0
+    properties:
+      r1_ohm_per_km: 0.3
+      x1_ohm_per_km: 0.5
+      r0_ohm_per_km: 0.5
+      x0_ohm_per_km: 0.7
+      max_i_ka: 1.0
+
+assets:
+  - id: load_1
+    name: SingleLoad
+    asset_type: load
+    node_id: loadbus
+    rated_power_kw: 500.0
+    parameters:
+      pf: 0.95
+      model: 1

@@ -12,6 +12,10 @@ from gridflow.domain.result.results import (
     NodeResult,
     RenewableResult,
 )
+from gridflow.domain.result.sensitivity import (
+    SensitivityResult,
+    VoltageSensitivityMatrix,
+)
 
 __all__ = [
     "BranchResult",
@@ -20,4 +24,6 @@ __all__ = [
     "LoadResult",
     "NodeResult",
     "RenewableResult",
+    "SensitivityResult",
+    "VoltageSensitivityMatrix",
 ]

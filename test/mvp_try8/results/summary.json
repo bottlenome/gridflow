@@ -1,0 +1,93 @@
+{
+  "cdl_network": {
+    "base_voltage_kv": 12.47,
+    "n_assets": 3,
+    "n_edges": 3,
+    "n_nodes": 4
+  },
+  "elapsed_total_s": 1.183,
+  "finished_at": "2026-04-28T01:05:51.725232+00:00",
+  "have_opendss": false,
+  "have_pandapower": true,
+  "section_1": {
+    "dss_script_chars": 663,
+    "dss_script_first_lines": [
+      "Clear",
+      "New Circuit.try8 bus1=sourcebus basekv=12.47 phases=3 pu=1.0 frequency=60.0",
+      "New Linecode.cdl_default nphases=3 r1=0.3 x1=0.5 r0=0.5 x0=0.7 c1=0.0 c0=0.0 units=km",
+      "New Line.line_1 bus1=sourcebus bus2=bus1 length=1.0 units=km r1=0.3 x1=0.5 r0=0.5 x0=0.7",
+      "New Line.line_2 bus1=bus1 bus2=bus2 length=1.0 units=km r1=0.3 x1=0.5 r0=0.5 x0=0.7"
+    ],
+    "pandapower_voltages_pu": [
+      1.0,
+      0.997292225456285,
+      0.9951876560117293,
+      0.9939854442771731
+    ],
+    "round_trip_max_drift_pu": 0.0
+  },
+  "section_2": {
+    "elapsed_s": 0.763,
+    "metric_columns": [
+      "runtime",
+      "voltage_deviation"
+    ],
+    "n_children": 4,
+    "runtime_per_experiment": [
+      0.18319601500002136,
+      0.18867897699999503,
+      0.19604358999998794,
+      0.18695416100001694
+    ],
+    "sweep_result_path": "results/sweep_result.json",
+    "voltage_deviation_mean": 0.003603311246804743,
+    "voltage_deviation_per_experiment": [
+      0.004082449576664299,
+      0.0037604861187773672,
+      0.003442106903000611,
+      0.003128202388776695
+    ]
+  },
+  "section_3a_evaluate": {
+    "evaluation_id": "try8_two_thresholds",
+    "evaluation_result_path": "results/evaluation_result.json",
+    "frac_below_095_per_experiment": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "frac_below_098_per_experiment": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "metric_columns": [
+      "frac_below_095",
+      "frac_below_098"
+    ]
+  },
+  "section_3b_sensitivity": {
+    "ci_widths": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "feeder_id": "try8_feeder",
+    "metric_max": 0.75,
+    "metric_min": 0.0,
+    "n_grid_points": 11,
+    "parameter_name": "voltage_low",
+    "sensitivity_result_path": "results/sensitivity_result.json"
+  },
+  "started_at": "2026-04-28T01:05:50.541742+00:00"
+}

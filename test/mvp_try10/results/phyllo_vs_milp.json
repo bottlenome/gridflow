@@ -1,0 +1,268 @@
+{
+  "aggregated": [
+    {
+      "deadline_violations_total": 11,
+      "mode": "sync",
+      "n_seeds": 5,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 77.0,
+      "v_min_mean": 0.7993,
+      "v_min_worst": 0.799331890566465
+    },
+    {
+      "deadline_violations_total": 11,
+      "mode": "random",
+      "n_seeds": 5,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 75.6,
+      "v_min_mean": 0.8017,
+      "v_min_worst": 0.799331890566465
+    },
+    {
+      "deadline_violations_total": 11,
+      "mode": "uniform",
+      "n_seeds": 5,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 72.8,
+      "v_min_mean": 0.8065,
+      "v_min_worst": 0.799331890566465
+    },
+    {
+      "deadline_violations_total": 11,
+      "mode": "phyllo",
+      "n_seeds": 5,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 74.2,
+      "v_min_mean": 0.8041,
+      "v_min_worst": 0.799331890566465
+    },
+    {
+      "deadline_violations_total": 11,
+      "mode": "milp",
+      "n_seeds": 5,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 70.0,
+      "v_min_mean": 0.8112,
+      "v_min_worst": 0.799331890566465
+    }
+  ],
+  "elapsed_s": 51.6,
+  "phyllo_milp_gap_pct": 6.0,
+  "raw": [
+    {
+      "deadline_violations": 1,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 0,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 0,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 0,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 0,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 1,
+      "milp_n_binaries": 49,
+      "milp_objective_kw": 70.0,
+      "milp_solve_s": 0.012,
+      "mode": "milp",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 0,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 1,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 1,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 1,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 1,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 1,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 1,
+      "milp_n_binaries": 96,
+      "milp_objective_kw": 63.0,
+      "milp_solve_s": 0.073,
+      "mode": "milp",
+      "n_evs": 11,
+      "peak_load_kw": 63.0,
+      "seed": 1,
+      "v_min_global_pu": 0.8227775496772077
+    },
+    {
+      "deadline_violations": 4,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 2,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 4,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 2,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 4,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 2,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 4,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 2,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 4,
+      "milp_n_binaries": 62,
+      "milp_objective_kw": 70.0,
+      "milp_solve_s": 0.017,
+      "mode": "milp",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 2,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 3,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 3,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 3,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 3,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 3,
+      "milp_n_binaries": 26,
+      "milp_objective_kw": 77.0,
+      "milp_solve_s": 0.01,
+      "mode": "milp",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 2,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 4,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 2,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 4,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "deadline_violations": 2,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 4,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 2,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 4,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "deadline_violations": 2,
+      "milp_n_binaries": 97,
+      "milp_objective_kw": 70.0,
+      "milp_solve_s": 0.042,
+      "mode": "milp",
+      "n_evs": 11,
+      "peak_load_kw": 70.0,
+      "seed": 4,
+      "v_min_global_pu": 0.8112705311096646
+    }
+  ]
+}

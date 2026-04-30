@@ -1,0 +1,475 @@
+{
+  "aggregated": [
+    {
+      "minutes_below_090_mean": 30.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "sync",
+      "n_evs": 5,
+      "n_seeds": 1,
+      "peak_load_kw_max": 35.0,
+      "peak_load_kw_mean": 35.0,
+      "v_min_global_mean": 0.8652504903023379,
+      "v_min_global_worst": 0.8652504903023379
+    },
+    {
+      "minutes_below_090_mean": 44.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "phyllo",
+      "n_evs": 5,
+      "n_seeds": 1,
+      "peak_load_kw_max": 21.0,
+      "peak_load_kw_mean": 21.0,
+      "v_min_global_mean": 0.8847473385725875,
+      "v_min_global_worst": 0.8847473385725875
+    },
+    {
+      "minutes_below_090_mean": 48.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "uniform",
+      "n_evs": 5,
+      "n_seeds": 1,
+      "peak_load_kw_max": 21.0,
+      "peak_load_kw_mean": 21.0,
+      "v_min_global_mean": 0.8847473385725875,
+      "v_min_global_worst": 0.8847473385725875
+    },
+    {
+      "minutes_below_090_mean": 36.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "random",
+      "n_evs": 5,
+      "n_seeds": 4,
+      "peak_load_kw_max": 35.0,
+      "peak_load_kw_mean": 26.25,
+      "v_min_global_mean": 0.8774675604981721,
+      "v_min_global_worst": 0.8652504903023379
+    },
+    {
+      "minutes_below_090_mean": 30.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "sync",
+      "n_evs": 11,
+      "n_seeds": 1,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 77.0,
+      "v_min_global_mean": 0.799331890566465,
+      "v_min_global_worst": 0.799331890566465
+    },
+    {
+      "minutes_below_090_mean": 54.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "n_seeds": 1,
+      "peak_load_kw_max": 42.0,
+      "peak_load_kw_mean": 42.0,
+      "v_min_global_mean": 0.8551033487218205,
+      "v_min_global_worst": 0.8551033487218205
+    },
+    {
+      "minutes_below_090_mean": 54.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "uniform",
+      "n_evs": 11,
+      "n_seeds": 1,
+      "peak_load_kw_max": 42.0,
+      "peak_load_kw_mean": 42.0,
+      "v_min_global_mean": 0.8551033487218205,
+      "v_min_global_worst": 0.8551033487218205
+    },
+    {
+      "minutes_below_090_mean": 51.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "random",
+      "n_evs": 11,
+      "n_seeds": 4,
+      "peak_load_kw_max": 56.0,
+      "peak_load_kw_mean": 52.5,
+      "v_min_global_mean": 0.8392780511736964,
+      "v_min_global_worst": 0.8338955489672808
+    },
+    {
+      "minutes_below_090_mean": 30.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "sync",
+      "n_evs": 17,
+      "n_seeds": 1,
+      "peak_load_kw_max": 119.0,
+      "peak_load_kw_mean": 119.0,
+      "v_min_global_mean": 0.7147603871693906,
+      "v_min_global_worst": 0.7147603871693906
+    },
+    {
+      "minutes_below_090_mean": 56.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "phyllo",
+      "n_evs": 17,
+      "n_seeds": 1,
+      "peak_load_kw_max": 63.0,
+      "peak_load_kw_mean": 63.0,
+      "v_min_global_mean": 0.8227775496772077,
+      "v_min_global_worst": 0.8227775496772077
+    },
+    {
+      "minutes_below_090_mean": 56.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "uniform",
+      "n_evs": 17,
+      "n_seeds": 1,
+      "peak_load_kw_max": 63.0,
+      "peak_load_kw_mean": 63.0,
+      "v_min_global_mean": 0.8227775496772077,
+      "v_min_global_worst": 0.8227775496772077
+    },
+    {
+      "minutes_below_090_mean": 53.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "random",
+      "n_evs": 17,
+      "n_seeds": 4,
+      "peak_load_kw_max": 77.0,
+      "peak_load_kw_mean": 75.25,
+      "v_min_global_mean": 0.8023165507022649,
+      "v_min_global_worst": 0.799331890566465
+    },
+    {
+      "minutes_below_090_mean": 30.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "sync",
+      "n_evs": 31,
+      "n_seeds": 1,
+      "peak_load_kw_max": 217.0,
+      "peak_load_kw_mean": 217.0,
+      "v_min_global_mean": 0.5,
+      "v_min_global_worst": 0.5
+    },
+    {
+      "minutes_below_090_mean": 56.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "phyllo",
+      "n_evs": 31,
+      "n_seeds": 1,
+      "peak_load_kw_max": 112.0,
+      "peak_load_kw_mean": 112.0,
+      "v_min_global_mean": 0.7309099030724441,
+      "v_min_global_worst": 0.7309099030724441
+    },
+    {
+      "minutes_below_090_mean": 58.0,
+      "minutes_below_095_mean": 60.0,
+      "mode": "uniform",
+      "n_evs": 31,
+      "n_seeds": 1,
+      "peak_load_kw_max": 105.0,
+      "peak_load_kw_mean": 105.0,
+      "v_min_global_mean": 0.7460544400933995,
+      "v_min_global_worst": 0.7460544400933995
+    },
+    {
+      "minutes_below_090_mean": 54.5,
+      "minutes_below_095_mean": 60.0,
+      "mode": "random",
+      "n_evs": 31,
+      "n_seeds": 4,
+      "peak_load_kw_max": 147.0,
+      "peak_load_kw_mean": 138.25,
+      "v_min_global_mean": 0.6614605134682086,
+      "v_min_global_worst": 0.6335583654389512
+    }
+  ],
+  "elapsed_s": 45.1,
+  "modes": [
+    "sync",
+    "phyllo",
+    "uniform",
+    "random"
+  ],
+  "n_values": [
+    5,
+    11,
+    17,
+    31
+  ],
+  "raw": [
+    {
+      "minutes_below_090": 30,
+      "minutes_below_095": 60,
+      "mode": "sync",
+      "n_evs": 5,
+      "peak_load_kw": 35.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8652504903023379,
+      "v_min_global_pu": 0.8652504903023379
+    },
+    {
+      "minutes_below_090": 44,
+      "minutes_below_095": 60,
+      "mode": "phyllo",
+      "n_evs": 5,
+      "peak_load_kw": 21.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8847473385725875,
+      "v_min_global_pu": 0.8847473385725875
+    },
+    {
+      "minutes_below_090": 48,
+      "minutes_below_095": 60,
+      "mode": "uniform",
+      "n_evs": 5,
+      "peak_load_kw": 21.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8847473385725875,
+      "v_min_global_pu": 0.8847473385725875
+    },
+    {
+      "minutes_below_090": 34,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 5,
+      "peak_load_kw": 28.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8751250745451755,
+      "v_min_global_pu": 0.8751250745451755
+    },
+    {
+      "minutes_below_090": 44,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 5,
+      "peak_load_kw": 21.0,
+      "seed": 1,
+      "v_charger_min_pu": 0.8847473385725875,
+      "v_min_global_pu": 0.8847473385725875
+    },
+    {
+      "minutes_below_090": 30,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 5,
+      "peak_load_kw": 21.0,
+      "seed": 2,
+      "v_charger_min_pu": 0.8847473385725875,
+      "v_min_global_pu": 0.8847473385725875
+    },
+    {
+      "minutes_below_090": 36,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 5,
+      "peak_load_kw": 35.0,
+      "seed": 3,
+      "v_charger_min_pu": 0.8652504903023379,
+      "v_min_global_pu": 0.8652504903023379
+    },
+    {
+      "minutes_below_090": 30,
+      "minutes_below_095": 60,
+      "mode": "sync",
+      "n_evs": 11,
+      "peak_load_kw": 77.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.799331890566465,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "minutes_below_090": 54,
+      "minutes_below_095": 60,
+      "mode": "phyllo",
+      "n_evs": 11,
+      "peak_load_kw": 42.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8551033487218205,
+      "v_min_global_pu": 0.8551033487218205
+    },
+    {
+      "minutes_below_090": 54,
+      "minutes_below_095": 60,
+      "mode": "uniform",
+      "n_evs": 11,
+      "peak_load_kw": 42.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8551033487218205,
+      "v_min_global_pu": 0.8551033487218205
+    },
+    {
+      "minutes_below_090": 40,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 56.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8338955489672808,
+      "v_min_global_pu": 0.8338955489672808
+    },
+    {
+      "minutes_below_090": 54,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 49.0,
+      "seed": 1,
+      "v_charger_min_pu": 0.8446605533801119,
+      "v_min_global_pu": 0.8446605533801119
+    },
+    {
+      "minutes_below_090": 54,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 56.0,
+      "seed": 2,
+      "v_charger_min_pu": 0.8338955489672808,
+      "v_min_global_pu": 0.8338955489672808
+    },
+    {
+      "minutes_below_090": 56,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 11,
+      "peak_load_kw": 49.0,
+      "seed": 3,
+      "v_charger_min_pu": 0.8446605533801119,
+      "v_min_global_pu": 0.8446605533801119
+    },
+    {
+      "minutes_below_090": 30,
+      "minutes_below_095": 60,
+      "mode": "sync",
+      "n_evs": 17,
+      "peak_load_kw": 119.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.7147603871693906,
+      "v_min_global_pu": 0.7147603871693906
+    },
+    {
+      "minutes_below_090": 56,
+      "minutes_below_095": 60,
+      "mode": "phyllo",
+      "n_evs": 17,
+      "peak_load_kw": 63.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8227775496772077,
+      "v_min_global_pu": 0.8227775496772077
+    },
+    {
+      "minutes_below_090": 56,
+      "minutes_below_095": 60,
+      "mode": "uniform",
+      "n_evs": 17,
+      "peak_load_kw": 63.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.8227775496772077,
+      "v_min_global_pu": 0.8227775496772077
+    },
+    {
+      "minutes_below_090": 44,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 17,
+      "peak_load_kw": 77.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.799331890566465,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "minutes_below_090": 58,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 17,
+      "peak_load_kw": 77.0,
+      "seed": 1,
+      "v_charger_min_pu": 0.799331890566465,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "minutes_below_090": 54,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 17,
+      "peak_load_kw": 70.0,
+      "seed": 2,
+      "v_charger_min_pu": 0.8112705311096646,
+      "v_min_global_pu": 0.8112705311096646
+    },
+    {
+      "minutes_below_090": 56,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 17,
+      "peak_load_kw": 77.0,
+      "seed": 3,
+      "v_charger_min_pu": 0.799331890566465,
+      "v_min_global_pu": 0.799331890566465
+    },
+    {
+      "minutes_below_090": 30,
+      "minutes_below_095": 60,
+      "mode": "sync",
+      "n_evs": 31,
+      "peak_load_kw": 217.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.5,
+      "v_min_global_pu": 0.5
+    },
+    {
+      "minutes_below_090": 56,
+      "minutes_below_095": 60,
+      "mode": "phyllo",
+      "n_evs": 31,
+      "peak_load_kw": 112.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.7309099030724441,
+      "v_min_global_pu": 0.7309099030724441
+    },
+    {
+      "minutes_below_090": 58,
+      "minutes_below_095": 60,
+      "mode": "uniform",
+      "n_evs": 31,
+      "peak_load_kw": 105.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.7460544400933995,
+      "v_min_global_pu": 0.7460544400933995
+    },
+    {
+      "minutes_below_090": 44,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 31,
+      "peak_load_kw": 147.0,
+      "seed": 0,
+      "v_charger_min_pu": 0.6335583654389512,
+      "v_min_global_pu": 0.6335583654389512
+    },
+    {
+      "minutes_below_090": 58,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 31,
+      "peak_load_kw": 140.0,
+      "seed": 1,
+      "v_charger_min_pu": 0.6574517181752999,
+      "v_min_global_pu": 0.6574517181752999
+    },
+    {
+      "minutes_below_090": 58,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 31,
+      "peak_load_kw": 126.0,
+      "seed": 2,
+      "v_charger_min_pu": 0.697380252083283,
+      "v_min_global_pu": 0.697380252083283
+    },
+    {
+      "minutes_below_090": 58,
+      "minutes_below_095": 60,
+      "mode": "random",
+      "n_evs": 31,
+      "peak_load_kw": 140.0,
+      "seed": 3,
+      "v_charger_min_pu": 0.6574517181752999,
+      "v_min_global_pu": 0.6574517181752999
+    }
+  ]
+}

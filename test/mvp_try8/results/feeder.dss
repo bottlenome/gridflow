@@ -1,0 +1,11 @@
+Clear
+New Circuit.try8 bus1=sourcebus basekv=12.47 phases=3 pu=1.0 frequency=60.0
+New Linecode.cdl_default nphases=3 r1=0.3 x1=0.5 r0=0.5 x0=0.7 c1=0.0 c0=0.0 units=km
+New Line.line_1 bus1=sourcebus bus2=bus1 length=1.0 units=km r1=0.3 x1=0.5 r0=0.5 x0=0.7
+New Line.line_2 bus1=bus1 bus2=bus2 length=1.0 units=km r1=0.3 x1=0.5 r0=0.5 x0=0.7
+New Line.line_3 bus1=bus2 bus2=bus3 length=1.0 units=km r1=0.3 x1=0.5 r0=0.5 x0=0.7
+New Load.load_1 bus1=bus1 kv=12.47 kw=200.0 pf=0.95 model=1 phases=3
+New Load.load_2 bus1=bus2 kv=12.47 kw=300.0 pf=0.95 model=1 phases=3
+New Load.load_3 bus1=bus3 kv=12.47 kw=400.0 pf=0.95 model=1 phases=3
+Set voltagebases=[12.47]
+Calcv
