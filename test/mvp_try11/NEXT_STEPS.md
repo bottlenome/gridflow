@@ -97,3 +97,117 @@ D-7: report.md / review_record.md 全面再書きえ
 - **小コミット**: MS 単位、smoke test 付き、commit message に意図明記
 
 ---
+
+## 3. Phase D-1: Voltage 違反 metric の二分解
+
+**目的**: 既存負荷起因の baseline-only 違反 (= M7 の責任外) と、SDP の dispatch
+が引き起こす dispatch-induced 違反 (= M7 の責任) を明示分離する。
+
+### 3.1 問題
+
+現状の `voltage_violation_ratio` (= `tools/grid_metrics.py`) は
+
+```python
+violations = sum(
+    1 for vmin, vmax in zip(v_min, v_max)
+    if vmin < 0.95 or vmax > 1.05
+)
+return violations / n
+```
+
+で、(a) DER injection ゼロでも違反する step、(b) injection で v が押し上げ
+られて違反する step を区別しない。
+
+cigre_lv の場合: baseline_v_min = 0.912 < 0.95 で、**全 step で v_min 違反**。
+M7 がどんな選択をしても改善されない (positive injection しか提供しないので)。
+
+### 3.2 実装手順
+
+#### Step 1: `grid_simulator.py` を修正、baseline ground truth を保存
+
+```python
+# In grid_simulator.py, add to GridRunResult:
+@dataclass(frozen=True)
+class GridRunResult:
+    # 既存フィールドに加えて:
+    baseline_voltage_min_pu: tuple[float, ...]    # DER injection ゼロ時の V_min(t)
+    baseline_voltage_max_pu: tuple[float, ...]    # 同 V_max(t)
+    baseline_line_load_pct: tuple[float, ...]     # 同 L_max(t)
+```
+
+baseline は **その timestep に existing load だけが流れているとき** の voltage。
+これを `grid_simulate` の中で計算するには:
+
+```python
+# 各 sample step で 2 回 PF を回す:
+# (1) DER 全停止 (active も standby も) で baseline_v_*
+# (2) DER 動作中の状態で v_min/v_max
+```
+
+または、`grid_impact.py` で計算済みの `baseline_v_pu` (existing load only)
+を timestep に依らない定数として使い、active / standby の injection 寄与
+を線形重畳して per-step v_min(t), v_max(t) を計算する (= DistFlow 線形近似で)。
+
+**推奨: 後者** (1 回の追加 PF で済む、計算量 O(1))。
+
+#### Step 2: `grid_metrics.py` に新 metric 追加
+
+```python
+@dataclass(frozen=True)
+class VoltageBaselineViolationRatio:
+    """既存負荷だけで起きる V 違反の比率 (= M7 が改善不能)."""
+    name: str = "voltage_violation_baseline_only"
+    # __aggregate__ や __sla_target__ と同じ pattern で、
+    # __voltage_baseline_min__ / __voltage_baseline_max__ から計算
+
+@dataclass(frozen=True)
+class VoltageDispatchInducedViolationRatio:
+    """SDP の dispatch が引き起こした V 違反の比率 (= M7 の責任)."""
+    name: str = "voltage_violation_dispatch_induced"
+    # baseline では違反していないのに、dispatch 後に違反した step
+    # = (vmin_actual < 0.95 and vmin_baseline >= 0.95)
+    #   OR (vmax_actual > 1.05 and vmax_baseline <= 1.05)
+```
+
+#### Step 3: `to_grid_experiment_result` で baseline 系列を ExperimentResult に埋込
+
+```python
+load_results = (
+    ...,
+    LoadResult(asset_id="__voltage_baseline_min__",
+               demands=v_baseline_min, supplied=v_baseline_min),
+    LoadResult(asset_id="__voltage_baseline_max__",
+               demands=v_baseline_max, supplied=v_baseline_max),
+    ...,
+)
+```
+
+#### Step 4: smoke test
+
+`tools/_msD1_smoke_test.py`:
+
+- cigre_lv で M7 を実行
+- 既存の voltage_violation_ratio (合算) が ~10% 程度
+- 新 metric `voltage_violation_baseline_only` が ~10% (= ほぼ全部 baseline 起因)
+- `voltage_violation_dispatch_induced` が ~0% (= M7 は injection で V 上げて
+  むしろ改善している場合も)
+- 全 metric が finite かつ sum 整合性 (合算 = baseline + dispatch を超えないこと)
+
+#### Step 5: aggregate スクリプト更新
+
+`/tmp/aggregate_C3.py` を `tools/aggregate_results.py` に格上げし、
+新 metric を表示。
+
+### 3.3 完了基準
+
+- 既存 voltage_violation_ratio が **2 つの内訳** に分解される
+- M7 の dispatch-induced 違反が **数値で 0-1% 以内** であることを確認
+- baseline-only 違反は別途報告 (= feeder 設計の問題として明示)
+- review_record で「M7 voltage 違反 12%」を「dispatch-induced X%, baseline Y%」と
+  内訳付きに書き換える
+
+### 3.4 工数目安
+
+半日〜1 日 (PF call 増加あり、smoke test 含む)
+
+---
