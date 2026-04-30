@@ -421,5 +421,194 @@ __all__ = (
     "build_trace_from_active_count",
     "build_trace_from_load_signal",
     "build_trace_from_decomposed_load_signal",
+    "build_trace_from_acn_sessions",
     "trace_summary",
 )
+
+
+def _parse_acn_dt(s: str) -> "datetime":
+    """Parse an ACN-style ``Fri, 04 Jan 2019 00:16:32 GMT`` timestamp."""
+    from datetime import datetime
+    return datetime.strptime(s, "%a, %d %b %Y %H:%M:%S GMT")
+
+
+def build_trace_from_acn_sessions(
+    sessions_csv: "Path",
+    pool: tuple[DER, ...],
+    *,
+    sla_kw: float,
+    horizon_days: int | None = None,
+    timestep_min: int = DEFAULT_TIMESTEP_MIN,
+    train_days: int = DEFAULT_TRAIN_DAYS,
+    seed: int = 0,
+    trace_id: str = "REAL-acn",
+    site_timezone_offset_min: int = -8 * 60,  # Caltech PST
+    commute_local_hours: tuple[int, ...] = (16, 17, 18, 19, 20),
+    commute_event_min_disconnects: int = 3,
+) -> ChurnTrace:
+    """Build a ChurnTrace from Caltech ACN-Data charging sessions.
+
+    Phase D-5 v2 (semantic-aligned real-DER validation, addresses
+    reviewer M-1 / M-2). Each ACN session is an interval during which
+    a real EV is plugged in; outside the session the EV is **not
+    available** to the VPP — i.e. a real per-DER drop-out event. We
+    map this directly onto the simulator's per-step active matrix:
+
+      * Pool ``residential_ev`` DERs are paired 1-to-1 with the K most
+        active ACN users (K = min(|residential_ev|, |unique users|)).
+        At each step, the paired EV's active flag is True iff the ACN
+        user has a session covering the step's timestamp.
+      * ``residential_ev`` DERs beyond K, and DERs of any other type,
+        follow a Gaussian-process-of-1 fallback: always active. This
+        is conservative — only real-EV churn drives ``commute`` axis
+        violations; non-EV DERs (heat pumps, batteries) are stable in
+        this trace because ACN does not observe them. Synthetic
+        weather / market axes remain available via separate traces.
+      * TriggerEvents are emitted only for record-keeping (not used to
+        re-generate the active matrix; the matrix IS the observation).
+        We cluster disconnect timestamps within commute-local-hour
+        windows; runs of ≥ ``commute_event_min_disconnects``
+        disconnects within a 30-minute window become one
+        ``commute`` TriggerEvent.
+
+    Args:
+        sessions_csv: Path to a CSV produced by ``tools/fetch_acn.py``.
+        pool: The DER pool to drive (200-DER mixed-type expected).
+        sla_kw: VPP SLA target (kW), passed through to ChurnTrace.
+        horizon_days: Number of days to use from the data. Defaults to
+            the full span observed in the CSV.
+        site_timezone_offset_min: Used to identify the local-evening
+            commute window from UTC ACN timestamps. Caltech is UTC-8.
+        commute_local_hours: Local hours that count as the evening
+            commute window (default 16:00-20:59).
+        commute_event_min_disconnects: Minimum simultaneous disconnects
+            within a 30-minute window for a TriggerEvent to be emitted.
+
+    Returns:
+        A ``ChurnTrace`` whose ``der_active_status`` is **observed
+        per-EV availability** (real data) for the residential_ev slice
+        of the pool.
+    """
+    from datetime import timedelta
+    import csv as _csv
+
+    with open(sessions_csv, encoding="utf-8") as fh:
+        sessions = list(_csv.DictReader(fh))
+    if not sessions:
+        raise ValueError(f"no sessions in {sessions_csv}")
+
+    # Determine date range from data
+    conns = [_parse_acn_dt(s["connectionTime"]) for s in sessions if s.get("connectionTime")]
+    if not conns:
+        raise ValueError("no parseable connectionTime fields")
+    t0 = min(conns).replace(hour=0, minute=0, second=0, microsecond=0)
+    if horizon_days is None:
+        t_end = max(_parse_acn_dt(s["disconnectTime"]) for s in sessions if s.get("disconnectTime"))
+        horizon_days = max(1, (t_end - t0).days + 1)
+    n_steps = horizon_days * 24 * 60 // timestep_min
+
+    # Identify the K most active ACN users; fall back to stationID when userID is null
+    def _did(s: dict[str, str]) -> str:
+        u = s.get("userID") or ""
+        if u and u != "None":
+            return f"u:{u}"
+        return f"st:{s.get('stationID', '')}"
+
+    user_session_count: dict[str, int] = {}
+    for s in sessions:
+        user_session_count[_did(s)] = user_session_count.get(_did(s), 0) + 1
+    sorted_users = sorted(user_session_count.items(), key=lambda kv: -kv[1])
+
+    ev_indices = [i for i, d in enumerate(pool) if d.der_type == "residential_ev"]
+    n_paired = min(len(ev_indices), len(sorted_users))
+    paired_user_ids = {sorted_users[k][0]: ev_indices[k] for k in range(n_paired)}
+
+    # Group sessions by user → list of (start_step, end_step) intervals
+    intervals_by_pool_idx: dict[int, list[tuple[int, int]]] = {}
+    for s in sessions:
+        uid = _did(s)
+        if uid not in paired_user_ids:
+            continue
+        try:
+            conn = _parse_acn_dt(s["connectionTime"])
+            disc = _parse_acn_dt(s["disconnectTime"])
+        except (KeyError, ValueError):
+            continue
+        start_step = max(0, int((conn - t0).total_seconds() // (timestep_min * 60)))
+        end_step = max(start_step, int((disc - t0).total_seconds() // (timestep_min * 60)))
+        end_step = min(end_step, n_steps)
+        if start_step >= n_steps:
+            continue
+        idx = paired_user_ids[uid]
+        intervals_by_pool_idx.setdefault(idx, []).append((start_step, end_step))
+
+    # Build per-step active matrix (n_steps × |pool|)
+    n_d = len(pool)
+    matrix: list[list[bool]] = [[True] * n_d for _ in range(n_steps)]
+    # Real EV: active only inside one of its session intervals
+    for j in range(n_d):
+        if j in intervals_by_pool_idx:
+            # Initialise to all-False, set True inside intervals
+            ranges = intervals_by_pool_idx[j]
+            for step in range(n_steps):
+                matrix[step][j] = False
+            for s, e in ranges:
+                for step in range(s, e):
+                    if 0 <= step < n_steps:
+                        matrix[step][j] = True
+        elif pool[j].der_type == "residential_ev":
+            # Excess EVs beyond the ACN user count: keep always-active
+            # (= conservative; this slice does not contribute observed churn)
+            pass
+        # Non-EV DERs: always active by default
+
+    # Detect commute TriggerEvents from disconnect clusters
+    commute_events: list[TriggerEvent] = []
+    bin_min = 30
+    bin_steps = bin_min // timestep_min
+    disconnect_steps: list[int] = []
+    for s in sessions:
+        try:
+            disc = _parse_acn_dt(s["disconnectTime"])
+        except (KeyError, ValueError):
+            continue
+        local_dt = disc + timedelta(minutes=site_timezone_offset_min)
+        if local_dt.hour not in commute_local_hours:
+            continue
+        step = int((disc - t0).total_seconds() // (timestep_min * 60))
+        if 0 <= step < n_steps:
+            disconnect_steps.append(step)
+    disconnect_steps.sort()
+    if disconnect_steps:
+        # Sliding window: count disconnects within ``bin_steps`` width
+        from collections import Counter
+        per_bin: Counter[int] = Counter()
+        for step in disconnect_steps:
+            per_bin[step // bin_steps] += 1
+        for bin_idx, count in per_bin.items():
+            if count >= commute_event_min_disconnects:
+                start_step = bin_idx * bin_steps
+                magnitude = min(0.95, 0.20 + 0.05 * count)
+                commute_events.append(
+                    TriggerEvent(
+                        trigger="commute",
+                        start_min=start_step * timestep_min,
+                        duration_min=float(bin_min),
+                        magnitude=float(magnitude),
+                    )
+                )
+
+    train_clamped = min(train_days, max(0, horizon_days - 1)) if horizon_days >= 2 else 0
+    return ChurnTrace(
+        trace_id=trace_id,
+        timestep_min=timestep_min,
+        horizon_days=horizon_days,
+        train_days=train_clamped,
+        test_days=horizon_days - train_clamped,
+        der_ids=tuple(d.der_id for d in pool),
+        trigger_basis=TRIGGER_BASIS_K4,
+        events=tuple(sorted(commute_events, key=lambda e: e.start_min)),
+        der_active_status=tuple(tuple(row) for row in matrix),
+        sla_target_kw=sla_kw,
+        seed=seed,
+    )
