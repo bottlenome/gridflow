@@ -571,7 +571,87 @@ SDP は以下 4 軸で variant 化できる:
                    trace 5 種全てで pareto-dominant or 同等
 ```
 
-### 8.7 想定される反証パターンと事前回答
+### 8.7 想定される反証パターンと事前回答 (略 — 直前テーブル)
+
+---
+
+## 9. Novelty Gate (実験前の新規性審査、9 項目)
+
+`docs/mvp_review_policy.md` §2.5.3 の 9 項目チェック。1 つでも ❌ なら Rule 1 (= Rule 7 乱数 anchor) に戻る原則。
+
+凡例: 🟢 通過 / 🟡 部分通過 (要外部確認) / 🟠 weak / 🔴 不合格
+
+| # | チェック | 判定 | 根拠 |
+|---|---|---|---|
+| **1** | 既存手法から自明に導けるか | 🟢 自明でない | trigger-orthogonal portfolio は、相関 portfolio (Markowitz) や DRO の **パラメータ変更** では到達できない。基底を物理因果で enumerate する操作は構造変更 |
+| **2** | 先行文献に同等概念があるか | 🟡 **要外部確認** | 隣接の **金融 causal portfolio** (Lopez de Prado 2019) を §4.5 で識別、3 点で構造的差分を明示。**Power systems 文脈での同等手法は 私の既知範囲内ではゼロ** だが、未検索。要 web 確認: `"DER" "causal portfolio"`, `"VPP" "trigger orthogonal"`, `"ancillary service" "structural causal"` 等 |
+| **3** | 物理的に解釈可能か | 🟢 ✅ | トリガー基底は物理 (commute = 人の移動、weather = 熱状態、market = 価格信号、comm = 情報状態)。各 DER の曝露も物理事実 (residential EV は通勤時刻に動く) |
+| **4** | "So what?" 専門家が行動変えるか | 🟢 ✅ | VPP 事業者は過剰契約 30-50% 削減、補助サービス市場参入指針が変わる。系統運用者は VPP を信頼可能担い手として位置付け直せる |
+| **5** | Cross-disciplinary insight | 🟢 ✅ | 動物行動学の **sentinel behavior** が機構 core。さらに金融の causal portfolio が隣接 foundation |
+| **6** | 計算手法自体に innovation | 🟢 ✅ | trigger-orthogonal MILP 定式 (§6.5.1) は、既存の portfolio 最適化に **causal basis 制約** を加えた新形。命名のみでなく algorithm 構造の追加 |
+| **7** | **乱数 anchor を経由したか** (Rule 7) | 🟠 **部分** | Rule 7 で sundial / cetacean / kabuki を anchor したが、それらは「通信遅延テーマ」を anchor し、**問題側 (= VPP churn 採用)** に間接寄与した。**手法側** (sentinel mechanism) は Rule 9 v2 step 5 で「burst 排出 + 補充」テーマから 5 候補を抽出して invariant 検査で絞った経路。Rule 7 anchor から **直接** 手法へ繋がっていない |
+| **8** | S0-S8 で method 一意化 | 🟢 ✅ | S7 (causal trigger orthogonality) は portfolio 系手法を要求し、相関ベース・データ駆動・confidence-set 系を全て排除。method class が一意 |
+| **9** | method 構成要素のうち **遠隔ドメインから移植** されたものがあるか | 🟢 ✅ | sentinel mechanism の core (= functional 分離 / 役割の dynamic 割当 / 警戒トリガー非共有) は動物行動学から移植。隣接 (OR / ML / power systems) には存在しない |
+
+### 9.1 部分通過項目の扱い
+
+#### 項目 #2 (先行文献) — 🟡
+
+`try10/ideation_record.md` §0 で確立した方針: **「未検索のまま新規」と claim しない**。本項目は Phase 1 移行前にユーザー (PO) による web 検索を要する:
+
+提案検索クエリ:
+- Google Scholar: `"causal portfolio" "demand response" OR "DER" OR "VPP"`
+- IEEE Xplore: `"trigger orthogonal" OR "structural causal" "ancillary service"`
+- arXiv: `causal aggregation ancillary service heavy tail`
+- Scopus: `"distributed energy resource" "causal" "portfolio"`
+
+→ **PO 検索結果次第で Phase 1 移行可否を判定**。
+
+#### 項目 #7 (乱数 anchor) — 🟠
+
+これは本 ideation の **方法論的な弱点**。原因と現状の選択肢:
+
+**原因**: Rule 7 anchor (sundial/cetacean/kabuki) は「通信遅延テーマ」軸で、Rule 8 で得た「burst 排出」軸と **整合しなかった**。Rule 9 v2 候補 (鳥群 / 種子バンク / 免疫 / 真社会性 / 雪崩) は **theme-selected** で random-anchored ではない。
+
+**選択肢**:
+
+| 案 | 内容 | trade-off |
+|---|---|---|
+| **(α) 部分通過のまま進む** | 弱点を §9 で明示し Phase 1 へ。論文では「Rule 7 + Rule 9 の統合方法は今後の課題」と記述 | 早く実験できる。ただし self-selection 疑念は残る |
+| **(β) Rule 9 v2 を random anchor 化** | 「burst 排出 + 補充」を持つ 50 ドメインを列挙し floor(rand × 50)+1 で 5 個再選定、もう一度 invariant 検査 | 数日工数、結果が現候補と同じなら方法論強化、異なれば手法見直し |
+| **(γ) policy 側を更新** | Rule 7 と Rule 9 の関係を明文化 (= "Rule 7 は問題 anchor、Rule 9 は手法 anchor" or 両 anchor 統合) してから本 try 続行 | policy 改訂工数。本 try は新 policy で再実行 |
+
+### 9.2 総合判定
+
+| 項目 | 判定 |
+|---|---|
+| 🟢 通過 | #1, #3, #4, #5, #6, #8, #9 (7 項目) |
+| 🟡 要外部確認 | #2 (PO 検索次第) |
+| 🟠 部分 | #7 (方法論弱点) |
+| 🔴 不合格 | なし |
+
+**現状 7/9 通過、1 件要確認、1 件方法論弱点**。
+
+`mvp_review_policy.md §2.5.3` 原則 (= 1 つでも ❌ なら戻る) は厳密適用すれば不合格だが、🔴 が無いため:
+
+> **PO 判断を仰ぐ**: (α/β/γ) のどれを採用するか、および #2 文献検索の実施。
+
+---
+
+## 10. Phase 1 移行の前提と要請
+
+本 ideation を Phase 1 (実装) に移すには以下が必要:
+
+| 項目 | 担当 | 内容 |
+|---|---|---|
+| #2 文献検索 | PO | 上記クエリ群で先行手法を確認、見つかれば候補切替か positioning 修正 |
+| #7 方法論判断 | PO | (α / β / γ) のどれかを選択 |
+| Phase 1 実装計画 | 仮想研究者 | §8 の M1-M6 + B1-B6 を gridflow + pandapower で実装する詳細設計 |
+
+→ 上記 3 件確定後、Phase 1 (実装フェーズ) に移行する。
+
+---
+
 
 | 反証シナリオ | reviewer の言い分 | 事前回答 |
 |---|---|---|
