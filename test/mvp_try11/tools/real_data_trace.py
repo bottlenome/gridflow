@@ -200,6 +200,138 @@ def build_trace_from_active_count(
     )
 
 
+def build_trace_from_decomposed_load_signal(
+    ts: DatasetTimeSeries,
+    pool: tuple[DER, ...],
+    *,
+    sla_kw: float,
+    seed: int = 0,
+    trace_id: str = "REAL-decomposed",
+    timestep_min: int = DEFAULT_TIMESTEP_MIN,
+    train_days: int = DEFAULT_TRAIN_DAYS,
+    load_channel: str = "system_load_mw",
+    commute_peak_hours_local: tuple[int, ...] = (16, 17, 18, 19, 20),
+    timezone_offset_min: int = -8 * 60,  # PST (CAISO local time relative to UTC)
+    weather_sigma_above: float = 1.0,
+    weather_window_steps: int = 7 * 24 * 12,  # 7-day rolling window at 5-min
+) -> ChurnTrace:
+    """Trace from a load signal decomposed into commute / weather axes.
+
+    Phase D-5 follow-up to address reviewer M-1 (semantic non-sequitur).
+    Where ``build_trace_from_load_signal`` mapped any load excursion onto
+    a single arbitrarily-chosen axis, this function decomposes the signal
+    into two physically-motivated trigger classes:
+
+      * ``commute`` events fire when the timestamp falls inside the
+        local-time evening peak window (default 16:00–20:00 PT, the
+        canonical California duck-curve evening rise). This corresponds
+        physically to residential EV / VPP-DER drop-out as owners arrive
+        home and use their cars.
+      * ``weather`` events fire when the load exceeds a 7-day rolling
+        baseline by more than ``weather_sigma_above`` standard deviations
+        of the residual. This captures cold-snap / heat-wave deviations
+        from a typical-week pattern (= the physical mechanism for
+        heat-pump synchronous activation).
+
+    Both decompositions are purely geometric on the load series; they do
+    not require additional data sources. The split is the main
+    semantic-alignment fix relative to the v1 single-axis mapping.
+    """
+    series = _channel(ts, load_channel)
+    if not series:
+        raise ValueError(f"empty channel '{load_channel}'")
+
+    # ----- (1) Commute axis: diurnal peak window
+    commute_events: list[TriggerEvent] = []
+    timestamps_iso = ts.timestamps_iso
+    # Walk timestamps; classify each step by local-hour. We do this without
+    # a heavy datetime dependency by parsing the ISO string's hour field
+    # (CAISO rows are ``YYYY-MM-DDTHH:MM:SS-00:00``).
+    in_peak_run = False
+    run_start_step = 0
+    for step, t_iso in enumerate(timestamps_iso):
+        try:
+            utc_hour = int(t_iso[11:13])
+            utc_minute = int(t_iso[14:16])
+            local_total_min = (utc_hour * 60 + utc_minute + timezone_offset_min) % (24 * 60)
+            local_hour = local_total_min // 60
+        except (ValueError, IndexError):
+            continue
+        is_peak = local_hour in commute_peak_hours_local
+        if is_peak and not in_peak_run:
+            in_peak_run = True
+            run_start_step = step
+        elif not is_peak and in_peak_run:
+            in_peak_run = False
+            commute_events.append(
+                TriggerEvent(
+                    trigger="commute",
+                    start_min=run_start_step * timestep_min,
+                    duration_min=float((step - run_start_step) * timestep_min),
+                    magnitude=0.50,
+                )
+            )
+    if in_peak_run:
+        commute_events.append(
+            TriggerEvent(
+                trigger="commute",
+                start_min=run_start_step * timestep_min,
+                duration_min=float((len(timestamps_iso) - run_start_step) * timestep_min),
+                magnitude=0.50,
+            )
+        )
+
+    # ----- (2) Weather axis: residual above rolling-7day baseline
+    n = len(series)
+    rolling: list[float] = []
+    win = max(1, min(weather_window_steps, n))
+    cumsum = 0.0
+    for step in range(n):
+        cumsum += series[step]
+        if step >= win:
+            cumsum -= series[step - win]
+            rolling.append(cumsum / win)
+        else:
+            rolling.append(cumsum / (step + 1))
+    residuals = tuple(series[i] - rolling[i] for i in range(n))
+    if n > 1:
+        mean_r = statistics.fmean(residuals)
+        std_r = statistics.pstdev(residuals)
+    else:
+        mean_r, std_r = 0.0, 0.0
+    threshold = mean_r + weather_sigma_above * std_r
+    span = max(1.0, std_r if std_r > 0 else 1.0)
+    weather_events = _events_from_threshold(
+        residuals,
+        timestep_min=timestep_min,
+        threshold=threshold,
+        above=True,
+        trigger="weather",
+        magnitude_scale=0.3 / span,
+    )
+
+    events = tuple(sorted(commute_events + list(weather_events), key=lambda e: e.start_min))
+    n_steps_envelope, horizon_days, train_clamped = _trace_envelope(
+        series, timestep_min, train_days
+    )
+    matrix = _build_active_matrix(
+        pool, events, n_steps_envelope, timestep_min, TRIGGER_BASIS_K4, seed
+    )
+    return ChurnTrace(
+        trace_id=trace_id,
+        timestep_min=timestep_min,
+        horizon_days=horizon_days,
+        train_days=train_clamped,
+        test_days=horizon_days - train_clamped,
+        der_ids=tuple(d.der_id for d in pool),
+        trigger_basis=TRIGGER_BASIS_K4,
+        events=events,
+        der_active_status=matrix,
+        sla_target_kw=sla_kw,
+        seed=seed,
+    )
+
+
 def build_trace_from_load_signal(
     ts: DatasetTimeSeries,
     pool: tuple[DER, ...],
@@ -288,5 +420,6 @@ def trace_summary(trace: ChurnTrace) -> dict[str, object]:
 __all__ = (
     "build_trace_from_active_count",
     "build_trace_from_load_signal",
+    "build_trace_from_decomposed_load_signal",
     "trace_summary",
 )
