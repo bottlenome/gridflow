@@ -404,5 +404,137 @@ B/C/E は脱落させるが、**論文ではその脱落理由を明示** (= 「
 
 ---
 
+## 7. 提案手法 (SDP) が成り立つ構造的根拠
+
+reviewer 質問: 「なぜ SDP が高確率で機能すると言えるのか?」 への論拠を整理する。
+
+### 7.1 5 つの構造的保証
+
+| # | 保証 | 中身 |
+|---|---|---|
+| **1** | **構造的 (= データ依存しない)** | orthogonality は trigger 基底から導出される構造で、訓練データの質に依存しない。NN や RL のような「学習が外れたら崩壊」する failure mode がない |
+| **2** | **最悪ケース保証** | 任意の単一トリガー $T_k$ 発火時、standby 集合の $T_k$ 曝露は **構造的に 0**。burst 全量が補償可能 |
+| **3** | **物理事前知識による enumerable 性** | トリガー基底 (commute, weather, market, comm) は **物理 / 契約構造から枚挙可能**。金融 (~100 因子) と異なり power system DER の因子空間は ~5 次元と低次元 |
+| **4** | **失敗モードが精密に特性化** | SDP が失敗する条件は (a) トリガー基底が不完全、(b) burst 規模 > standby 容量 の **2 つに限定**。両方とも明示的な前提として宣言可能 |
+| **5** | **Heterogeneity を utilize** | DER 種別の異質性 (residential / commercial / industrial / utility-owned) が異なるトリガー曝露を **物理的に保証** する。pool が混合的なほど SDP は強くなる (= 業界実態と整合) |
+
+### 7.2 機能の前提条件 (= 失敗する条件の明示)
+
+論文として誠実な claim にするため、SDP が機能する前提を明確化:
+
+| 前提 | 違反時の挙動 | Phase 1 で要検証 |
+|---|---|---|
+| **P1**: トリガー基底 $\{T_1, \dots, T_K\}$ が生起する全 burst を span する | 未列挙トリガーで burst 発生時、orthogonal なはずの standby も離脱 | **trace に "K+1 番目" のトリガーを意図的に注入して頑健性検証** |
+| **P2**: pool が **十分 heterogeneous** | 単一種類 DER しかなければ orthogonal subset なし → SDP infeasible | pool 構成比を変えた sensitivity 実験 |
+| **P3**: burst は近似的に **単一トリガー駆動** | 複数トリガー同時発火 (= 連動 burst) ではナイーブ orthogonal が崩れる | trace に「2-trigger 同時発火」シナリオを含めて挙動観察 |
+| **P4**: トリガー曝露ラベルが正確 | 誤ラベル DER が orthogonal subset 内に紛れ込み離脱 → SLA 違反 | DER ラベル誤り率 5%, 10%, 20% で robustness 評価 |
+
+→ P1-P4 違反時の挙動を **意図的に** 実験設計に含める (= 提案手法の限界も論文で示す姿勢)
+
+### 7.3 既存手法との成功確率比較
+
+| 手法 | 成功条件 | 失敗条件 | gridflow trace で成立? |
+|---|---|---|---|
+| 静的過剰契約 | 過剰量 > 任意 burst | 想定超 burst | ⚠️ 重尾で外れる |
+| SP (シナリオ) | シナリオが trace tail を網羅 | 重尾未網羅 | ❌ シナリオ N に指数的 |
+| DRO (Wasserstein) | ball radius が分布変動を内包 | radius 過小 | ⚠️ radius チューニング依存 |
+| 相関 portfolio | 相関係数が将来も保たれる | 構造変化 | ❌ OOD で崩壊 |
+| 金融 causal portfolio | causal graph 推定が正確 | グラフ誤り | ⚠️ 隠れ confounder 多 |
+| **SDP (提案)** | **P1-P4 が成立** | P1-P4 違反 | ✅ **P1-P4 を Phase 1 で個別検証可能** |
+
+SDP の "成功" は **Phase 1 で前提を直接検証できる構造** になっている点が他手法と異なる (他手法はチューニングや当てはめで間接にしか確認できない)。これが「成り立つ可能性が高い」根拠の中核。
+
+---
+
+## 8. 実験 — 提案手法の variants と Phase 1 計画
+
+reviewer 質問: 「提案手法として何パターンを実験で確かめるのか?」 への回答。
+
+### 8.1 SDP の自由度
+
+SDP は以下 4 軸で variant 化できる:
+
+| 軸 | 変数 | candidates |
+|---|---|---|
+| **a. トリガー基底次元** $K$ | 何個のトリガーを基底にするか | $K=2$ (時刻のみ), $K=3$ (+気象), $K=4$ (+市場), $K=5$ (+通信), $K=$ adaptive |
+| **b. orthogonality 緩和度** | 完全直交 vs 緩和 | strict (exact), soft (penalty $\lambda$), tolerant (overlap $\leq \varepsilon$) |
+| **c. 最適化定式化** | どう解くか | MILP exact, LP relaxation, greedy, simulated annealing |
+| **d. 動員ポリシー** | trigger 検出時の挙動 | 単純動員 (orthogonal 全召集), 段階動員 (level-1 → level-2), 適応動員 (NN 検出器併用) |
+
+理論上 $5 \times 3 \times 4 \times 3 = 180$ variants。Phase 1 で全部はやらない。
+
+### 8.2 Phase 1 実験で確かめる **6 パターン**
+
+論文の核となる主張別に 6 パターン:
+
+| # | variant | 主張 |
+|---|---|---|
+| **M1** | SDP-strict-MILP-K3 | **canonical form**。提案手法の core |
+| **M2** | SDP-strict-MILP-K2 vs K3 vs K4 | 主張 (1): **基底次元数の影響** (P1 検証) |
+| **M3** | SDP-strict vs soft vs tolerant | 主張 (2): **orthogonality 緩和の trade-off** |
+| **M4** | SDP-greedy vs MILP | 主張 (3): **計算量と最適性** (大規模 pool 対応) |
+| **M5** | SDP-MILP + NN 動員 | 主張 (4): **NN は動員に使えるが設計には不可** (§5.4 を実験で確認) |
+| **M6** | SDP under DER label noise (5/10/20%) | 主張 (5): **P4 (ラベル誤り)** への robustness |
+
+### 8.3 baseline (比較対象、§4.7 + naive NN)
+
+| # | baseline | 由来 |
+|---|---|---|
+| B1 | 静的過剰契約 (+30%) | 業界実装 |
+| B2 | SP (N=200 シナリオ) | 系統 A |
+| B3 | Wasserstein DRO | 系統 B |
+| B4 | Markowitz 相関 portfolio | 系統 E |
+| B5 | **金融 causal portfolio (PC アルゴリズム)** | §4.5 への直接反証 (= ユーザー指定 (a) 採用) |
+| B6 | naive NN reactive | §5 への直接反証 |
+
+### 8.4 trace 設計 (P1-P4 と OOD 条件を担保)
+
+| 条件 | trace 設計 |
+|---|---|
+| 単一トリガー burst | commute / weather / market 各々の単独 burst trace を月単位で生成 |
+| 複数トリガー同時 (P3 違反) | "厳冬朝 + 通勤" など 2 トリガー同時発火を trace に注入 |
+| 未列挙トリガー (P1 違反) | 「pandemic 自宅勤務シフト」など K+1 番目トリガーを test 期に注入 (train 期には不在 = OOD) |
+| OOD 頻度 (§5.5) | train 期に market spike を稀、test 期に頻発 |
+| label noise (P4 検証) | DER の実トリガー曝露と labelled 値を 5/10/20% 違える |
+
+### 8.5 評価指標
+
+| 指標 | 意味 |
+|---|---|
+| **SLA 違反率** | trace 全期間で SLA tail (例: 99% 達成) を満たさない時間帯の割合 |
+| **総契約コスト** | active + standby の月額契約コスト |
+| **Burst 補償率** | trigger 発火時の standby 補償 / burst 規模 |
+| **計算時間** | optimization の CPU time (大規模 pool で MILP vs greedy 比較) |
+| **OOD robustness gap** | train trace SLA - test trace SLA (= 環境変化への retention) |
+
+### 8.6 マトリクス全景 — 1 表で見える形
+
+```
+        ┌────────────────────────────────────────────────────┐
+        │  6 提案 variants (M1-M6)  ×  6 baselines (B1-B6)  │
+        │                                                     │
+        │  各 cell:  trace 5 種 (single / multi / OOD /       │
+        │             label-noise / 大規模 pool)              │
+        │                                                     │
+        │  指標 5 種:  SLA 違反率 / コスト / 補償率 /          │
+        │             計算時間 / OOD gap                       │
+        └────────────────────────────────────────────────────┘
+
+  論文の主要主張 = M1 が B1-B6 全てに対し
+                   trace 5 種全てで pareto-dominant or 同等
+```
+
+### 8.7 想定される反証パターンと事前回答
+
+| 反証シナリオ | reviewer の言い分 | 事前回答 |
+|---|---|---|
+| 「single trigger 仮定が強すぎる」 | P3 違反 trace で SDP が崩れたら? | M1 vs M3 (soft) で緩和の効果を示す。soft が strict と僅差なら "緩和で対処可" と主張 |
+| 「label 誤りに脆弱」 | P4 違反で実用性ない? | M6 で 20% 誤りまで sensitivity を示す。20% 誤りでも B1-B4 より良ければ実用域 |
+| 「pool が同質ならどうする?」 | P2 違反 | "P2 は VPP の本来要件" と論じる (= heterogeneous pool であることが VPP の業界実態) |
+| 「未列挙トリガーで崩壊」 | P1 違反 | trace に K+1 トリガー注入して挙動観察。崩れた時の degrade speed を NN baseline と比較 |
+
+---
+
+
 
 
