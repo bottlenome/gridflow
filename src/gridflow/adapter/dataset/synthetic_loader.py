@@ -67,11 +67,18 @@ class SyntheticLoader:
             raise ValueError(f"unsupported dataset: {spec.dataset_id}")
 
         # Defer the heavy import to the call site so that this loader
-        # has no side effects at module-import time.
-        from test.mvp_try11.tools.der_pool import make_default_pool
-        from test.mvp_try11.tools.trace_synthesizer import (
-            synth_c1_single_trigger,
-        )
+        # has no side effects at module-import time. The synth modules
+        # live under ``test/mvp_try11/tools/``; ensure that path is on
+        # sys.path before importing.
+        import os
+        import sys
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[4]
+        try11_path = repo_root / "test" / "mvp_try11"
+        if str(try11_path) not in sys.path:
+            sys.path.insert(0, str(try11_path))
+        from tools.der_pool import make_default_pool
+        from tools.trace_synthesizer import synth_c1_single_trigger
 
         params = dict(spec.params)
         seed = int(params.get("seed", 0))
