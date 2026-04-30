@@ -77,6 +77,95 @@ C2 (= framework のみで実データ未取得) の **真の解消**。
 
 ---
 
+## B. 用語集 (略語・固有名)
+
+### B.1 手法・手法 variants
+
+| 略 | 名称 | 役割 |
+|---|---|---|
+| **CTOP** | Causal-Trigger Orthogonal Portfolio | 提案手法の総称 (= 旧 SDP Sentinel-DER Portfolio) |
+| **SDP** | Sentinel-DER Portfolio | CTOP の旧名。コード変数や旧 commit message で残存 |
+| M1 | strict-MILP-K3 | CTOP canonical (3 trigger 軸 / strict orthogonality) |
+| M2a/b/c | K=2/3/4 | trigger 基底次元数の影響を測る ablation |
+| M3b | soft | orthogonality を penalty 化した relaxed variant |
+| M3c | tolerant | overlap ≤ ε を許容する relaxed variant |
+| M4b | greedy | O(N log N) の近似 heuristic (= Theorem 2 の境界対象) |
+| M5 | NN dispatch | M1 design + naive NN dispatch (動員専用 NN 併用) |
+| M6 | label noise | 10% 反転 label 下での M1 ロバスト性 |
+| **M7** | **grid-aware** | **DistFlow voltage / line constraint 付き MILP (本セッションで実装、Phase D で改善対象)** |
+| M8 | active+standby joint | 次セッション (Phase D-3) で予定する完全 MILP |
+| B1 | 静的 +30% 過剰契約 | 業界 default の素朴 baseline |
+| B2 | Stochastic Programming | 200 シナリオ SAA |
+| B3 | Wasserstein DRO | distributionally robust |
+| B4 | Markowitz | 過去相関ベース portfolio |
+| B5 | 金融 causal portfolio (簡易版) | PC アルゴリズム + cluster (= CPCM 簡易版、full PDE 不在) |
+| B6 | naive NN | sklearn MLP で churn 予測 → 反応的補充 |
+
+### B.2 trace ファミリー
+
+| 略 | 中身 | 検証する外挿 |
+|---|---|---|
+| C1 | 単一既知トリガー | baseline (外挿 (1) 基準) |
+| C2 | 既知軸の過去最大級 burst | 外挿 (1) — CTOP 構造保証主張根拠 |
+| C3 | 複数既知同時 | single trigger 仮定の崩れ |
+| C4 | 基底外の新トリガー軸 | 外挿 (2) — CTOP も崩れるが detection 可能 |
+| C5 | OOD 頻度 shift | 外挿 (1) の頻度版 |
+| C6 | label noise | label 誤りロバスト性 |
+| C7 | correlation reversal | 相関ベース手法 (B4/B5/B6) を崩壊させる |
+| C8 | scarce orthogonal | utility_battery 削減で fully-orthogonal type 不在状況 |
+
+### B.3 ideation rules (mvp_review_policy.md §2.5)
+
+| Rule | 内容 |
+|---|---|
+| Rule 1 | HAI-CDP (Human-AI Co-ideation, ≥10 候補列挙) |
+| Rule 2 | Ordinary persona (専門家 persona 排除) |
+| Rule 3 | CoT 4 ステップ (隣接 / アナロジー / 最遠 / 実行可能性) |
+| Rule 4 | Extreme user の amplified needs |
+| Rule 5 | TRIZ 妥協なし矛盾解 |
+| Rule 6 | Fixation 監視 (= 直近 try 軸からの脱却) |
+| Rule 7 | 乱数アンカリング (= 自己選択バイアス断絶) |
+| Rule 8 | 課題深掘り S0-S8 (= S7 で method 一意化) |
+| Rule 9 v2 | TRIZ 遠隔ドメイン (≥ 3 候補 + invariant 検査) |
+
+### B.4 配電網 / electrical engineering
+
+| 略 | 内容 |
+|---|---|
+| **VPP** | Virtual Power Plant (仮想発電所) |
+| **DER** | Distributed Energy Resource (分散エネルギー資源) |
+| **SLA** | Service Level Agreement (補助サービスの応答契約) |
+| **pu** | per-unit (= 標称電圧で割った無次元値) |
+| **MVA** | Mega Volt-Ampere (変圧器容量単位) |
+| **DistFlow** | 配電網用の線形化潮流モデル (Baran-Wu 1989) |
+| **PF** | Power Flow calculation (潮流計算、pandapower の `runpp`) |
+| **ANSI C84.1** | 米国規格、電圧許容 0.95-1.05 pu |
+| **IEEE Std 1547** | DER interconnection standard |
+| **EN 50160** | 欧州規格、電圧許容 ±10% |
+
+### B.5 文献・先行研究
+
+| 略 | 文献 | 役割 |
+|---|---|---|
+| **CPCM** | Rodriguez Dominguez 2025 (Causal PDE-Control Models) | 金融 causal portfolio の最前線、本研究の最重要先行 |
+| Lopez de Prado 2019 | Machine Learning for Asset Managers | causal portfolio 系譜の祖 |
+| Mitchison 1977 | Phyllotaxis | try10 で参照、本 try11 では参照外 |
+| Mathieu 2015 | CVaR-based DER portfolio | B4 の理論祖 |
+| Ortega-Vazquez 2009 | LOLP-based reserve | B1 の理論祖 |
+| Bertsimas & Sim 2004 | Robust optimization | B3 の理論祖 |
+| Esfahani & Kuhn 2018 | Wasserstein DRO | B3 の DRO 理論 |
+
+### B.6 略語が混乱しやすい (要注意)
+
+- **CTOP / SDP**: 同一手法の新旧名。論文では CTOP に統一済み、コード内変数や
+  commit message には SDP が残る (= リファクタ未実施)
+- **F-M1 / F-M2**: F-M2 paper (= 3 feeder 検証) を「Future-Multi-feeder」と
+  読む。F-M1 は single feeder 初版 (= 旧 270 cell sweep)
+- **M7 grid-aware**: 本 commit で実装したが、relaxed bound (V_max=1.10) 利用
+  のため Phase D で **再実装が必要**
+
+---
+
 ## 0. 現状の正直な評価 (= 未解消の問題)
 
 ### 0.1 C3 の "解消" は不十分
