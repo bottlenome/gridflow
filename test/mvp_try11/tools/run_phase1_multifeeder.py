@@ -57,6 +57,7 @@ from .feeder_config import FEEDER_TRAFO_MVA, feeder_active_pool, get_feeder_conf
 from .feeders import map_pool_to_feeder
 from .grid_metrics import GRID_METRICS
 from .grid_simulator import grid_simulate, to_grid_experiment_result
+from .sdp_grid_aware import solve_sdp_grid_aware
 from .sdp_optimizer import (
     solve_sdp_greedy,
     solve_sdp_soft,
@@ -77,7 +78,7 @@ from .trace_synthesizer import (
 from .vpp_metrics import VPP_METRICS
 from .vpp_simulator import all_standby_dispatch_policy
 
-METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6",
+METHODS = ("M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M4b", "M5", "M6", "M7",
            "B1", "B2", "B3", "B4", "B5", "B6")
 
 TRACES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8")
@@ -85,7 +86,7 @@ TRACES = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8")
 FEEDERS = tuple(FEEDER_TRAFO_MVA.keys())
 
 # Methods that skip at scale=5000 (too slow)
-SKIP_AT_5000 = frozenset({"M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6", "B2", "B3"})
+SKIP_AT_5000 = frozenset({"M1", "M2a", "M2b", "M2c", "M3b", "M3c", "M5", "M6", "M7", "B2", "B3"})
 
 
 def _make_trace(trace_id: str, pool, seed: int, sla_kw: float):
@@ -108,7 +109,8 @@ def _make_trace(trace_id: str, pool, seed: int, sla_kw: float):
     raise ValueError(f"unknown trace: {trace_id}")
 
 
-def _solve(method: str, pool, active_ids, trace, *, burst, sla_kw, seed):
+def _solve(method: str, pool, active_ids, trace, *, burst, sla_kw, seed,
+           bus_map=None, feeder_name=None):
     if method == "M1":
         sol = solve_sdp_strict(pool, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M1")
         return sol.standby_ids, sol.objective_cost, "M1", all_standby_dispatch_policy
@@ -138,6 +140,16 @@ def _solve(method: str, pool, active_ids, trace, *, burst, sla_kw, seed):
         perturbed = perturb_pool_label_noise(pool, noise_rate=0.10, seed=seed + 99)
         sol = solve_sdp_strict(perturbed, active_ids, burst, basis=TRIGGER_BASIS_K3, mode="M6")
         return sol.standby_ids, sol.objective_cost, "M6-noise10", all_standby_dispatch_policy
+    if method == "M7":
+        if bus_map is None or feeder_name is None:
+            raise ValueError("M7 requires bus_map and feeder_name")
+        sol = solve_sdp_grid_aware(
+            pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
+            basis=TRIGGER_BASIS_K3,
+            v_max_pu=1.10, line_max_pct=120.0,  # relaxed bounds for synthetic feeders
+            mode="M7-grid",
+        )
+        return sol.standby_ids, sol.objective_cost, "M7-grid", all_standby_dispatch_policy
     if method == "B1":
         sol = solve_b1_static_overprov(pool, active_ids, overprov_factor=0.30)
         return sol.standby_ids, sol.objective_cost, "B1", all_standby_dispatch_policy
@@ -185,6 +197,7 @@ def run_one_cell(args: tuple) -> dict:
         standby_ids, design_cost, method_label, dispatch_policy = _solve(
             method, pool, active_ids, trace,
             burst=burst, sla_kw=sla_kw, seed=seed,
+            bus_map=bus_map, feeder_name=feeder,
         )
         design_solve_time = time.perf_counter() - design_t0
 
