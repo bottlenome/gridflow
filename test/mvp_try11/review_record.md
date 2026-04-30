@@ -140,3 +140,110 @@
 
 ---
 
+## D. 完成度 (査読 §4.2 D)
+
+### D-1 数値性能 vs 構造的保証の整理
+
+**判定: ⚠️ MAJOR 指摘 (M-1, ←既出)**
+
+§7.1 で率直に「Pareto-strict dominance は良性条件下では未確立」と認めており、誠実な姿勢は評価可。しかし論文 §1 / §6.1 / §9 の言語を **「同等」「構造的保証」「detection-friendly」** に統一する編集修正が必要。
+
+### D-2 反証可能性 (5.1.5 評価指標 + §6.4 OOD 解析)
+
+**判定: ✅ 合格**
+
+`ideation_record.md` §5.5 の P1-P4 (= burst trigger 多様性 / OOD 頻度 / 同時発火 / label noise) を C1-C6 trace で具体的に検証。M3c の脆弱性 (6.15%) や B5 の高違反 (5.09%) も **隠さず報告** している。
+
+### D-3 図表の充実
+
+**判定: ⚠️ MODERATE 指摘 (mod-3)**
+
+論文 §6 は表中心で図がない。reviewer は plotted Pareto frontier (cost vs violation) や per-trace box plot を期待する。
+
+**修正提案**: `results/plots/` 配下に matplotlib で以下を生成:
+- `pareto_cost_violation.png` (15 method × 6 trace の散布図)
+- `per_trace_violation_box.png` (method × trace の violation ratio box plot)
+- `ood_gap_bar.png` (method 別の C4 vs C1 の bar)
+
+### D-4 計算性能の報告
+
+**判定: ✅ 合格**
+
+§7.6 で variant 別の solve time を表で報告。MILP 0.2-0.4 秒 / cell は実用域、SP/DRO の 5-30 秒との差を明示。
+
+---
+
+## E. Top venue 水準 (査読 §4.2 E, IEEE PES GM 想定)
+
+### E-1 Theoretical novelty depth
+
+**判定: ⚠️ MAJOR 指摘 (M-2 関連 + new)**
+
+SDP は MILP 形式の portfolio 問題で、**理論的な新規性は構造化** (= 既存 portfolio に causal axis 制約を追加) **に留まる**。Top venue (IEEE Trans. Power Systems / Smart Grid 等) は以下を要請:
+
+- 理論的最適性証明 (例: SDP 解と CPCM 解の関係定理)
+- 漸近解析 (N → ∞ 時の計算量・性能)
+- 実 VPP データでの検証
+
+本稿は (a) (b) を欠き、(c) は synthetic trace のみ。Top venue 水準には未達、PES GM workshop または Applied Energy / Energies (rapid review) が想定 venue。
+
+### E-2 複数 feeder / 複数 scale 検証
+
+**判定: ❌ MAJOR 指摘 (M-2, ←既出)**
+
+§8.5 / §8.2 で限界として認めるが、`mvp_review_policy.md` §4.2 E-2 が要請する複数 feeder 検証は未実施。
+
+**修正計画**:
+- Phase 2 で CIGRE LV / Kerber 30 / Dickert の 3 feeder で aggregate output が grid 制約 (1.05 / 0.95 pu) 下に収まるかを検証
+- N = 50, 200, 1000, 5000 の 4 scale で M1 / M4b の挙動差を測定
+
+### E-3 学術 community 受容性
+
+**判定: ⚠️ MODERATE 指摘 (mod-4)**
+
+`Sentinel-DER Portfolio` という命名は動物行動学の比喩を残し、学術 community での受容性に懸念。**実装と理論は健全** だが、命名を `Causal-Trigger Orthogonal Portfolio (CTOP)` 等の technical な表記に揃える方が査読通過率が高い。
+
+**修正提案**: タイトルと abstract を `Causal-Trigger Orthogonal Portfolio for Virtual Power Plant Standby Design (with Sentinel-Inspired Heuristic)` 等に変更し、sentinel 比喩は §4.6 (動機) に格下げ。
+
+---
+
+## 修正計画 (条件付き合格 → 合格に向けて)
+
+### 必須 (MAJOR 解消)
+
+| # | 内容 | 該当節 | 工数目安 |
+|---|---|---|---|
+| F-M1 | 数値同等性に統一した言語修正 (abstract / §1.4 / §9) | 主に編集 | 1 日 |
+| F-M2 | 複数 feeder + 複数 scale 実験追加 | §5.1 + §6 拡張 | 1 週間 |
+
+### 強く推奨 (MODERATE 解消)
+
+| # | 内容 | 工数目安 |
+|---|---|---|
+| F-mod1 | trigger basis 設計指針サブセクション追加 (§4.1) | 半日 |
+| F-mod2 | B5 が CPCM 簡易版である旨を §3.4.2 / §5.1.6 / §9.1 に明記 | 半日 |
+| F-mod3 | matplotlib プロット 3 種を生成 + 論文に図示 | 1 日 |
+| F-mod4 | タイトル + abstract を CTOP 軸に変更 (sentinel は §4.6 動機へ) | 1 日 |
+
+合計: MAJOR 2 件解消で **合格** (mvp_review_policy.md §4.3 「条件付き合格 = MAJOR 1 件以下」より厳密)、MODERATE 4 件追加解消で **Top venue 水準合格** に近づく。
+
+---
+
+## 査読まとめ
+
+- **A 合格** (gridflow を contribution として主張せず、ideation 全 Rule 経由、Novelty Gate 9/9)
+- **B 合格 (MODERATE 1)** (問題定義明確、トリガー基底根拠強化が望ましい)
+- **C 合格 (MAJOR 1, MODERATE 1)** (主張トーン慎重化、B5 が CPCM 簡易版である旨追記)
+- **D 合格 (MAJOR 1, MODERATE 1)** (数値同等性の率直記述、図表強化)
+- **E 未達 (MAJOR 1, MODERATE 1)** (複数 feeder + 複数 scale 検証、命名)
+
+**判定**: 条件付き合格 (MAJOR ×2 を F-M1 / F-M2 で解消すれば合格)
+
+PO への提案: 本 Phase 1 の成果を以下に分岐:
+1. **(a) F-M1 + F-mod1〜4 を即時実施** (1-2 日工数) → workshop / Applied Energy 投稿水準
+2. **(b) F-M1 + F-M2 + 全 mod を実施** (約 2 週間工数) → Top venue 投稿水準
+3. **(c) Phase 1 を try11 結果として確定し、try12 で別問題に進む** (= 候補 1 / 候補 3 を扱う)
+
+---
+
+
