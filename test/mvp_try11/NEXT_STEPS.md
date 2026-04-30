@@ -211,3 +211,134 @@ load_results = (
 半日〜1 日 (PF call 増加あり、smoke test 含む)
 
 ---
+
+## 4. Phase D-2: Tight bound MILP + infeasibility 報告
+
+**目的**: 現状の M7 で使った relaxed bound (V_max=1.10, line_max=120%) を
+**運用基準** (V_max=1.05, line_max=100%) に戻し、その下で feasible/infeasible
+を honestly に報告する。
+
+### 4.1 問題
+
+現状 `tools/run_phase1_multifeeder.py` の M7 case:
+
+```python
+sol = solve_sdp_grid_aware(
+    pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
+    basis=TRIGGER_BASIS_K3,
+    v_max_pu=1.10, line_max_pct=120.0,  # ← relaxed
+    mode="M7-grid",
+)
+```
+
+これは ANSI / IEEE 規格を 1% 超えても許容する hack。**実運用なら一発不採用**。
+
+しかも、この緩和が `feasible=True` を作ったので、論文の主張が一見成立しただけで、
+真の運用基準で再評価すると infeasible になる可能性が高い。
+
+### 4.2 実装手順
+
+#### Step 1: M7 の bound を tight 化 (V_max=1.05, line_max=100%)
+
+```python
+# In run_phase1_multifeeder.py:
+if method == "M7":
+    sol = solve_sdp_grid_aware(
+        pool, active_ids, burst, bus_map=bus_map, feeder_name=feeder_name,
+        basis=TRIGGER_BASIS_K3,
+        v_max_pu=1.05,        # ← ANSI C84.1 strict
+        line_max_pct=100.0,   # ← 線路定格
+        mode="M7-strict-grid",
+    )
+```
+
+#### Step 2: Infeasibility を ExperimentResult に明示
+
+`run_one_cell` で `sol.feasible == False` の場合:
+
+```python
+if not sol.feasible:
+    return {
+        "feeder": feeder, "scale": scale, "trace_id": trace_id,
+        "method": method, "seed": seed,
+        "elapsed_s": round(elapsed, 3),
+        "error": None,
+        "design_cost": None,
+        "n_standby": 0,
+        "infeasible": True,                      # ← 追加 field
+        "infeasibility_reason": "MILP infeasible under V_max=1.05 strict",
+        "metrics": {},
+    }
+```
+
+aggregate スクリプトで infeasible cells を別カウント。
+
+#### Step 3: Soft fallback (M7-soft) variant 追加
+
+infeasible の場合に違反量を最小化する soft variant を実装:
+
+```python
+def solve_sdp_grid_aware_soft(...):
+    """電圧制約を hard でなく penalty 項に。
+    overshoot violation の総和を minimize するスラック変数を導入."""
+    # 各 bus i に slack s_i ≥ 0 を導入
+    # constraint: V_i ≤ V_max + s_i
+    # objective: cost + λ * sum(s_i)
+```
+
+これで「strict 不可だがどれだけ近づけるか」を測定可能。
+
+#### Step 4: Re-run F-M2 sweep with tight bounds
+
+```bash
+PYTHONPATH=src .venv/bin/python -m tools.run_phase1_multifeeder \
+    --feeders cigre_lv kerber_dorf kerber_landnetz \
+    --scales 200 \
+    --traces C1 C2 C3 C4 C5 C6 C7 C8 \
+    --methods M1 M7 M7-soft B1 B4 B5 \
+    --seeds 0 1 2 \
+    --n-workers 4
+```
+
+期待される結果:
+- M7 (strict): cigre_lv で多くの cell が **infeasible**
+- M7-soft: feasible だが slack > 0 (= 違反緩和の量を測定)
+- M1 (no grid): 高 voltage 違反のまま (現状)
+
+#### Step 5: 結果を honestly 報告
+
+`results/try11_FM2_strict_results.json` に分けて出力。次の集計で:
+
+- M7 strict が **何 % の cell で feasible** か (= 運用域の境界)
+- M7 strict の voltage 違反は **<0.1%** (= 制約により構造的に保証)
+- M7-soft の slack 平均 (= 構造保証を緩めた場合のコスト)
+
+### 4.3 完了基準
+
+- M7 strict (V_max=1.05) で feasible cell の voltage 違反 ratio < 0.1%
+- infeasible cells の割合を report に明記
+- M7-soft の slack 統計を取得し、緩和コストを定量化
+- review_record で「12% 合格」判定を取消、「strict X% feasible / soft Y%」に書換
+
+### 4.4 想定される困難と対処
+
+#### 困難 A: cigre_lv のほぼ全 cell が infeasible
+
+baseline_v_min = 0.912 で既に違反、SDP は positive injection のみで V_min は
+上げ得るが V_max もタイトに制約されるので、そもそも feasible 領域が極小。
+
+**対処**: D-3 (active pool MILP 化) で active 配置を grid-aware にする。
+それでも infeasible なら **cigre_lv はこの SLA scale には不向き** と論文で
+明示し、kerber_dorf / kerber_landnetz で主張を作る。
+
+#### 困難 B: kerber_dorf / kerber_landnetz でも infeasible 多発
+
+burst kw に対して standby 容量が物理的に不足している可能性。SLA target を
+さらに下げる (= per-feeder 30% trafo MVA) か、active pool size を再設計
+(= D-3)。
+
+### 4.5 工数目安
+
+1-2 日 (sweep 実行 1142s × 2 回 + soft variant 実装 + 結果分析)
+
+---
