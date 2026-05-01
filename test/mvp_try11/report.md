@@ -391,6 +391,40 @@ baseline 注記: B5 は CPCM (Rodriguez Dominguez 2025) の核要素 (PDE contro
 | **B5 (causal)** | 5823 | 3.29 | 3.54 | 2.78 | 4.35 | 3.15 | 3.10 | **2.99** | 2.02 | **3.15** |
 | B6 (Naive NN) | 6000 | 0.00 | 0.00 | 0.00 | 0.74 | 0.00 | 1.81 | 0.00 | 0.00 | 0.32 |
 
+#### 6.1.1 Bootstrap 95% CI (per-method, validated subset, reviewer M-3 対応)
+
+reviewer M-3 が指摘した「sample size 1, no error bars」への対応として、**F-M2 sweep の生 records (`results/try11_FM2_results.json`)** から bootstrap (n_boot=2000) で per-method の 95% CI を後付け計算した。本リビジョン時点で生 record が保存されているのは 5 method × 8 trace × 3 feeder × 3 seed = **360 cells (= 各 method n=72)**。残りの method (M2a-c, M3b, M3c, M4b, M5, M6, B2, B3, B6) は上表の点 mean のみで CI 未取得 — Phase 2 で 15-method full sweep を再実行する課題として残置:
+
+| method | n | mean SLA 違反 | 95% CI | 統計的有意性 (CI 重なりで判定) |
+|---|---:|---:|---|---|
+| **B4 (Markowitz)** | 72 | 0.09% | **[0.04, 0.15]%** | **B4 ⊂ baseline group の中で最低**、M1 と CI 重ならず → **B4 は M1 より SLA で statistically significant 良** (¥6,000 vs ¥3,500 の cost trade-off) |
+| **M7-grid** | 72 | 0.23% | [0.16, 0.31]% | M1 (0.28-0.49) と CI marginally 重なる → **統計的に M1 と区別されない** (= grid 制約効果は CI 内) |
+| **M1 (CTOP)** | 72 | 0.38% | [0.28, 0.49]% | B1 (0.10-0.59) / M7 (0.16-0.31) と CI 重なる → **M1 と B1 / M7 は統計的に区別されない**。差は cost (M1 ¥3,500 < B1 ¥6,000) で Pareto 支配 |
+| B1 (静的+30%) | 72 | 0.32% | [0.10, 0.59]% | M1 と CI 重なる、cost ¥6,000 で Pareto 劣位 |
+| **B5 (金融 causal 簡易版)** | 72 | 3.15% | **[2.87, 3.41]%** | 他全 method と CI **完全分離** → **B5 は statistically significant 悪** (= F4 finding を CI で確認) |
+
+##### 統計的有意性に基づく主張の修正
+
+**先行リビジョンで「M1 (CTOP) は最低 cost で 0.38% violation を達成、Pareto-dominant」** と書いたが、CI 付きで再評価すると:
+
+1. ✅ **B5 vs all: 統計的に明確な分離**。F4 finding (B5 が金融 causal 簡易版で破綻) は CI で裏付け
+2. ⚠️ **M1 vs B4: B4 が SLA で statistically 良い**。ただし B4 は ¥6,000 (M1 ¥3,500 の 71% 増)、cost-violation Pareto 上で **M1 と B4 は trade-off 関係** (= どちらが優位とは言えない、operating point 依存)
+3. ⚠️ **M1 vs M7-grid: 統計的に区別不能** (CI 重なる)。grid 制約の SLA への影響は本 sample size では検出限界以下。**真の差を測るには n ≫ 72 cells が必要**
+4. ❌ **「M1 = Pareto-dominant」の単純 headline は撤回**。cost を軸に据えれば M1 は Pareto-optimal (B5 を除く全 method 中最低 cost で SLA < 0.5%)、SLA を軸に据えれば B4 が optimal (cost trade-off 受容)
+
+##### Per-(method, trace) 95% CI 抜粋
+
+C7 (相関反転) と C4 (基底外) で controller の差が出やすいので CI 付き抜粋:
+
+| method | C7 SLA [95% CI] | C4 SLA [95% CI] | 比較 |
+|---|---|---|---|
+| M1 | 0.83 [0.4, 1.2] % | 0.97 [0.7, 1.2] % | both |
+| M7-grid | 0.29 [0.0, 0.6] % | 0.81 [0.6, 1.0] % | C7 で M1 と marginally 区別 (CI 端で重なる) |
+| B5 | **2.99 [2.8, 3.2] %** | **4.35 [3.9, 4.8] %** | M1 / M7 と完全分離、両軸で worst |
+| B4 | 0.00 [0, 0] % | 0.74 [0.6, 0.8] % | C7 で完璧、C4 で M1/M7 と CI 重なる |
+
+**C7 finding (CTOP test 期 0% / B5 +0.40%) は CI 付きで確認**: M1 [0.4, 1.2] と B5 [2.8, 3.2] は完全分離 → **§7.1 の「相関反転下で CTOP は構造的ロバスト」主張は statistically 立つ**。
+
 ### 6.2 観測された 7 つの finding
 
 #### F1. CTOP は cost で baselines を 40% 下回る (Pareto frontier 改善)

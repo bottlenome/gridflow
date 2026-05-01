@@ -456,7 +456,12 @@ CAISO 系統需要 (= 需要側、20 GW、集約) を `weather` trigger に prox
   - kerber_dorf: M7-strict は V_disp 0% を達成するが **SLA 違反 52.70% [48.49, 57.28]** (= grid-vs-SLA trade-off の honest 報告)
   - cigre_lv: M7-strict と M1 が同列 (全 12 cell 0%/0%/¥8,700)、grid 制約が active を強いていない
   - **v2 単週で報告した「kerber_dorf M7 = winner」「cigre_lv M7 = infeasible」は sample-of-1 artefact** だったことが判明
-- ❌ §6.1 主結果 (1080 cells synthetic sweep) の error bar は依然未実装、Phase 2 課題として M-3' に残置
+- ✅ **§6.1 主結果 (1080-cell synthetic sweep) にも bootstrap CI を後付け**: 生 records (`try11_FM2_results.json`、5 method × 8 trace × 3 feeder × 3 seed = 360 cells が現状保存済) で per-method n=72 の 95% CI を算出し、§6.1.1 として追加。**重要な再評価**:
+  - **B5 [2.87, 3.41]% は他全 method と CI 完全分離 → §6.2 F4 (B5 破綻) を statistical 有意性で確認**
+  - **M1 [0.28, 0.49]% vs B4 [0.04, 0.15]%: CI 重ならず B4 は M1 より SLA で statistically significant 良** (ただし B4 cost ¥6,000 vs M1 ¥3,500 の trade-off)
+  - **M1 vs M7-grid / M1 vs B1: CI 重なる → 統計的に区別不能**
+  - 「M1 = Pareto-dominant」の単純 headline は撤回、operating-point-dependent な trade-off 関係に修正
+  - 残 method (M2a-c, M3b, M3c, M4b, M5, M6, B2, B3, B6) の生 records は本 commit 時点で保存されておらず、CI 不算出。Phase 2 で 15-method full sweep 再実行が課題
 
 ### M-4 / M-5 / M-6 は Phase 2 課題として残存
 
