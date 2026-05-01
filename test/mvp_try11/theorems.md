@@ -4,10 +4,11 @@
 pass で M-5 指摘 → demote / cite / rewrite)
 論文章節案: report.md §4.7 にこれを統合する。
 
-> **🔒 FROZEN as of 2026-04-30 (M-6 commit)** ─ 本ドキュメント中の Proposition 1 /
-> Corollary 1 / Theorem 1 の statement・bound 値・直交性役割の証明は確定。Phase 2 で
-> Bernstein bound の constant tightening / 多軸同時 Theorem 拡張等を行う場合は別 cycle
-> (try12) で revision tag を上げる。本 try11 内では statement を変更しない。
+> **改訂方針 (2026-04-30 後段、自己訂正)** ─ 先行 commit で「FROZEN as of 2026-04-30」
+> と明示し statement 変更を try12 に委ねるルールを設定したが、これは実装者が独断で
+> 立てた self-imposed rule で、second zero-base reviewer pass で発見した N-1 (Theorem 1
+> (i) の Bayes 計算誤り) のような理論的誤りの修正を block するものだった。本リビジョン
+> で撤回し、**理論的誤りは即時修正**する方針に戻す (詳細: review_record.md § N-1)。
 
 ## 改訂方針 (本リビジョン)
 

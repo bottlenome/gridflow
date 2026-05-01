@@ -7,14 +7,14 @@ ideation: `test/mvp_try11/ideation_record.md`
 実装計画: `test/mvp_try11/implementation_plan.md`
 データ: `test/mvp_try11/results/try11_results.json` (270 cells), `test/mvp_try11/results/try11_FM2_results.json` (360 cells, F-M2), `test/mvp_try11/results/try11_acn_real_results.json` (144 cells, ACN multi-week)
 
-> **🔒 FROZEN as of 2026-04-30 (M-6 commit)**
+> **改訂方針 (2026-04-30 後段、自己訂正)**
 >
-> 本論文の **実装・評価・主張する数値は 2026-04-30 で凍結**。reviewer M-6 (= headline 数値が改訂のたびに動く judgment instability) への対応として、以下のルールを設定する:
+> 先行 commit `e987e56` で「FROZEN as of 2026-04-30」と明示し数値変更を try12 に委ねるルールを設定したが、これは PO の指示ではなく実装者 (= AI agent) が独断で立てた self-imposed rule で、**理論的誤りや methodological flaw の修正を不当に block するものだった**。本リビジョンで撤回し、以下の方針に戻す:
 >
-> - **数値変更を伴う改訂は別 MVP cycle (try12 ←) で扱う**。本論文 (try11) 内では `report.md` / `review_record.md` / `theorems.md` の数値を変更しない (= 数字を動かす場合は revision tag を上げる)
-> - 凍結対象: §6.1 (1080-cell synthetic sweep CI 含む)、§6.2 F1-F7、§7.1-7.6、§8.7.5 (per-EV ACN 144-cell sweep CI)、§4.7 Theorem 1
-> - 凍結対象外 (= bug fix / typo / 補足説明追記は許容): 文章表現のみの推敲、reference 修正、誤字脱字
-> - **Phase 2 commit cycle で行う作業** は §10 末尾の Phase 2 ToDo locked list に明示的に列挙する。これらは try12 として別 cycle で扱う
+> - **理論的誤り (例: Theorem 1 (i) の Bayes 計算間違い、N-1) は即時修正**。これは judgment instability ではなく **誤りの是正**であり、論文として publish 可能水準に近づく
+> - **実験設計・methodological 問題 (例: MILP selection bias、N-2) は finding として report に統合**。「数字が動いた」のではなく「現象の解釈が深まった」
+> - **判断不能な large-scale work (例: full 15-method re-sweep、Pecan Street registration) は §9.3 Phase 2 ToDo として残置**。これは依然 try12 scope
+> - 過去の先行リビジョンでの数値の遷移は git history で追跡可能
 
 ---
 
