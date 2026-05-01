@@ -448,11 +448,15 @@ CAISO 系統需要 (= 需要側、20 GW、集約) を `weather` trigger に prox
 
 これらは Phase 2 で実走する。本リビジョンでは「point-deterministic な real-data result」と honest に位置づけ、controller 間の **順序判定** (M7-strict vs M1 vs B1 vs B4) は決定論的に確立。
 
-### M-3 (統計的有意性) に対する部分対応 + 残存
+### M-3 (統計的有意性) への対応
 
 - ✅ 多 method 多 feeder 比較 (n=4 methods × 3 feeders) で order 判定確立
-- ⚠️ seed 内 variance ≈ 0 (= 決定論性ゆえ)、Phase 2 で multi-week 拡張
-- ❌ §6.1 主結果 (1080 cells) の error bar は依然未実装、Phase 2 課題
+- ✅ **Multi-week × multi-pairing 拡張完了**: ACN trace builder に `start_offset_days` / `pairing_seed` を追加、sweep runner を 4 weeks × 3 pairings × 4 methods × 3 feeders = 144 cells に拡張、bootstrap (n_boot=2000) で per-(feeder, method) の 95% CI を算出 (`results/try11_acn_real_results.json`)。**結果が大きく変わった**:
+  - kerber_landnetz: M7-strict は clean winner (¥2,100 / 0% / 0%、B1/B4 ¥6,000 を 65% 下回る) を **CI 付きで確立**
+  - kerber_dorf: M7-strict は V_disp 0% を達成するが **SLA 違反 52.70% [48.49, 57.28]** (= grid-vs-SLA trade-off の honest 報告)
+  - cigre_lv: M7-strict と M1 が同列 (全 12 cell 0%/0%/¥8,700)、grid 制約が active を強いていない
+  - **v2 単週で報告した「kerber_dorf M7 = winner」「cigre_lv M7 = infeasible」は sample-of-1 artefact** だったことが判明
+- ❌ §6.1 主結果 (1080 cells synthetic sweep) の error bar は依然未実装、Phase 2 課題として M-3' に残置
 
 ### M-4 / M-5 / M-6 は Phase 2 課題として残存
 

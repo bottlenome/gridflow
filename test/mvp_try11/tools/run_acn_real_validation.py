@@ -47,6 +47,9 @@ from .vpp_metrics import VPP_METRICS
 DEFAULT_FEEDERS: tuple[str, ...] = tuple(FEEDER_TRAFO_MVA.keys())
 DEFAULT_METHODS: tuple[str, ...] = ("M1", "M7", "B1", "B4")
 DEFAULT_SEEDS: tuple[int, ...] = (0, 1, 2)
+DEFAULT_WINDOW_DAYS: int = 7
+DEFAULT_WEEK_OFFSETS: tuple[int, ...] = (0, 7, 14, 21)  # 4 non-overlapping weeks
+DEFAULT_PAIRING_SEEDS: tuple[int, ...] = (0, 1, 2)  # 0 = deterministic top-K
 HARDER_ALPHA: float = 0.70  # 70% of trafo MVA — pushes controllers to differentiate
 
 
@@ -68,8 +71,21 @@ def _config_at_alpha(feeder: str, alpha: float) -> FeederVppConfig:
 
 
 def run_one_acn_cell(args: tuple) -> dict:
-    """Single (feeder, method, seed) cell driven by the ACN real trace."""
-    feeder, method, seed, sessions_csv, alpha = args
+    """Single ACN-driven sweep cell.
+
+    args = (feeder, method, seed, sessions_csv, alpha,
+            week_offset_days, window_days, pairing_seed).
+    """
+    (
+        feeder,
+        method,
+        seed,
+        sessions_csv,
+        alpha,
+        week_offset_days,
+        window_days,
+        pairing_seed,
+    ) = args
     started = time.perf_counter()
     try:
         config = _config_at_alpha(feeder, alpha)
@@ -83,11 +99,17 @@ def run_one_acn_cell(args: tuple) -> dict:
         from .feeder_config import feeder_active_pool
         active_ids = feeder_active_pool(pool, config)
 
-        # Build the real-DER trace; seed perturbs the (synthetic) sweep over
-        # the non-EV slice and the active-matrix-derived event timing only.
+        # Build the real-DER trace; pairing_seed perturbs the user-to-DER
+        # mapping (= which 50 of the 140 ACN users get bound to the
+        # residential_ev slice), week_offset_days slides the analysis
+        # window across multiple non-overlapping weeks. Together they
+        # generate genuine variance across cells (= reviewer M-3 fix).
         trace = build_trace_from_acn_sessions(
             Path(sessions_csv), pool, sla_kw=sla_kw, seed=seed,
-            trace_id=f"REAL-acn-{seed}",
+            horizon_days=window_days,
+            start_offset_days=week_offset_days,
+            pairing_seed=pairing_seed,
+            trace_id=f"REAL-acn-w{week_offset_days}-p{pairing_seed}-s{seed}",
         )
 
         design_t0 = time.perf_counter()
@@ -106,6 +128,9 @@ def run_one_acn_cell(args: tuple) -> dict:
             return {
                 "feeder": feeder, "method": method, "method_label": method_label,
                 "seed": seed, "alpha": alpha, "sla_kw": sla_kw,
+                "week_offset_days": week_offset_days,
+                "window_days": window_days,
+                "pairing_seed": pairing_seed,
                 "design_cost": None, "n_standby": 0,
                 "design_solve_time_s": round(design_solve_time, 3),
                 "elapsed_s": round(elapsed, 3),
@@ -137,6 +162,9 @@ def run_one_acn_cell(args: tuple) -> dict:
         return {
             "feeder": feeder, "method": method, "method_label": method_label,
             "seed": seed, "alpha": alpha, "sla_kw": sla_kw,
+            "week_offset_days": week_offset_days,
+            "window_days": window_days,
+            "pairing_seed": pairing_seed,
             "design_cost": design_cost, "n_standby": len(standby_ids),
             "design_solve_time_s": round(design_solve_time, 3),
             "elapsed_s": round(elapsed, 3),
@@ -147,7 +175,11 @@ def run_one_acn_cell(args: tuple) -> dict:
         elapsed = time.perf_counter() - started
         return {
             "feeder": feeder, "method": method, "seed": seed,
-            "alpha": alpha, "elapsed_s": round(elapsed, 3),
+            "alpha": alpha,
+            "week_offset_days": week_offset_days,
+            "window_days": window_days,
+            "pairing_seed": pairing_seed,
+            "elapsed_s": round(elapsed, 3),
             "error": f"{type(e).__name__}: {e}", "metrics": {},
         }
 
@@ -222,6 +254,18 @@ def main() -> int:
     parser.add_argument("--seeds", type=int, nargs="+", default=list(DEFAULT_SEEDS))
     parser.add_argument("--alpha", type=float, default=HARDER_ALPHA,
                         help=f"SLA/trafo ratio (default {HARDER_ALPHA})")
+    parser.add_argument(
+        "--week-offsets", type=int, nargs="+", default=list(DEFAULT_WEEK_OFFSETS),
+        help="Day-offsets within the CSV at which each window starts",
+    )
+    parser.add_argument(
+        "--window-days", type=int, default=DEFAULT_WINDOW_DAYS,
+        help="Length of each window in days (default 7)",
+    )
+    parser.add_argument(
+        "--pairing-seeds", type=int, nargs="+", default=list(DEFAULT_PAIRING_SEEDS),
+        help="Seeds for the user-to-DER pairing (0 = deterministic top-K)",
+    )
     parser.add_argument("--n-workers", type=int, default=4)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
@@ -231,12 +275,17 @@ def main() -> int:
         raise SystemExit(f"sessions CSV not found: {sessions_csv}")
 
     cells: list[tuple] = [
-        (f, m, s, str(sessions_csv), args.alpha)
-        for f in args.feeders for m in args.methods for s in args.seeds
+        (f, m, s, str(sessions_csv), args.alpha, w, args.window_days, p)
+        for f in args.feeders
+        for m in args.methods
+        for s in args.seeds
+        for w in args.week_offsets
+        for p in args.pairing_seeds
     ]
     n = len(cells)
     print(
-        f"[acn-real-validation] cells={n} (α={args.alpha}) workers={args.n_workers}"
+        f"[acn-real-validation] cells={n} (α={args.alpha}, window={args.window_days}d) "
+        f"workers={args.n_workers}"
     )
 
     started = time.perf_counter()
@@ -264,6 +313,9 @@ def main() -> int:
         "config": {
             "feeders": args.feeders, "methods": args.methods,
             "seeds": args.seeds, "alpha": args.alpha,
+            "week_offsets": args.week_offsets,
+            "window_days": args.window_days,
+            "pairing_seeds": args.pairing_seeds,
             "sessions_csv": str(sessions_csv),
         },
         "elapsed_s": round(total, 1),

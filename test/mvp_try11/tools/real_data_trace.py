@@ -438,6 +438,8 @@ def build_trace_from_acn_sessions(
     *,
     sla_kw: float,
     horizon_days: int | None = None,
+    start_offset_days: int = 0,
+    pairing_seed: int = 0,
     timestep_min: int = DEFAULT_TIMESTEP_MIN,
     train_days: int = DEFAULT_TRAIN_DAYS,
     seed: int = 0,
@@ -475,8 +477,19 @@ def build_trace_from_acn_sessions(
         sessions_csv: Path to a CSV produced by ``tools/fetch_acn.py``.
         pool: The DER pool to drive (200-DER mixed-type expected).
         sla_kw: VPP SLA target (kW), passed through to ChurnTrace.
-        horizon_days: Number of days to use from the data. Defaults to
-            the full span observed in the CSV.
+        horizon_days: Number of days to use from the data, starting at
+            ``start_offset_days``. Defaults to the full span.
+        start_offset_days: Offset (in days) from the first
+            connectionTime in the CSV to slice the analysis window.
+            Together with ``horizon_days`` lets a sweep walk multiple
+            non-overlapping weeks of the same fixture (= reviewer M-3
+            statistical-variance fix).
+        pairing_seed: Seeds the user→DER pairing. ``pairing_seed=0``
+            keeps the deterministic top-K-by-session-count rule
+            (default, reproduces the v2 first run). For
+            ``pairing_seed>0`` the top-2K most active users are
+            sampled randomly to size K, so each seed sees a different
+            subset of real EV behavior.
         site_timezone_offset_min: Used to identify the local-evening
             commute window from UTC ACN timestamps. Caltech is UTC-8.
         commute_local_hours: Local hours that count as the evening
@@ -489,8 +502,9 @@ def build_trace_from_acn_sessions(
         per-EV availability** (real data) for the residential_ev slice
         of the pool.
     """
-    from datetime import timedelta
     import csv as _csv
+    import random as _random
+    from datetime import timedelta
 
     with open(sessions_csv, encoding="utf-8") as fh:
         sessions = list(_csv.DictReader(fh))
@@ -501,10 +515,20 @@ def build_trace_from_acn_sessions(
     conns = [_parse_acn_dt(s["connectionTime"]) for s in sessions if s.get("connectionTime")]
     if not conns:
         raise ValueError("no parseable connectionTime fields")
-    t0 = min(conns).replace(hour=0, minute=0, second=0, microsecond=0)
+    csv_t0 = min(conns).replace(hour=0, minute=0, second=0, microsecond=0)
+    csv_t_end = max(_parse_acn_dt(s["disconnectTime"]) for s in sessions if s.get("disconnectTime"))
+    csv_span_days = max(1, (csv_t_end - csv_t0).days + 1)
+
+    # Slice the requested window
+    t0 = csv_t0 + timedelta(days=start_offset_days)
     if horizon_days is None:
-        t_end = max(_parse_acn_dt(s["disconnectTime"]) for s in sessions if s.get("disconnectTime"))
-        horizon_days = max(1, (t_end - t0).days + 1)
+        horizon_days = csv_span_days - start_offset_days
+    if horizon_days <= 0:
+        raise ValueError(
+            f"horizon_days={horizon_days} after start_offset_days={start_offset_days}; "
+            f"CSV spans {csv_span_days} days"
+        )
+    t_end = t0 + timedelta(days=horizon_days)
     n_steps = horizon_days * 24 * 60 // timestep_min
 
     # Identify the K most active ACN users; fall back to stationID when userID is null
@@ -514,18 +538,43 @@ def build_trace_from_acn_sessions(
             return f"u:{u}"
         return f"st:{s.get('stationID', '')}"
 
-    user_session_count: dict[str, int] = {}
+    # Restrict to sessions whose connectionTime falls in [t0, t_end)
+    window_sessions = []
     for s in sessions:
+        try:
+            conn = _parse_acn_dt(s["connectionTime"])
+        except (KeyError, ValueError):
+            continue
+        if t0 <= conn < t_end:
+            window_sessions.append(s)
+    if not window_sessions:
+        raise ValueError(
+            f"no sessions in window [{t0.date()}, {t_end.date()}); "
+            f"check start_offset_days / horizon_days"
+        )
+
+    user_session_count: dict[str, int] = {}
+    for s in window_sessions:
         user_session_count[_did(s)] = user_session_count.get(_did(s), 0) + 1
     sorted_users = sorted(user_session_count.items(), key=lambda kv: -kv[1])
 
     ev_indices = [i for i, d in enumerate(pool) if d.der_type == "residential_ev"]
     n_paired = min(len(ev_indices), len(sorted_users))
-    paired_user_ids = {sorted_users[k][0]: ev_indices[k] for k in range(n_paired)}
+
+    # pairing_seed=0 → deterministic top-K (legacy v2). pairing_seed>0 → random
+    # subsample of K users from the top-min(2K, |users|) most active, so each
+    # seed exercises a different real-EV subset.
+    if pairing_seed == 0 or n_paired >= len(sorted_users):
+        chosen_users = [u for u, _ in sorted_users[:n_paired]]
+    else:
+        rng = _random.Random(pairing_seed)
+        candidate_pool = [u for u, _ in sorted_users[: min(2 * n_paired, len(sorted_users))]]
+        chosen_users = rng.sample(candidate_pool, n_paired)
+    paired_user_ids = {chosen_users[k]: ev_indices[k] for k in range(n_paired)}
 
     # Group sessions by user → list of (start_step, end_step) intervals
     intervals_by_pool_idx: dict[int, list[tuple[int, int]]] = {}
-    for s in sessions:
+    for s in window_sessions:
         uid = _did(s)
         if uid not in paired_user_ids:
             continue
@@ -545,32 +594,27 @@ def build_trace_from_acn_sessions(
     # Build per-step active matrix (n_steps × |pool|)
     n_d = len(pool)
     matrix: list[list[bool]] = [[True] * n_d for _ in range(n_steps)]
-    # Real EV: active only inside one of its session intervals
     for j in range(n_d):
         if j in intervals_by_pool_idx:
-            # Initialise to all-False, set True inside intervals
             ranges = intervals_by_pool_idx[j]
             for step in range(n_steps):
                 matrix[step][j] = False
-            for s, e in ranges:
-                for step in range(s, e):
+            for s_step, e_step in ranges:
+                for step in range(s_step, e_step):
                     if 0 <= step < n_steps:
                         matrix[step][j] = True
-        elif pool[j].der_type == "residential_ev":
-            # Excess EVs beyond the ACN user count: keep always-active
-            # (= conservative; this slice does not contribute observed churn)
-            pass
-        # Non-EV DERs: always active by default
 
-    # Detect commute TriggerEvents from disconnect clusters
+    # Detect commute TriggerEvents from disconnect clusters within the window
     commute_events: list[TriggerEvent] = []
     bin_min = 30
     bin_steps = bin_min // timestep_min
     disconnect_steps: list[int] = []
-    for s in sessions:
+    for s in window_sessions:
         try:
             disc = _parse_acn_dt(s["disconnectTime"])
         except (KeyError, ValueError):
+            continue
+        if not (t0 <= disc < t_end):
             continue
         local_dt = disc + timedelta(minutes=site_timezone_offset_min)
         if local_dt.hour not in commute_local_hours:
@@ -578,9 +622,7 @@ def build_trace_from_acn_sessions(
         step = int((disc - t0).total_seconds() // (timestep_min * 60))
         if 0 <= step < n_steps:
             disconnect_steps.append(step)
-    disconnect_steps.sort()
     if disconnect_steps:
-        # Sliding window: count disconnects within ``bin_steps`` width
         from collections import Counter
         per_bin: Counter[int] = Counter()
         for step in disconnect_steps:

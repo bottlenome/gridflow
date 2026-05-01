@@ -11,7 +11,7 @@ ideation: `test/mvp_try11/ideation_record.md`
 
 ## Abstract
 
-仮想発電所 (Virtual Power Plant; VPP) が系統運用者へ補助サービスを提供する際、メンバー機器 (EV / 蓄電池 / エコキュート 等) の **流出入 (churn)** は重尾分布をもって発生する。共通の外部トリガー (通勤時刻、気象、市場価格、通信障害) が同期離脱を駆動するため、独立同分布仮定下で設計された予備容量や強化学習ベース動的補充は、新規トリガーや trigger-co-occurrence 下で SLA 違反に至る。本研究は **Causal-Trigger Orthogonal Portfolio (CTOP, sentinel-inspired)** を提案する: DER の **物理因果トリガー曝露** をベクトル化し、active pool の曝露集合と直交する standby pool を整数計画問題 (MILP) として定式化する。提案は (i) 動物行動学の歩哨 (sentinel) 機構を Rule 9 v2 の遠隔ドメイン候補 5 個から invariant 検査で機械的に絞り込んで導出し、(ii) 金融分野で先行する causal portfolio (Lopez de Prado 2019, Rodriguez Dominguez 2025) と 5 軸 (driver 同定 / allocation 連続-離散 / 制約形式 / 目的関数 / 動学設定) で構造的に異なる discrete-MILP-jump-tail 設定として独立 contribution する。Theorem 1-3 で (a) MILP 解の Pareto-optimality, (b) greedy 近似の $\ln K + 1$ 倍境界, (c) label noise $\varepsilon$ 下の expected worst-case 容量損失境界 を確立する。実験は **3 feeders (CIGRE LV / Kerber Dorf / Kerber Landnetz) × 200 機 DER pool × 8 trace 種 (C1-C8、C7 = 相関反転、C8 = scarce orthogonal) × 15 method × 3 seed = 1080 cells** で実施した。主要結果として **CTOP は cost ¥3,500/月で 0.38% の SLA 違反率** を達成し、Markowitz 相関 portfolio (B4)・Naive NN reactive (B6)・業界 default (B1) の ¥6,000/月と比較して **40% コスト削減** を示した。**C7 相関反転下で CTOP は train > test の負の OOD gap (-1.79%) を示し、構造的ロバスト性を実証**、相関ベース B5 のみ正の gap (+0.40%) で崩壊。C8 scarce orthogonal 条件で CTOP は cost ¥3,500 で 0.17% 違反、同性能 baseline は ¥6,000 (= 71% 高コスト)。電圧制約面で CTOP は utility battery 集中配置により feeder 依存の電圧違反を生じ、これは grid-aware 拡張の動機となった。本リビジョンでは Phase D 拡張群 (D-1〜D-7, NEXT_STEPS.md) を追加実装し、(i) §6.2 F7 / §8.7 で報告した 12% voltage 違反を D-1 で **dispatch-induced と baseline-only に分離して報告** (cigre_lv 代表セルで dispatch_induced ≈ 0%)、(ii) D-2 で ANSI C84.1 strict envelope (V_max=1.05) 下の feasibility / infeasibility を honestly に報告、(iii) D-3 で active 配置自体を MILP 変数化した M8 を導入、(iv) D-4 で feasibility envelope を deployability map として可視化、(v) **D-5 で `commute` trigger 軸の物理実体である Caltech ACN-Data EV charging sessions (Lee, Li, Low 2019、985 sessions / 50 stations / 140 users / 33 days) を取得し、3 feeders × 4 methods × 3 seeds = 36 cells の multi-method 比較 sweep を harder operating point (α=0.70) で実走**、(vi) D-6 で multi-scale (Theorem 2) sweep tooling を追加、(vii) D-7 で report / review_record を倫理対応書換した。実 EV 個別 churn データに対する main finding: **kerber_dorf 上で M7-strict のみが SLA 違反 0% AND dispatch-induced voltage 違反 0% を ¥4,600 で達成** (M1 / B1 / B4 は同等 SLA で voltage 100% 違反 / cost ¥4,500-6,000)。kerber_landnetz でも **M7-strict が ¥2,100 で baseline (¥6,000) を 65% 下回る Pareto-dominant**。先行リビジョンで「relaxed bound (V_max=1.10) 下の 5× voltage reduction」と表現した部分は **特定 operating regime 下の改善** に慎重化し、本リビジョン v2 では **strict ANSI envelope 下 / 実 EV 個別 churn 下で multi-method 比較で M7-strict のみが SLA + grid 両立** が headline finding となる (詳細 §8.7)。
+仮想発電所 (Virtual Power Plant; VPP) が系統運用者へ補助サービスを提供する際、メンバー機器 (EV / 蓄電池 / エコキュート 等) の **流出入 (churn)** は重尾分布をもって発生する。共通の外部トリガー (通勤時刻、気象、市場価格、通信障害) が同期離脱を駆動するため、独立同分布仮定下で設計された予備容量や強化学習ベース動的補充は、新規トリガーや trigger-co-occurrence 下で SLA 違反に至る。本研究は **Causal-Trigger Orthogonal Portfolio (CTOP, sentinel-inspired)** を提案する: DER の **物理因果トリガー曝露** をベクトル化し、active pool の曝露集合と直交する standby pool を整数計画問題 (MILP) として定式化する。提案は (i) 動物行動学の歩哨 (sentinel) 機構を Rule 9 v2 の遠隔ドメイン候補 5 個から invariant 検査で機械的に絞り込んで導出し、(ii) 金融分野で先行する causal portfolio (Lopez de Prado 2019, Rodriguez Dominguez 2025) と 5 軸 (driver 同定 / allocation 連続-離散 / 制約形式 / 目的関数 / 動学設定) で構造的に異なる discrete-MILP-jump-tail 設定として独立 contribution する。Theorem 1-3 で (a) MILP 解の Pareto-optimality, (b) greedy 近似の $\ln K + 1$ 倍境界, (c) label noise $\varepsilon$ 下の expected worst-case 容量損失境界 を確立する。実験は **3 feeders (CIGRE LV / Kerber Dorf / Kerber Landnetz) × 200 機 DER pool × 8 trace 種 (C1-C8、C7 = 相関反転、C8 = scarce orthogonal) × 15 method × 3 seed = 1080 cells** で実施した。主要結果として **CTOP は cost ¥3,500/月で 0.38% の SLA 違反率** を達成し、Markowitz 相関 portfolio (B4)・Naive NN reactive (B6)・業界 default (B1) の ¥6,000/月と比較して **40% コスト削減** を示した。**C7 相関反転下で CTOP は train > test の負の OOD gap (-1.79%) を示し、構造的ロバスト性を実証**、相関ベース B5 のみ正の gap (+0.40%) で崩壊。C8 scarce orthogonal 条件で CTOP は cost ¥3,500 で 0.17% 違反、同性能 baseline は ¥6,000 (= 71% 高コスト)。電圧制約面で CTOP は utility battery 集中配置により feeder 依存の電圧違反を生じ、これは grid-aware 拡張の動機となった。本リビジョンでは Phase D 拡張群 (D-1〜D-7) と zero-base reviewer pass 後追加検証 (D-5 v2: per-EV ACN 実データ multi-week × multi-pairing CI sweep) を追加実装した。実 EV 個別 churn データ (Caltech ACN-Data, 985 sessions / 50 stations / 140 users / 33 days, sha256-pinned) に対する 144-cell sweep (4 weeks × 3 pairings × 4 methods × 3 feeders, α=0.70) の **bootstrap 95% CI 付き** main finding: (a) **kerber_landnetz で M7-strict が clean Pareto winner** (¥2,100、SLA 0% / V_disp 0%、対する M1 は ¥1,800 で SLA 71.11% [67.12, 74.72]、B1/B4 は ¥6,000 で 65% over)、(b) **kerber_dorf で M7-strict は grid 0% を達成するが SLA 違反 52.70% [48.49, 57.28]** という grid-vs-SLA trade-off を honest 報告、(c) **cigre_lv では M7-strict と M1 が同等** (両者 0%/0%/¥8,700)。先行 v2 単週 (3 seeds × 1 week) で「kerber_dorf M7 = clean winner」と報告した結果は week-of-data 依存の sample-of-1 artefact だったことが multi-week で判明、本リビジョンでは **「feeder ごとに勝者が異なる」「M7-strict は grid 制約と SLA の trade-off を体現」** が正確な main message となる (詳細 §8.7)。
 
 ---
 
@@ -729,31 +729,48 @@ ACN session の disconnectTime histogram (UTC、Caltech は UTC-8 PST):
 
 これは典型的 California workplace charging pattern であり、PT 16:00-18:00 の clustered disconnect が **`commute` trigger 軸の物理実体そのもの**。`build_trace_from_acn_sessions` (`tools/real_data_trace.py`) は disconnect events を 30-min bin で cluster し、`commute_event_min_disconnects ≥ 3` の bin を `TriggerEvent` として抽出 (本データで **98 commute events / 33 days = 1 evening cluster / 日**)。
 
-##### Multi-method sweep 結果 (real-DER trace, α=0.70)
+##### Multi-method sweep 結果 (real-DER trace, α=0.70, multi-week × multi-pairing)
 
-`tools/run_acn_real_validation.py` で 3 feeders × 4 methods × 3 seeds = **36 cells** を実走 (145 秒、4 workers、`results/try11_acn_real_results.json`):
+`tools/run_acn_real_validation.py` で 3 feeders × 4 methods × **4 weeks (week_offsets = 0, 7, 14, 21) × 3 user-pairing seeds (pairing_seeds = 0, 1, 2)** = **144 cells** を実走 (187 秒、4 workers、`results/try11_acn_real_results.json`)。週軸と DER↔ACN-user pairing 軸の両軸で variance を作り、percentile bootstrap (n_boot = 2000) で per-(feeder, method) の 95% CI を算出 (= reviewer M-3 への対応):
 
-| feeder | method | feas/total | SLA 違反 | V dispatch-induced | cost (¥) |
-|---|---|---:|---:|---:|---:|
-| **cigre_lv** | M1 | 3/3 | 0.00% | 0.00% | 8,700 |
-| | B1 (静的+30%) | 3/3 | **96.54%** ← SLA fail | 0.00% | 6,000 |
-| | B4 (Markowitz) | 3/3 | 0.00% | 0.00% | 12,000 |
-| | **M7-strict** | **0/3** ← honest infeasible | — | — | — |
-| **kerber_dorf** | M1 | 3/3 | 0.00% | **100.00%** ← grid 違反 | 4,500 |
-| | B1 | 3/3 | 0.00% | **100.00%** | 6,000 |
-| | B4 | 3/3 | 0.00% | **100.00%** | 6,000 |
-| | **M7-strict** | **3/3** | **0.00%** | **0.00%** | **4,600** ← winner |
-| **kerber_landnetz** | M1 | 3/3 | **63.32%** ← SLA fail | 0.00% | 1,800 |
-| | B1 | 3/3 | 0.00% | 0.00% | 6,000 |
-| | B4 | 3/3 | 0.00% | 0.00% | 6,000 |
-| | **M7-strict** | **3/3** | **0.00%** | 0.00% | **2,100** ← Pareto 改善 |
+| feeder | method | n | SLA 違反 [95% CI] | V dispatch-induced [95% CI] | cost (¥) |
+|---|---|---:|---|---|---:|
+| **cigre_lv** | B1 (静的+30%) | 12 | **97.77 [95.68, 99.51]%** ← SLA fail | 0% | 6,000 |
+| | B4 (Markowitz) | 12 | 0% | 0% | 12,000 |
+| | M1 | 12 | 0% | 0% | 8,700 |
+| | M7-strict | 12 | 0% | 0% | 8,700 |
+| **kerber_dorf** | B1 | 12 | 0% | 0% | 6,000 |
+| | B4 | 12 | 0% | 0% | 6,000 |
+| | M1 | 12 | 0% | **100 [100, 100]%** ← grid 違反 | 4,500 |
+| | **M7-strict** | 12 | **52.70 [48.49, 57.28]%** ← SLA 不安定 | **0%** | 4,500 |
+| **kerber_landnetz** | B1 | 12 | 0% | 0% | 6,000 |
+| | B4 | 12 | 0% | 0% | 6,000 |
+| | M1 | 12 | **71.11 [67.12, 74.72]%** ← SLA fail | 0% | 1,800 |
+| | **M7-strict** | 12 | **0%** | **0%** | **2,100** ← Pareto-dominant |
 
-##### 主要発見
+##### 主要発見 (multi-week revision で headline が大きく変わった)
 
-1. **kerber_dorf で M7-strict のみが SLA + grid 両立**: M1 / B1 / B4 は SLA を clear するが **dispatch-induced voltage 違反 100%** を発生 (= grid envelope 全 step 違反)。M7-strict は **0% dispatch-induced + ¥4,600** で全 baseline (¥6,000) を 23% 下回る Pareto-dominant
-2. **kerber_landnetz で cost-feasibility frontier 改善**: M7-strict ¥2,100 (= B1 / B4 の ¥6,000 を **65% 下回る**) で SLA / grid 両立。M1 (¥1,800) は cheaper だが SLA 違反 63%
-3. **cigre_lv で M7-strict は infeasible を honest 報告**: α=0.70 での feeder envelope 限界。Phase D-2 で導入した M7-soft variant (slack-penalised) は本 sweep に未含、Phase 2 で同 trace に対して soft 比較を実行
-4. **CI が [X, X] zero-width な点について**: ACN trace は決定論的実データ、MILP は決定論的最適化なので 3 seeds が同一結果を返す。**統計的変動を出すには user-to-EV pairing の randomisation か別週の data に対する実走が必要**。本リビジョンでは「point-deterministic な real-data result」として正直に位置づけ、bootstrap CI を Phase 2 で multi-week 実走で取得する
+**v2 単週 (3 seeds × 1 week) → multi-week (4 weeks × 3 pairings) で点 → CI 区間に拡張した結果、headline 主張を大幅に修正する必要が判明した**:
+
+1. **cigre_lv では M7-strict / M1 / B4 が同列**: 12 cell 全てで SLA 0% / V_disp_ind 0%、cost は B4 ¥12,000 > M1 = M7-strict ¥8,700。**M7-strict は M1 と区別されない** (= cigre_lv では grid 制約が active を強いておらず、M7 = M1 となる cell)。B1 (¥6,000) は安いが **SLA 97.77% [95.68, 99.51] で常時 fail**
+
+2. **kerber_dorf で controller の真の trade-off が顕在化**:
+   - M1: cost ¥4,500 (安) だが **dispatch-induced voltage 100% [100, 100]** = 全 step grid 違反
+   - **M7-strict**: 同 cost ¥4,500 で **V_disp_ind 0%** を達成、ただし **SLA 違反 52.70% [48.49, 57.28]** = 半数の (week × pairing) cell で SLA 不達成。grid 制約優先で standby 容量制限が効くため
+   - B1, B4: ¥6,000 (over-buy で買い切り) で SLA / grid 両立
+   - **M7-strict は「grid 守れば SLA 半分外す」trade-off**。M7-soft (slack 緩和、Phase D-2 実装済) や M8 (active+standby joint, Phase D-3 実装済) でこの trade-off を緩和する設計が **Phase 2 sweep の対象**
+
+3. **kerber_landnetz で M7-strict が clean Pareto winner**:
+   - **M7-strict ¥2,100 で SLA 0% / V_disp_ind 0%** (12 cell 全て成功)、B1/B4 の ¥6,000 を **65% 下回る**
+   - M1 ¥1,800 は cheaper だが **SLA 71.11% [67.12, 74.72]** で常時 fail (= active size が SLA に対して足りない)
+   - **kerber_landnetz は本 sweep で M7-strict が単独 Pareto-dominance を確立する唯一の cell**
+
+4. **v2 単週との差分 — sample-of-1 の危険性が露呈**:
+   - 単週 sweep: 「kerber_dorf M7 = winner (0/0/¥4,600)」「cigre_lv M7 = infeasible」と報告
+   - 本 multi-week sweep: kerber_dorf M7 は 52% で SLA fail、cigre_lv M7 は M1 と同等で feasible
+   - 単週点は **week-of-data に強く依存** ─ 実 EV trace は週により workload が変わる。reviewer M-3 が指摘した "sample size 1, no error bars" の真の含意がここで現れた。本リビジョンでは **常に bootstrap CI 付きで報告する** ことを headline 義務とする
+
+5. **bootstrap CI 幅の妥当性**: 12 サンプルでの 95% CI 幅は SLA 違反で 4-9 ポイント (cigre_lv B1: 95.68→99.51 で 3.83pt、kerber_dorf M7: 48.49→57.28 で 8.79pt、kerber_landnetz M1: 67.12→74.72 で 7.60pt)。**統計的有意性は確立**、ただし「M7 単独優位」の単純 headline は撤回し、**feeder ごとに勝者が異なる** が正確な記述となる
 
 ##### v1 (CAISO 経由) との比較 — semantic 整合性の差
 
@@ -804,8 +821,12 @@ VPP の補助サービス契約における重尾 burst churn 問題に対し、
 - 基底外トリガー C4 では全手法 ~0.5-1.1% degrade するが、CTOP は detection-friendly failure mode (NN は silent)
 - 計算時間: CTOP MILP 0.013 秒 vs B2/B3 SP/DRO 5 秒 (= **400 倍高速**)
 - Grid 制約面で CTOP は集中配置由来の voltage 違反を生じる。M7 (Grid-aware CTOP, §8.7) を導入し、relaxed bound (V_max=1.10) 下では合算 voltage 違反を 5× 削減した。本リビジョンでは reviewer-grade な honest reporting のため Phase D-1〜D-6 拡張群 (§8.7.3) を追加実装した: D-1 で違反 metric を baseline-only と dispatch-induced に分離 (cigre_lv 代表セルで dispatch_induced ≈ 0% を実測)、D-2 で ANSI C84.1 strict envelope 下の M7-strict / M7-soft、D-3 で active 配置を MILP 変数化した M8、D-4 で feasibility envelope の deployability map、D-5 で real-data trace adapter、D-6 で multi-scale scaling sweep tooling
-- **実データ検証 v2 (§8.7.5)**: `commute` trigger 軸の物理実体である Caltech ACN-Data EV charging sessions (Lee, Li, Low 2019、985 sessions / 33 days / 140 users) を取得 (`tools/fetch_acn.py`、sha256 pin `1dda5bfa…`)、3 feeders × 4 methods × 3 seeds = 36 cells を harder operating point (α=0.70) で実走。**kerber_dorf 上で M7-strict のみ SLA 0% AND dispatch-induced voltage 0% を ¥4,600 で達成** (M1 / B1 / B4 は同等 SLA で voltage 100% 違反 / ¥4,500–6,000)。kerber_landnetz でも M7-strict ¥2,100 で baseline ¥6,000 を 65% 下回る。cigre_lv では M7-strict が α=0.70 で infeasible を honest 報告 (= feeder envelope 限界)。先行 v1 (CAISO 系統負荷経由) は semantic non-sequitur (= 系統需要 ≠ DER 個別 churn) のため reviewer M-1 / M-2 を生み、v2 で per-EV 個別データに置換することで構造的に解消した
-- 先行リビジョンで「合格 (top venue 水準)」とした判定は本リビジョンで **「条件付き合格 (Phase D-5 v2 で per-EV 実データ multi-method 比較が成立、large-scale sweep + 統計設計拡張は Phase 2)」** に格下げし、bootstrap CI 取得 (= multi-week ACN 実走) / DER siting 文献群との positioning 書換 / 理論貢献の再構築 は Phase 2 commit cycle に委ねる
+- **実データ検証 v2 + multi-week CI (§8.7.5)**: `commute` trigger 軸の物理実体である Caltech ACN-Data EV charging sessions (Lee, Li, Low 2019、985 sessions / 50 stations / 140 users / 33 days、sha256 pin `1dda5bfa…`) を取得し、4 weeks × 3 user-pairing seeds × 4 methods × 3 feeders = **144 cells** を harder operating point (α=0.70) で実走、percentile bootstrap (n_boot=2000) で 95% CI を算出。Headline は feeder 依存:
+  - **kerber_landnetz**: M7-strict ¥2,100 / SLA 0% / V_disp 0% で **B1/B4 (¥6,000) を 65% 下回る Pareto-dominant** (M1 は ¥1,800 だが SLA 71.11% [67.12, 74.72] で常時 fail)
+  - **kerber_dorf**: M7-strict は **V_disp 0%** を達成するも **SLA 違反 52.70% [48.49, 57.28]** (grid-vs-SLA trade-off)、M1 は SLA 0% だが **V_disp 100% [100, 100]** (grid 違反)、B1/B4 は ¥6,000 で over-buy で両立
+  - **cigre_lv**: M7-strict / M1 / B4 が同列 (全 cell 0%/0%)、B1 のみ SLA 97.77% [95.68, 99.51] で fail
+- v2 単週 (3 seeds × 1 week) で「kerber_dorf M7 = clean winner」と報告した結果は **week-of-data 依存の sample-of-1 artefact** だったと multi-week で判明。これは reviewer M-3 「sample size 1 / no error bars」が指摘した statistical-rigor の欠如そのもので、本リビジョンでは **常に bootstrap CI 付き** で報告する義務を立てた
+- 先行リビジョンで「合格 (top venue 水準)」とした判定は本リビジョンで **「条件付き合格 (Phase D-5 v2 で per-EV 実データ multi-week × multi-pairing CI 付き比較が成立、M7-strict の grid-vs-SLA trade-off を honest 報告、Phase 2 で M7-soft / M8 同 trace 比較 + DER siting 文献 positioning + 理論貢献再構築)」** に格下げ。残課題は Phase 2 commit cycle で完遂する
 
 ### 9.1 Future work
 
