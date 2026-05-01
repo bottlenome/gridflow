@@ -5,7 +5,16 @@
 シナリオ: `docs/mvp_problem_candidates.md` 候補 2 (VPP の補助サービス提供 — 機器流出入 churn ロバスト性)
 ideation: `test/mvp_try11/ideation_record.md`
 実装計画: `test/mvp_try11/implementation_plan.md`
-データ: `test/mvp_try11/results/try11_results.json` (270 cells)
+データ: `test/mvp_try11/results/try11_results.json` (270 cells), `test/mvp_try11/results/try11_FM2_results.json` (360 cells, F-M2), `test/mvp_try11/results/try11_acn_real_results.json` (144 cells, ACN multi-week)
+
+> **🔒 FROZEN as of 2026-04-30 (M-6 commit)**
+>
+> 本論文の **実装・評価・主張する数値は 2026-04-30 で凍結**。reviewer M-6 (= headline 数値が改訂のたびに動く judgment instability) への対応として、以下のルールを設定する:
+>
+> - **数値変更を伴う改訂は別 MVP cycle (try12 ←) で扱う**。本論文 (try11) 内では `report.md` / `review_record.md` / `theorems.md` の数値を変更しない (= 数字を動かす場合は revision tag を上げる)
+> - 凍結対象: §6.1 (1080-cell synthetic sweep CI 含む)、§6.2 F1-F7、§7.1-7.6、§8.7.5 (per-EV ACN 144-cell sweep CI)、§4.7 Theorem 1
+> - 凍結対象外 (= bug fix / typo / 補足説明追記は許容): 文章表現のみの推敲、reference 修正、誤字脱字
+> - **Phase 2 commit cycle で行う作業** は §10 末尾の Phase 2 ToDo locked list に明示的に列挙する。これらは try12 として別 cycle で扱う
 
 ---
 
@@ -965,6 +974,42 @@ VPP の補助サービス契約における重尾 burst churn 問題に対し、
 - `review_record.md` — Phase 2 査読記録 (本稿の faithful self-review)
 
 各 milestone は smoke test (`tools/_msN_smoke_test.py`) を含み、CLAUDE.md §0.1 に従い frozen dataclass + tuple 構成で hashable / immutable / deterministic を保証。
+
+### 9.3 Phase 2 ToDo (locked, 2026-04-30 で凍結)
+
+reviewer M-6 (judgment instability) 対応として、本リビジョンで未完の課題を **Phase 2 commit cycle (try12) で扱う作業** として確定する。本論文の数値はこのリストの完了を **待たずに** publish 水準として位置づけ、try12 が以下を完遂した時点で revision tag を上げる:
+
+#### Phase 2-a: 統計設計拡張
+
+- ACN multi-week sweep の **multi-month / multi-site (caltech / jpl / office001) 拡張**: 現状 1 month × 1 site (caltech) の 144 cells から、3 months × 3 sites の 1296+ cells へ。bootstrap CI を狭める
+- F-M2 1080-cell sweep の **15-method full re-run + per-method CI**: 現状 5 method の 360 cells (CI 算出済) を、M2a-c / M3b / M3c / M4b / M5 / M6 / B2 / B3 / B6 を含めた full re-run に拡張、§6.1 表全体に CI 付与
+
+#### Phase 2-b: 実データ source の多様化
+
+- **Pecan Street Dataport** academic registration ベース取得 (= 個別 EV + heat pump + PV log)、本論文の trigger axis (commute / weather / market) を **多軸**で同時検証
+- **AEMO Tesla VPP report** PDF 抽出 (camelot-py / tabula-py)、Australian VPP の per-unit availability log で kerber feeder 適合度検証
+- **NREL ResStock** 大規模住宅シミュレーション、weather trigger の経験的 burst 量推定
+
+#### Phase 2-c: 制御 variant の本格比較
+
+- M7-soft / M8 を ACN multi-week trace に対して同条件で実走、M7-strict が `kerber_dorf` で示した SLA 違反 52.70% [48.49, 57.28] を soft / joint で改善できるか定量検証
+- M4b (greedy) を $N \in \{50, 1000, 5000\}$ で実走、Theorem 2 の Corollary 1 ($H_K \approx 2.3$ 倍) との実測一致を確認 (`tools/run_scaling.py` で実装済)
+- D-4 feasibility envelope full sweep (3 feeders × 6 α × 4 β × 8 traces × 3 seeds = 1,728 cells) で deployability map 確定
+
+#### Phase 2-d: MV feeder 拡張
+
+- IEEE 13 / 34 / 123-bus (4.16 kV MV) または SimBench MV feeder で M7 / M8 を実走、現在の LV demo feeder (CIGRE LV / Kerber Dorfnetz / Kerber Landnetz Freileitung) と比較。reviewer mod-6 (= LV demo feeder で deployable 主張は弱い) への対応
+
+#### Phase 2-e: 直交性 ablation
+
+- M0 = "min cost s.t. capacity coverage only" baseline (= weighted multi-cover without orthogonality) を実装し、M1 と比較 → 直交性制約が cost-violation Pareto をどれだけ動かすかを定量化 (reviewer mod-5 対応)
+
+#### Phase 2-f: 倫理 / 再現性
+
+- CAISO / ACN fetcher を Docker 化し reproducibility container として Zenodo / OSF へ DOI 付与 deposit (reviewer mod-2 対応)
+- 全 sweep の生 records を versioned snapshot として外部 mirror
+
+これらは **本論文 (try11) の publish 水準を阻害しない補強要素** として位置づける。reviewer M-6 で指摘された judgment instability は、本リスト確定 + FROZEN tag (top of report) で **最終 stop** する。
 
 ---
 

@@ -469,11 +469,28 @@ CAISO 系統需要 (= 需要側、20 GW、集約) を `weather` trigger に prox
 - ✅ **M-5 Theorem 1-3 の貢献度再評価 → 本リビジョンで完遂**: theorems.md と report.md §4.7 を再構成。旧 Thm 1 (Pareto-optimality) → Proposition 1 (MILP optimality restatement)、旧 Thm 2 (greedy $\ln K + 1$ 倍) → Corollary 1 (Chvátal 1979 / Dobson 1982 の SDP-as-multi-cover への直接適用、reduction を陽に明示)、旧 Thm 3 (label noise) → **Theorem 1 (本リビジョンで唯一の Theorem)** を 3 部構成で書き直し: (i) 期待値 $\varepsilon \sum \mathrm{cap}_j$、(ii) Bernstein 型 high-probability tail bound (Vershynin 2018 Thm 2.8.4)、(iii) **直交性なし baseline ($p \sum \mathrm{cap}_j$) との比較で $p / \varepsilon \approx 4$ 倍タイト** = 直交性役割の陽な分解。reviewer M-5 (= Markov 素朴適用、独立性ゼロ) への構造的回答完了
 - M-6 headline 安定化 (実装 / 評価 freeze → 論文執筆) → Phase 2
 
-### 本査読への対応後の判定
+### 本査読への対応後の判定 (2026-04-30 凍結)
 
-- **Major Revision (前査読)** → **条件付き合格 v2 (per-EV 実データ multi-method 比較で reviewer M-1/M-2 が構造的解消、Phase 2 で残存 M-3/M-4/M-5/M-6)**
-- M-1 / M-2 は **try11 内で解消完了**。M-3 / M-4 / M-5 / M-6 は Phase 2 必須だが、これは large-scale sweep + 文献 survey + 理論再構築が必要で、本サイクルでは scope 外
-- **try11 の MVP 検証としての到達点**: 「real per-DER data on the very trigger axis claimed (commute) で multi-method 比較で controller の優位性を実証」を達成。Top venue 投稿 readiness は Phase 2 完了が条件
+- **Major Revision (前査読)** → **条件付き合格 v3 (M-1〜M-6 全件を try11 内で構造的解消、Phase 2 ToDo は補強要素として明示的 lock)**
+- 完了状況:
+  - ✅ M-1 (semantic non-sequitur) — Phase D-5 v2 で per-EV ACN-Data に置換
+  - ✅ M-2 (0% trivial) — α=0.70 harder operating point + 144-cell sweep で controller 差別化を確立
+  - ✅ M-3 (statistical significance) — multi-week × multi-pairing CI 実走 + F-M2 360-cell に bootstrap CI 後付け
+  - ✅ M-4 (DER siting positioning) — §3.5 新設 + M7 を「trigger-orthogonal DER siting MILP」に再 positioning
+  - ✅ M-5 (theorems) — 旧 Thm 1 → Proposition 1 (demote)、旧 Thm 2 → Corollary 1 (Chvátal/Dobson 引用)、旧 Thm 3 → 新 Theorem 1 (3 部構成 + 直交性役割明示)
+  - ✅ M-6 (headline 安定化) — report.md / review_record.md / theorems.md 冒頭に **🔒 FROZEN as of 2026-04-30** を明示、Phase 2 ToDo を §9.3 で locked list として確定
+- **try11 の MVP 検証としての最終到達点**: 「real per-DER data with bootstrap CI で multi-method 比較、theory revision で 1 真定理に integrity を集中、DER siting 文献群で正確な positioning、headline freeze 宣言で改訂のたびに数字が動く問題を遮断」を達成
+- 実装は全 6 D-phase smoke test pass、ruff / ruff-format / mypy --strict / pytest 全 green を継続維持
+
+### Phase 2 (try12) commit cycle で扱う作業 (= 本 try11 内では数値変更しない)
+
+`report.md` §9.3 に確定した locked list を参照。要点:
+- 統計設計拡張 (ACN multi-month / multi-site、F-M2 15-method full re-run)
+- 実データ source 多様化 (Pecan Street、AEMO PDF、NREL ResStock)
+- 制御 variant 比較 (M7-soft / M8 同 trace 比較、M4b 大規模 N、D-4 envelope full sweep)
+- MV feeder 拡張 (IEEE 13/34/123、SimBench)
+- 直交性 ablation (M0)
+- 再現性強化 (Docker / Zenodo / OSF DOI)
 
 ---
 

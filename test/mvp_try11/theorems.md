@@ -4,6 +4,11 @@
 pass で M-5 指摘 → demote / cite / rewrite)
 論文章節案: report.md §4.7 にこれを統合する。
 
+> **🔒 FROZEN as of 2026-04-30 (M-6 commit)** ─ 本ドキュメント中の Proposition 1 /
+> Corollary 1 / Theorem 1 の statement・bound 値・直交性役割の証明は確定。Phase 2 で
+> Bernstein bound の constant tightening / 多軸同時 Theorem 拡張等を行う場合は別 cycle
+> (try12) で revision tag を上げる。本 try11 内では statement を変更しない。
+
 ## 改訂方針 (本リビジョン)
 
 ゼロベース PWRS reviewer pass (`review_record.md` 参照) で以下の指摘を受けた:
