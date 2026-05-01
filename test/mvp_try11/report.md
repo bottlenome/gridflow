@@ -144,6 +144,51 @@ CPCM は U.S. equity panel × 300+ candidate drivers で Sharpe 比 / turnover /
 
 > SDP は CPCM の連続-PDE framework に subsume されない **discrete structural causal portfolio** であり、power systems の物理計測可能性と離散 DER 選択の必然性を活用した独立 contribution である。
 
+### 3.5 DER siting / Volt-VAR Optimization (本リビジョン M-4 追加)
+
+PWRS reviewer ゼロベース pass で「§3 が VPP reliability + portfolio theory に閉じており、DER siting / Volt-VAR Optimization (VVO) 文献を一切引用していない」と指摘された (M-4)。本研究の grid-aware 拡張 (M7, §8.7) は DistFlow 線形化 + per-DER 配置 voltage / line 制約を MILP に組み込む構成であり、これは PWRS / IEEE T-SG / IEEE T-PS の **DER siting / VVO 文献の中核問題** と直接重なる。本節で関連文献を整理し、M7 の positioning を honest に書き直す。
+
+#### 3.5.1 DER siting / placement の系譜
+
+Borges & Falcão 2006 [^Borges2006] は分散電源 (DG) の最適配置と sizing を、配電損失最小化と reliability index 改善の二目的最適化として定式化し、遺伝的アルゴリズムで解いた。これは **「どの bus に DG を置くか」を決定変数とする** 早期の系統的研究であり、本研究 M7 の "DER 配置を MILP の決定変数に含める" 発想の直接的先行。
+
+Atwa et al. 2010 [^Atwa2010] は再生可能 DG (PV / wind) の最適 mix を **probabilistic load flow + voltage / line constraint MILP** で解いた。constraint 形式 (per-bus voltage upper / lower、per-line loading) は本研究 M7 と同型である一方、unit 種別が "renewable PV / wind generators" であり、active / standby pool の動学を扱わない点で異なる。
+
+Quezada & Abbad 2006 [^Quezada2006] は配電損失への DG 浸透率の影響を解析し、**voltage profile** を bus 単位で測定する linear sensitivity 行列を導入した。本研究の `tools/grid_impact.py` で実装した DistFlow probe-based impact 行列は本系譜の直接派生。
+
+#### 3.5.2 DistFlow / OPF 理論基盤
+
+Farivar & Low 2013 [^Farivar2013] の Branch Flow Model (BFM) は **DistFlow 線形化** の現代的理論基盤を提供し、配電網の SOCP 緩和の精度保証を確立した。本研究 M7 で用いる "1 kW probe による per-bus voltage 摂動行列" は BFM の linearisation の特殊形であり、放射状 (radial) 配電網で曲解なく成立する。
+
+Lavaei & Low 2012 [^Lavaei2012] の OPF SDP 緩和は voltage 制約を含む power flow 問題が convex relaxation で **zero duality gap** を持つ条件を示した。本研究 M7 は SDP 緩和ではなく直接 MILP として解くが、constraint 形式 (per-bus voltage upper bound、per-line loading) は同系列。
+
+#### 3.5.3 Volt-VAR Optimization (VVO)
+
+Volt-VAR Optimization は配電運用において inverter / capacitor / OLTC を制御し voltage 規制 (ANSI C84.1 / IEEE 1547) を満たす運用最適化問題で、IEEE T-SG / IEEE T-PS で 30 年以上の文献蓄積がある。本研究 M7 は VVO の **設計時 (= contract design) 版** に位置づけられ、運用時 dispatch ではなく contract design 段階で voltage envelope を満たす standby pool を選ぶ点が differentiator。
+
+#### 3.5.4 M7 の positioning (revised)
+
+先行リビジョンでは M7 を「grid-aware causal portfolio」と称したが、本リビジョンで以下に書き直す:
+
+> **M7 = trigger-orthogonal DER siting MILP**
+>
+> Borges 2006 / Atwa 2010 系譜の DER siting MILP に、本研究 §4 の **trigger-orthogonal 制約** を追加した変種。DistFlow 線形化 (Farivar-Low 2013) + per-bus voltage upper bound + per-line loading bound という constraint 形式は DER siting 文献の標準形で、本研究の **新規性は trigger-orthogonal 制約と組み合わせた点** にある。
+
+これにより:
+- ✅ **本研究の真の貢献が明確化**: 「causal portfolio framework を VPP に持ち込んだ」 (= overreach) ではなく、**「trigger-orthogonal DER siting」という 2 系譜の交叉として独立位置を取る** という positioning
+- ✅ **既存 DER siting 文献との関係が明確**: M7 は DER siting MILP を **trigger 直交性で拡張** した変種、計算量も DER siting 標準と同等
+- ✅ **reviewer M-4 (= §3 で DER siting 文献欠落) への構造的回答**
+
+[^Borges2006]: C. L. T. Borges, D. M. Falcão, "Optimal distributed generation allocation for reliability, losses, and voltage improvement," International Journal of Electrical Power & Energy Systems, vol. 28, no. 6, pp. 413-420, 2006.
+
+[^Atwa2010]: Y. M. Atwa, E. F. El-Saadany, M. M. A. Salama, R. Seethapathy, "Optimal renewable resources mix for distribution system energy loss minimization," IEEE Trans. Power Systems, vol. 25, no. 1, pp. 360-370, 2010.
+
+[^Quezada2006]: V. H. M. Quezada, J. R. Abbad, T. G. S. Román, "Assessment of energy distribution losses for increasing penetration of distributed generation," IEEE Trans. Power Systems, vol. 21, no. 2, pp. 533-540, 2006.
+
+[^Farivar2013]: M. Farivar, S. H. Low, "Branch flow model: relaxations and convexification," IEEE Trans. Power Systems, vol. 28, no. 3, pp. 2554-2572, 2013.
+
+[^Lavaei2012]: J. Lavaei, S. H. Low, "Zero duality gap in optimal power flow problem," IEEE Trans. Power Systems, vol. 27, no. 1, pp. 92-107, 2012.
+
 ---
 
 ## 4. Method: Sentinel-DER Portfolio (SDP)
@@ -718,6 +763,8 @@ scale=200 でのみ実施。$N \in \{50, 1000, 5000\}$ への拡張で MILP solv
 ### 8.7 Grid-aware CTOP (M7) と Phase D 拡張群 — 投稿水準への到達経路
 
 §6.2 F7 で示した「CTOP M1 が cigre_lv 上で 96% voltage 違反を引き起こす」問題に対し、**M7 (Grid-aware CTOP)** を実装した。先行リビジョンでは relaxed bound (V_max=1.10, L_max=120%) 下の評価で「12% への低減 (= 5x reduction)」と報告したが、本リビジョンでは **Phase D 拡張群 (D-1〜D-6)** で reviewer-grade な honest reporting に書き直す。
+
+**本リビジョン M-4 対応の positioning**: M7 は §3.5 で整理した DER siting / VVO 文献 (Borges 2006, Atwa 2010, Farivar-Low 2013) の系譜に属し、本研究の **真の貢献は「DistFlow 線形化 + per-bus voltage / line bound」(= 既存) と「trigger-orthogonal 制約」(= §4 新規) を組み合わせた構成** にある。先行リビジョンで称した「causal portfolio の grid 拡張」表現は overreach であり、撤回する。
 
 #### 8.7.1 M7 MILP 拡張
 
