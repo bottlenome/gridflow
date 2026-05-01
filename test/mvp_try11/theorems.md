@@ -120,79 +120,119 @@ vol. 7, no. 4, pp. 515-531, 1982.
 
 ---
 
-## Theorem 1 (本リビジョンで唯一の Theorem; 旧 Thm 3 の rewrite) — 直交性下の label-noise ロバスト性
+## Theorem 1 (Bayes-corrected, 2nd zero-base reviewer pass N-1 fix) — 直交性下の label-noise ロバスト性
+
+> **N-1 修正履歴 (2026-04-30 後段)**: 先行版 (`f5e1cb5` commit) は posterior $P(e=1 \mid \tilde{e}=0)$ を Markov 不等式で $\varepsilon$ で素朴上界としていたが、これは prior $p \ll 1$ の場合のみ成立する。本リビジョンで Bayes 公式を陽に書き、prior 依存を明示する (詳細: `review_record.md` § N-1)。
 
 **Setup**:
 
-- 各 DER $j$ は真の曝露ベクトル $\mathbf{e}_j \in \{0,1\}^K$ を持つが、観測値
-  $\tilde{\mathbf{e}}_j$ は **independent symmetric label noise** で得られる:
-
-  $$
-  \forall j, k: \quad P(\tilde{e}_{j,k} \neq e_{j,k}) = \varepsilon, \quad \tilde{e}_{j,k} \perp \tilde{e}_{j',k'} \; (\text{for } (j,k) \neq (j',k'))
-  $$
-
-- 標準 SDP は **観測曝露** に基づき、$S \subseteq \mathcal{D} \setminus A$ を
-  以下を満たすように選ぶ (= observation-orthogonal):
-
-  $$
-  \forall j \in S, k \in E(A): \tilde{e}_{j,k} = 0
-  $$
-
-**主張 (3 部構成)**:
-
-### (i) 期待 worst-case 容量損失境界
+- 各 DER $j$ は **type** $\tau(j)$ を持ち、type ごとに axis $k$ への **prior 曝露率** $p_{\tau, k} = P(e_{j,k}^{\text{true}} = 1 \mid \tau(j) = \tau)$ が定まる (本論文 `make_default_pool` では default exposure $\mathbf{1}[\text{type-axis}]$ + 5% per-axis flip により $p \in \{0.05, 0.95\}$ の二値分布)
+- 観測値 $\tilde{e}_{j,k}$ は真値に **対称 label noise** $\varepsilon$ を加えたもの:
 
 $$
-\mathbb{E}\left[\max_{k \in E(A)} W(S, k) \,\Big|\, \tilde{e}_{j,k}=0 \;\forall j \in S, k \in E(A)\right] \leq \varepsilon \cdot \sum_{j \in S} \mathrm{cap}_j
+P(\tilde{e}_{j,k} \neq e_{j,k}^{\text{true}}) = \varepsilon
 $$
 
-**証明**: 観測 $\tilde{e}_{j,k} = 0$ かつ noise rate $\varepsilon$ の下で、
-真値 $e_{j,k} = 1$ は Bayes flip により高々 $\varepsilon$ の確率で起こる。
-よって $W(S, k) = \sum_{j \in S} \mathrm{cap}_j \cdot \mathbf{1}[e_{j,k}=1]$ の
-条件付き期待値は $\varepsilon \cdot \sum_{j \in S} \mathrm{cap}_j$ で上界される。
-$\max_{k}$ を取っても各 $k$ への期待が同じく上界されるため $\Box$。
+- 標準 SDP は観測曝露に基づき、$S$ を **observation-orthogonal** ($\tilde{e}_{j,k} = 0 \;\forall j \in S, k \in E(A)$) に選ぶ
 
-### (ii) Bernstein 型 high-probability bound
-
-各 $k \in E(A)$ について、
+**Bayes posterior**:
 
 $$
-P\left(W(S, k) \geq \varepsilon \sum_{j \in S} \mathrm{cap}_j + t\right)
-\leq \exp\left(-\frac{t^2}{2\varepsilon(1-\varepsilon)\sum_{j \in S} \mathrm{cap}_j^2 + \tfrac{2}{3} t \cdot \max_{j \in S} \mathrm{cap}_j}\right)
+\boxed{\pi_{j,k} := P(e_{j,k}^{\text{true}} = 1 \mid \tilde{e}_{j,k} = 0) = \frac{\varepsilon \cdot p_{\tau(j), k}}{\varepsilon \cdot p_{\tau(j), k} + (1-\varepsilon) \cdot (1 - p_{\tau(j), k})}}
 $$
 
-**証明スケッチ**: $W(S, k) - \mu_k = \sum_{j \in S} \mathrm{cap}_j (X_j - \varepsilon)$、
-ただし $X_j \in \{0, 1\}$ は条件付きで independent Bernoulli($\varepsilon$)。
-標準 Bernstein 不等式 (Vershynin 2018 [^Vershynin2018], Theorem 2.8.4) を
-$\mathrm{cap}_j$-weighted Bernoulli 和に適用。
+これは $p$ への依存を持つ非自明な量。先行版の "$\pi \leq \varepsilon$" は $p \to 0$ の極限でのみ成立。
 
-**帰結 (実用)**: $\varepsilon = 0.10$, 典型 $|S| = 10$, $\mathrm{cap}_j = 100$ kW
-で $\sum \mathrm{cap}_j = 1000$ kW、$\sum \mathrm{cap}_j^2 = 100,000$ kW^2、
-$\max \mathrm{cap}_j = 500$ kW (utility battery) のとき、$t = 200$ kW で
-$P(W > 100 + 200) \leq \exp(-200^2 / (2 \cdot 0.09 \cdot 100000 + 2/3 \cdot 500 \cdot 200)) = \exp(-200^2 / (18000 + 66667)) = \exp(-200^2 / 84667) \approx \exp(-0.47) \approx 0.62$。緩いが情報量はある。
+### (i) 期待 worst-case 容量損失境界 (Bayes 修正版)
 
-### (iii) 直交性なし baseline との比較 (= 本 Theorem の本質)
-
-直交性制約を **課さない** 場合 (= 任意の $S' \subseteq \mathcal{D} \setminus A$
-を観測条件付けなしに選ぶ)、worst-case loss は:
+固定 $S$ について:
 
 $$
-\mathbb{E}\left[\max_{k \in E(A)} W(S', k)\right] \leq p \cdot \sum_{j \in S'} \mathrm{cap}_j
+\mathbb{E}\left[\max_{k \in E(A)} W(S, k) \;\Big|\; \tilde{e}_{j,k}=0 \;\forall j \in S, k \in E(A)\right] \leq \max_{k \in E(A)} \sum_{j \in S} \mathrm{cap}_j \cdot \pi_{j,k}
 $$
 
-ただし $p = \max_{k \in E(A)} P(e_{j,k}=1)$ は marginal base-rate 曝露率。
-実用域では $p \in [0.3, 0.5]$ (典型: 半数の DER が commute / weather 軸に
-曝露)。
+**証明**: $W(S, k) = \sum_{j \in S} \mathrm{cap}_j \cdot \mathbf{1}[e_{j,k}^{\text{true}}=1]$。観測 $\tilde{e}_{j,k}=0$ 条件付きで indicator は Bernoulli($\pi_{j,k}$)。線形性で per-axis 期待値を取り、$\max_k$ で union $\Box$。
 
-**比較**: $p = 0.40$, $\varepsilon = 0.10$ で:
+**重要な含意 (先行版からの差分)**:
+
+| type \ axis | prior $p$ | $\pi$ at $\varepsilon=0.05$ | 備考 |
+|---|---:|---:|---|
+| residential_ev × commute | 0.95 | **0.500** | **先行 $\varepsilon$ 上界の 10× 倍** |
+| residential_ev × weather | 0.05 | 0.0028 | 先行上界より遥かにタイト |
+| utility_battery × commute | 0.05 | 0.0028 | 同上 |
+| heat_pump × weather | 0.95 | 0.500 | 同 commute と並ぶ weak |
+| commercial_fleet × commute | 0.05 | 0.0028 | 同 utility |
+
+**Bound のタイトさは type の prior に強く依存**。論文 §6.1 の MILP は cost 最小化で `residential_ev` の commute label-flipped 個体 ($\pi = 0.5$) を preferentially picks する傾向があるため、平均 bound は $\varepsilon$ より遥かに緩い。
+
+### (ii) Bernstein 型 high-probability bound (Bayes 修正版)
+
+axis $k \in E(A)$ について、$\mu_k := \sum_{j \in S} \mathrm{cap}_j \cdot \pi_{j,k}$, $\sigma_k^2 := \sum_{j \in S} \mathrm{cap}_j^2 \cdot \pi_{j,k}(1 - \pi_{j,k})$, $M := \max_{j \in S} \mathrm{cap}_j$ とする:
 
 $$
-\frac{\text{Bound (i) (orthogonal)}}{\text{Bound (iii) (no orth)}} = \frac{\varepsilon}{p} = \frac{0.10}{0.40} = 0.25
+P\left(W(S, k) \geq \mu_k + t\right) \leq \exp\left(-\frac{t^2}{2 \sigma_k^2 + \tfrac{2}{3} t M}\right)
 $$
 
-→ **直交性は期待 worst-case loss を 4 倍タイトにする**。これが trigger-orthogonal
-SDP の構造的優位の数学的説明であり、Markov 不等式の素朴適用ではなく **直交性
-制約自体の役割** を陽に分離した形で書ける。
+(証明: $\mathrm{cap}_j$-weighted Bernoulli($\pi_{j,k}$) 独立和への Vershynin 2018 [^Vershynin2018] Theorem 2.8.4 適用。$\pi$ が大きい場合 $\sigma^2$ も大きくなるため、bound 自体も緩む。)
+
+### (iii) 直交性なし baseline との比較 (Bayes 修正版、prior 依存)
+
+直交性制約を **課さない** 場合の per-axis 期待損失:
+
+$$
+\mathbb{E}[W(S', k)] = \sum_{j \in S'} \mathrm{cap}_j \cdot p_{\tau(j), k}
+$$
+
+直交性下 (Bound (i)) との **per-axis tightening factor** は:
+
+$$
+\rho_{\text{orth}}(j, k) = \frac{\pi_{j,k}}{p_{\tau(j),k}} = \frac{\varepsilon}{\varepsilon \cdot p_{\tau(j), k} + (1-\varepsilon) \cdot (1 - p_{\tau(j), k})}
+$$
+
+数値例 ($\varepsilon = 0.05$):
+
+| prior $p$ | $\rho_{\text{orth}}$ | tightening |
+|---:|---:|---|
+| 0.95 | **0.526** | weak (× 0.53) |
+| 0.50 | 0.100 | moderate (× 0.10) |
+| 0.05 | **0.0556** | strong (× 0.056) |
+
+**先行版が主張した "$p / \varepsilon \approx 4$ 倍タイト" は中程度 prior ($p \approx 0.4$) のときのみ成立する近似式**。本論文の pool は $p \in \{0.05, 0.95\}$ の二値分布なので、honest な statement は:
+
+> **直交性の tightening factor は per-axis × per-DER-type で大きく異なる: high-prior axis では $\approx 0.5$ (weak), low-prior axis では $\approx \varepsilon$ (strong)。MILP が cost 最小化で high-prior label-flipped DER を preferentially picks するため、実効的 bound は worst-case (high-prior) に近づく**。
+
+これが本論文 Theorem 1 の真の theoretical content であり、先行版「$p/\varepsilon \approx 4$ 倍一律タイト」は誤った over-claim だった。
+
+### (iv) MILP の selection bias 注記 (N-2 連動)
+
+Theorem 1 (i)-(iii) は **fixed $S$ に対する条件付き期待値** だが、実装 (`tools/sdp_optimizer.py:solve_sdp_strict`) は cost 最小化を行う。これは観測上「全軸 0」に見える label-flipped DER (= 統計的外れ値) を preferentially picks する **selection bias** を持つ。
+
+**実例検証** (kerber_landnetz, $\alpha=0.70$, M1):
+
+```
+MILP 実測: cost ¥1,800, n_standby=3
+  residential_ev_028  K4=(F,F,F,T)  ← default (T,F,F,T)、commute axis flip
+  residential_ev_043  K4=(F,F,F,T)  ← default (T,F,F,T)、commute axis flip
+  industrial_battery_006  K4=(F,F,F,T)  ← default (F,F,T,T)、market axis flip
+```
+
+3 機すべてが **label perturbation で flip された統計的外れ値**。Bayes posterior:
+- 各 EV: $\pi_{\text{commute}} = 0.5$
+- industrial: $\pi_{\text{market}} = 0.5$
+
+**真の合算 expected loss = $\sum \mathrm{cap}_j \cdot \pi_{j,k}$**:
+- commute: $7 \cdot 0.5 + 7 \cdot 0.5 + 100 \cdot 0 = 7$ kW (industrial の $\pi_{\text{commute}}$ は default 0 で flip 確率小)
+- market: $0 + 0 + 100 \cdot 0.5 = 50$ kW
+
+market expected loss 50 kW vs SLA target 33.6 kW = **超過** (Theorem 1 (i) bound に基づき確率的に SLA 違反が予想される)
+
+実 ACN sweep で観測される 59-77% SLA 違反はこの **MILP selection bias × Bayes posterior 0.5** の整合的結果であり、CTOP の構造保証が崩れたのではなく、**Theorem 1 (i) bound の高 prior 領域で MILP が exploit される境界条件を実測した** ものと解釈できる。
+
+**Phase 2 で対処すべき設計選択**:
+
+1. **規範的 fix**: MILP に "expected loss ≤ threshold" 制約を追加。posterior $\pi_{j,k}$ を MILP 入力に拡張 (= ε と prior の推定を要する)
+2. **simple fix**: pool perturbation rate を 0% に固定 (= label noise 設定を排除)、または perturbation rate を main experimental knob として sensitivity sweep
+3. **honest reporting fix**: 現状を維持し、§6.1 / §8.7.5 で "MILP は label outlier を exploit する → real data 下で SLA 不安定" を **central finding** として書き直す
 
 [^Vershynin2018]: R. Vershynin, "High-Dimensional Probability: An Introduction
 with Applications in Data Science", Cambridge Series in Statistical and
