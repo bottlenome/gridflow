@@ -314,35 +314,70 @@ $$
 
 [^Dobson1982]: G. Dobson, "Worst-case analysis of greedy heuristics for integer programming with non-negative data", Mathematics of Operations Research, vol. 7, no. 4, pp. 515-531, 1982.
 
-#### 4.7.3 Theorem 1 (本リビジョンで唯一の Theorem) — 直交性下の label-noise ロバスト性
+#### 4.7.3 Theorem 1 (本リビジョンで唯一の Theorem, Bayes-corrected by N-1) — 直交性下の label-noise ロバスト性
 
-**Setup**: 各 DER $j$ は真の曝露 $\mathbf{e}_j \in \{0,1\}^K$ を持つが、観測値 $\tilde{\mathbf{e}}_j$ は独立対称 label noise (rate $\varepsilon$) で得られる。標準 SDP は **観測曝露**に基づき $S$ を observation-orthogonal ($\tilde{e}_{j,k} = 0 \;\forall j \in S, k \in E(A)$) に選ぶ。
+> **N-1 履歴**: 本節の先行版 (`f5e1cb5` commit) は posterior $P(e=1 \mid \tilde{e}=0)$ を $\varepsilon$ で素朴上界としていたが、second zero-base reviewer pass で Bayes 計算が prior に依存することが指摘された。本リビジョンで Bayes 公式を陽に書き、prior 依存を明示する (詳細は `theorems.md` Theorem 1)。
 
-**主張 (3 部構成)**:
+**Setup**: 各 DER $j$ は **type** $\tau(j)$ を持ち、type ごとに axis $k$ への **prior 曝露率** $p_{\tau, k}$ が定まる (本論文 `make_default_pool` では default exposure + 5% per-axis flip により $p \in \{0.05, 0.95\}$ の二値)。観測値 $\tilde{\mathbf{e}}_j$ は対称 label noise rate $\varepsilon$ で得られる。SDP は観測曝露に基づき $S$ を observation-orthogonal に選ぶ。
+
+**Bayes posterior** $\pi_{j,k} := P(e_{j,k}^{\text{true}}=1 \mid \tilde{e}_{j,k}=0) = \dfrac{\varepsilon \cdot p_{\tau(j),k}}{\varepsilon \cdot p_{\tau(j),k} + (1-\varepsilon)(1-p_{\tau(j),k})}$ は **prior $p$ への依存を持つ非自明な量**。先行版「$\pi \leq \varepsilon$」は $p \to 0$ の極限のみで成立。
+
+**主張 (3 部構成、Bayes 修正版)**:
 
 **(i) 期待 worst-case 容量損失境界**:
 
 $$
-\mathbb{E}\left[\max_{k \in E(A)} W(S, k) \,\Big|\, \tilde{e}_{j,k}=0 \;\forall j \in S, k \in E(A)\right] \leq \varepsilon \cdot \sum_{j \in S} \mathrm{cap}_j
+\mathbb{E}\left[\max_{k \in E(A)} W(S, k) \,\Big|\, \tilde{e}_{j,k}=0\right] \leq \max_{k \in E(A)} \sum_{j \in S} \mathrm{cap}_j \cdot \pi_{j,k}
 $$
 
-**(ii) Bernstein 型 high-probability bound**:
+**重要な含意**: $\varepsilon = 0.05$ の本論文 pool で:
+
+| type \ axis | prior $p$ | $\pi$ | 備考 |
+|---|---:|---:|---|
+| residential_ev × commute | 0.95 | **0.500** | **先行 $\varepsilon$ 上界の 10× 倍** |
+| residential_ev × weather | 0.05 | 0.0028 | 先行上界より tight |
+| utility_battery × commute | 0.05 | 0.0028 | 同上 |
+
+**(ii) Bernstein 型 high-probability bound** (Bayes 修正版):
+
+$\mu_k := \sum \mathrm{cap}_j \pi_{j,k}$, $\sigma_k^2 := \sum \mathrm{cap}_j^2 \pi_{j,k}(1-\pi_{j,k})$, $M := \max \mathrm{cap}_j$ で:
 
 $$
-P\left(W(S, k) \geq \varepsilon \sum_{j \in S} \mathrm{cap}_j + t\right) \leq \exp\left(-\frac{t^2}{2\varepsilon(1-\varepsilon)\sum_{j \in S} \mathrm{cap}_j^2 + \tfrac{2}{3} t \cdot \max_{j \in S} \mathrm{cap}_j}\right)
+P\left(W(S, k) \geq \mu_k + t\right) \leq \exp\left(-\frac{t^2}{2 \sigma_k^2 + \tfrac{2}{3} t M}\right)
 $$
 
-(証明: $\mathrm{cap}_j$-weighted Bernoulli 和への Vershynin 2018 [^Vershynin2018] Theorem 2.8.4 適用。)
+($\pi$ が大きい cell では $\sigma^2$ も大きく、bound 自体も緩む。)
 
-**(iii) 直交性なし baseline との比較 (= 本 Theorem の本質的主張)**:
+**(iii) 直交性なし baseline との比較 (Bayes 修正版)**:
 
-直交性制約を **課さない** 場合の worst-case loss は $\mathbb{E}[\max_k W(S', k)] \leq p \cdot \sum_{j \in S'} \mathrm{cap}_j$、ただし $p = \max_{k \in E(A)} P(e_{j,k}=1)$ は marginal base-rate 曝露率 (実用域で $p \in [0.3, 0.5]$)。これに対し直交性下の bound (i) は $\varepsilon \cdot \sum \mathrm{cap}_j$ で:
+直交性なしでの per-axis 期待損失 $\mathbb{E}[W(S', k)] = \sum \mathrm{cap}_j \cdot p_{\tau(j),k}$ に対し、tightening factor は:
 
 $$
-\frac{\text{Bound (i) (orthogonal)}}{\text{Bound (iii) (no orth)}} = \frac{\varepsilon}{p} \approx \frac{0.10}{0.40} = 0.25
+\rho_{\text{orth}}(j, k) = \frac{\pi_{j,k}}{p_{\tau(j),k}} = \frac{\varepsilon}{\varepsilon \cdot p + (1-\varepsilon)(1-p)}
 $$
 
-→ **直交性は期待 worst-case loss を $p/\varepsilon \approx 4$ 倍タイトにする**。これが trigger-orthogonal SDP の構造的優位の数学的説明。Markov 不等式の素朴適用ではなく **直交性制約自体の役割** を陽に分離した形で書ける。
+| prior $p$ | $\rho_{\text{orth}}$ ($\varepsilon = 0.05$) | tightening |
+|---:|---:|---|
+| 0.95 | **0.526** | weak (× 0.53) ← residential_ev × commute |
+| 0.50 | 0.100 | moderate |
+| 0.05 | **0.0556** | strong (× 0.056) ← utility × commute |
+
+**先行版の "$p / \varepsilon \approx 4$ 倍タイト" 主張は中程度 prior ($p \approx 0.4$) のみで成立する近似式**。本論文 pool ($p \in \{0.05, 0.95\}$) では axis × type で $\rho_{\text{orth}} \in [0.056, 0.526]$ と大きく異なる。**真の theoretical statement は「直交性 tightening は per-axis × per-type で大きく異なる; high-prior axis では weak (× 0.5)、low-prior で strong (× $\varepsilon$)」**。
+
+**(iv) MILP の selection bias 注記 (N-2 連動)**:
+
+実装 (`tools/sdp_optimizer.py:solve_sdp_strict`) は cost 最小化を行い、観測上「全軸 0」に見える label-flipped DER (= 統計的外れ値) を preferentially picks する **selection bias** を持つ。実例 (kerber_landnetz, $\alpha=0.70$, M1):
+
+```
+MILP 実測: cost ¥1,800, n_standby=3、すべて K4=(F,F,F,T) — label-flipped 外れ値
+  residential_ev_028  default (T,F,F,T) → commute axis flipped to F
+  residential_ev_043  同上
+  industrial_battery_006  default (F,F,T,T) → market axis flipped to F
+```
+
+Bayes posterior 計算: 各 EV の $\pi_{\text{commute}} = 0.5$、industrial の $\pi_{\text{market}} = 0.5$。市場軸 expected loss = $100 \cdot 0.5 = 50$ kW > SLA 33.6 kW。Theorem 1 (i) の bound 上は **確率的 SLA 違反が予想され**、§8.7.5 の ACN 実 sweep で観測される SLA 違反 59-77% はこの **MILP selection bias × Bayes posterior 0.5** の整合的結果。
+
+詳細な救済策 (規範的 fix / pool perturbation 排除 / honest reporting fix) は `theorems.md` Theorem 1 (iv) を参照。本論文では (iii) honest reporting fix を採用し、§8.7.5 の controller-induced 主張を撤回する。
 
 [^Vershynin2018]: R. Vershynin, "High-Dimensional Probability: An Introduction with Applications in Data Science", Cambridge Series in Statistical and Probabilistic Mathematics, 2018.
 
