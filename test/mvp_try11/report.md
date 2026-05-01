@@ -11,7 +11,7 @@ ideation: `test/mvp_try11/ideation_record.md`
 
 ## Abstract
 
-仮想発電所 (Virtual Power Plant; VPP) が系統運用者へ補助サービスを提供する際、メンバー機器 (EV / 蓄電池 / エコキュート 等) の **流出入 (churn)** は重尾分布をもって発生する。共通の外部トリガー (通勤時刻、気象、市場価格、通信障害) が同期離脱を駆動するため、独立同分布仮定下で設計された予備容量や強化学習ベース動的補充は、新規トリガーや trigger-co-occurrence 下で SLA 違反に至る。本研究は **Causal-Trigger Orthogonal Portfolio (CTOP, sentinel-inspired)** を提案する: DER の **物理因果トリガー曝露** をベクトル化し、active pool の曝露集合と直交する standby pool を整数計画問題 (MILP) として定式化する。提案は (i) 動物行動学の歩哨 (sentinel) 機構を Rule 9 v2 の遠隔ドメイン候補 5 個から invariant 検査で機械的に絞り込んで導出し、(ii) 金融分野で先行する causal portfolio (Lopez de Prado 2019, Rodriguez Dominguez 2025) と 5 軸 (driver 同定 / allocation 連続-離散 / 制約形式 / 目的関数 / 動学設定) で構造的に異なる discrete-MILP-jump-tail 設定として独立 contribution する。Theorem 1-3 で (a) MILP 解の Pareto-optimality, (b) greedy 近似の $\ln K + 1$ 倍境界, (c) label noise $\varepsilon$ 下の expected worst-case 容量損失境界 を確立する。実験は **3 feeders (CIGRE LV / Kerber Dorf / Kerber Landnetz) × 200 機 DER pool × 8 trace 種 (C1-C8、C7 = 相関反転、C8 = scarce orthogonal) × 15 method × 3 seed = 1080 cells** で実施した。主要結果として **CTOP は cost ¥3,500/月で 0.38% の SLA 違反率** を達成し、Markowitz 相関 portfolio (B4)・Naive NN reactive (B6)・業界 default (B1) の ¥6,000/月と比較して **40% コスト削減** を示した。**C7 相関反転下で CTOP は train > test の負の OOD gap (-1.79%) を示し、構造的ロバスト性を実証**、相関ベース B5 のみ正の gap (+0.40%) で崩壊。C8 scarce orthogonal 条件で CTOP は cost ¥3,500 で 0.17% 違反、同性能 baseline は ¥6,000 (= 71% 高コスト)。電圧制約面で CTOP は utility battery 集中配置により feeder 依存の電圧違反を生じ、これは grid-aware 拡張の動機となった。本リビジョンでは Phase D 拡張群 (D-1〜D-7) と zero-base reviewer pass 後追加検証 (D-5 v2: per-EV ACN 実データ multi-week × multi-pairing CI sweep) を追加実装した。実 EV 個別 churn データ (Caltech ACN-Data, 985 sessions / 50 stations / 140 users / 33 days, sha256-pinned) に対する 144-cell sweep (4 weeks × 3 pairings × 4 methods × 3 feeders, α=0.70) の **bootstrap 95% CI 付き** main finding: (a) **kerber_landnetz で M7-strict が clean Pareto winner** (¥2,100、SLA 0% / V_disp 0%、対する M1 は ¥1,800 で SLA 71.11% [67.12, 74.72]、B1/B4 は ¥6,000 で 65% over)、(b) **kerber_dorf で M7-strict は grid 0% を達成するが SLA 違反 52.70% [48.49, 57.28]** という grid-vs-SLA trade-off を honest 報告、(c) **cigre_lv では M7-strict と M1 が同等** (両者 0%/0%/¥8,700)。先行 v2 単週 (3 seeds × 1 week) で「kerber_dorf M7 = clean winner」と報告した結果は week-of-data 依存の sample-of-1 artefact だったことが multi-week で判明、本リビジョンでは **「feeder ごとに勝者が異なる」「M7-strict は grid 制約と SLA の trade-off を体現」** が正確な main message となる (詳細 §8.7)。
+仮想発電所 (Virtual Power Plant; VPP) が系統運用者へ補助サービスを提供する際、メンバー機器 (EV / 蓄電池 / エコキュート 等) の **流出入 (churn)** は重尾分布をもって発生する。共通の外部トリガー (通勤時刻、気象、市場価格、通信障害) が同期離脱を駆動するため、独立同分布仮定下で設計された予備容量や強化学習ベース動的補充は、新規トリガーや trigger-co-occurrence 下で SLA 違反に至る。本研究は **Causal-Trigger Orthogonal Portfolio (CTOP, sentinel-inspired)** を提案する: DER の **物理因果トリガー曝露** をベクトル化し、active pool の曝露集合と直交する standby pool を整数計画問題 (MILP) として定式化する。提案は (i) 動物行動学の歩哨 (sentinel) 機構を Rule 9 v2 の遠隔ドメイン候補 5 個から invariant 検査で機械的に絞り込んで導出し、(ii) 金融分野で先行する causal portfolio (Lopez de Prado 2019, Rodriguez Dominguez 2025) と 5 軸 (driver 同定 / allocation 連続-離散 / 制約形式 / 目的関数 / 動学設定) で構造的に異なる discrete-MILP-jump-tail 設定として独立 contribution する。理論面では (a) MILP 最適性 (Proposition 1)、(b) greedy 近似の $H_K \leq \ln K + 1$ 倍境界 (Corollary 1, Chvátal 1979 / Dobson 1982 の SDP-as-multi-cover への直接適用)、(c) **直交性下の label-noise robustness (Theorem 1)** ─ 期待 worst-case 容量損失が $\varepsilon \cdot \sum \mathrm{cap}_j$ で抑えられ、直交性なし baseline ($p \cdot \sum \mathrm{cap}_j$) の $p / \varepsilon \approx 4$ 倍タイト + Bernstein high-probability tail bound ─ を確立する。先行リビジョンで「3 つの定理」と称した部分は zero-base reviewer pass M-5 指摘 (= Pareto-optimality は MILP の自明性質、greedy 境界は Chvátal の transcription、Markov 素朴適用) を受け、**Proposition + Corollary + 1 Theorem に再構成** した (詳細 §4.7、`theorems.md`)。実験は **3 feeders (CIGRE LV / Kerber Dorf / Kerber Landnetz) × 200 機 DER pool × 8 trace 種 (C1-C8、C7 = 相関反転、C8 = scarce orthogonal) × 15 method × 3 seed = 1080 cells** で実施した。主要結果として **CTOP は cost ¥3,500/月で 0.38% の SLA 違反率** を達成し、Markowitz 相関 portfolio (B4)・Naive NN reactive (B6)・業界 default (B1) の ¥6,000/月と比較して **40% コスト削減** を示した。**C7 相関反転下で CTOP は train > test の負の OOD gap (-1.79%) を示し、構造的ロバスト性を実証**、相関ベース B5 のみ正の gap (+0.40%) で崩壊。C8 scarce orthogonal 条件で CTOP は cost ¥3,500 で 0.17% 違反、同性能 baseline は ¥6,000 (= 71% 高コスト)。電圧制約面で CTOP は utility battery 集中配置により feeder 依存の電圧違反を生じ、これは grid-aware 拡張の動機となった。本リビジョンでは Phase D 拡張群 (D-1〜D-7) と zero-base reviewer pass 後追加検証 (D-5 v2: per-EV ACN 実データ multi-week × multi-pairing CI sweep) を追加実装した。実 EV 個別 churn データ (Caltech ACN-Data, 985 sessions / 50 stations / 140 users / 33 days, sha256-pinned) に対する 144-cell sweep (4 weeks × 3 pairings × 4 methods × 3 feeders, α=0.70) の **bootstrap 95% CI 付き** main finding: (a) **kerber_landnetz で M7-strict が clean Pareto winner** (¥2,100、SLA 0% / V_disp 0%、対する M1 は ¥1,800 で SLA 71.11% [67.12, 74.72]、B1/B4 は ¥6,000 で 65% over)、(b) **kerber_dorf で M7-strict は grid 0% を達成するが SLA 違反 52.70% [48.49, 57.28]** という grid-vs-SLA trade-off を honest 報告、(c) **cigre_lv では M7-strict と M1 が同等** (両者 0%/0%/¥8,700)。先行 v2 単週 (3 seeds × 1 week) で「kerber_dorf M7 = clean winner」と報告した結果は week-of-data 依存の sample-of-1 artefact だったことが multi-week で判明、本リビジョンでは **「feeder ごとに勝者が異なる」「M7-strict は grid 制約と SLA の trade-off を体現」** が正確な main message となる (詳細 §8.7)。
 
 ---
 
@@ -69,7 +69,7 @@ $$
 1. **問題の構造化** (§3-4): VPP churn 問題を「重尾 burst churn を駆動する外部トリガーに対して standby 集合を **trigger-orthogonal** に設計する portfolio 問題」として定式化、既存手法の暗黙 i.i.d. 仮定を明示破る
 2. **遠隔ドメイン移植** (§4): Rule 9 v2 (`docs/mvp_review_policy.md` §2.5.2) に従い、生態学/動物行動学/免疫学の 5 候補から invariant 保存検査で sentinel 機構を機械的選定
 3. **金融 causal portfolio との構造的差分** (§3.4): Rodriguez Dominguez 2025 [^3] の連続-PDE framework に subsume されない discrete-MILP-jump-tail 設定として独立 contribution
-4. **理論貢献** (§4.7): Pareto-optimality (Theorem 1)、greedy $\ln K + 1$ 倍境界 (Theorem 2)、label noise $\varepsilon$ 下の expected worst-case 容量損失境界 (Theorem 3)
+4. **理論貢献** (§4.7、本リビジョン M-5 対応で再構成): Proposition 1 (MILP 最適性, restatement)、Corollary 1 (greedy $H_K$ 倍境界, Chvátal 1979 / Dobson 1982 の派生)、**Theorem 1** (直交性下の label-noise robustness、期待値 + Bernstein high-prob bound + 直交性なし baseline との比較で **$p/\varepsilon \approx 4$ 倍タイト** な独立貢献)
 5. **多 feeder 実証** (§5-6): 3 feeders × 200 機 DER pool × 8 trace × 15 method × 3 seed = 1080 cells で:
    (a) **コスト面の Pareto 優位**: CTOP ¥3,500/月 vs B1/B4/B6 ¥6,000 (= 40% 削減) で同等性能、(b) **C7 相関反転下の構造的ロバスト性** (CTOP: gap -1.79%, B5: gap +0.40%)、(c) **C8 scarce orthogonal で cost-efficiency 優位** (CTOP ¥3,500 vs B1/B4/B6 ¥6,000)、(d) **B5 (金融 causal portfolio 簡易版) は全 trace で 3.15% 平均違反** で破綻
 
@@ -228,39 +228,71 @@ $$
 
 **A (sentinel) のみが** trigger-orthogonal を直接 captures し、5/5 invariant 保存で **機械的に唯一の生存候補** となる。
 
-### 4.7 Theoretical Properties
+### 4.7 Theoretical Properties (本リビジョン: PWRS reviewer M-5 対応で再構成)
 
-詳細は別文書 `theorems.md`。要約:
+ゼロベース PWRS reviewer pass (`review_record.md` 参照) で **M-5 = 「3 つの定理の独立性ほぼゼロ」** という指摘を受け、本節を以下のように再構成した:
 
-#### Theorem 1 (Pareto-optimality)
+- **旧 Thm 1 (Pareto-optimality)** → **Proposition 1**: MILP 最適性の restatement、独立貢献ではない
+- **旧 Thm 2 (greedy ln K + 1 境界)** → **Corollary 1**: Chvátal 1979 / Dobson 1982 の派生として明記、reduction を陽に書く
+- **旧 Thm 3 (label noise bound)** → **Theorem 1 (本リビジョンで唯一の Theorem)**: 直交性が境界に果たす役割を陽に分解 (3 部構成)、Bernstein high-probability 拡張を追加
 
-$\mathcal{F} = \{S: \mathrm{TriOrth}(A, S) \land \forall k: \mathrm{Cap}_S^{(\bar{k})} \geq B_k\}$ を feasible 集合とする。CTOP MILP の最適解 $S^*$ は (cost, worst-case capacity loss) 二目的の Pareto frontier 上にある。
+詳細は別文書 `theorems.md`。要旨:
 
-帰結: 任意の baseline $S' \neq S^*$ について、$\mathrm{cost}(S') \leq \mathrm{cost}(S^*)$ かつ $\max_k W(S', k) < 0$ となる解は存在しない (worst-case loss は非負)。SDP の構造保証は **数学的に厳密**。
+#### 4.7.1 Proposition 1 (MILP optimality, restatement)
 
-#### Theorem 2 (Greedy 近似境界)
+SDP MILP の最適解 $S^*$ は feasible 集合 $\mathcal{F}_{\mathrm{TriOrth}}(A) = \{S: \mathrm{TriOrth}(A, S) \land \forall k: \mathrm{Cap}_S^{(\bar{k})} \geq B_k\}$ の中で最低 cost を達成する。
 
-`solve_sdp_greedy` (M4b) は CTOP MILP 解 $S^*$ に対し:
+**位置づけ**: これは MILP 最適性の定義に等価で、**独立した定理ではない**。先行リビジョンで「Pareto-optimality on (cost, worst-case loss)」と表現したが、$\mathcal{F}_{\mathrm{TriOrth}}$ 内で直交性により worst-case loss は $0$ なので Pareto frontier 主張は退化する (= 単一目的最適化と等価)。Proposition として位置づけを honest に弱体化。
 
-$$
-\mathrm{cost}(S_{\mathrm{greedy}}) \leq (\ln K + 1) \cdot \mathrm{cost}(S^*)
-$$
+#### 4.7.2 Corollary 1 (Greedy 近似境界, Chvátal 1979 / Dobson 1982 の派生)
 
-証明スケッチ: SDP は weighted set cover の特殊形 ($K$ 要素、$N$ 集合)、Chvátal (1979) より $H_K = O(\ln K)$ 倍。$K \in \{3, 4, 5\}$ で境界は 1.83 / 2.08 / 2.28 倍。
-
-帰結: 大規模 ($N \geq 5000$) では MILP は指数時間化、greedy のみ実用域で **2.3 倍以内の保証**。本実験 §6.1.6 で実測 5x ギャップは小規模 ($N=200$) ゆえ.
-
-#### Theorem 3 (Label Noise Robustness)
-
-各 DER の曝露ベクトル entry が独立に確率 $\varepsilon$ で反転する label-noise 下で、CTOP 解 $\hat{S}$ の **期待 worst-case capacity loss** は:
+SDP の cost 最小化問題に対する `solve_sdp_greedy` (M4b) は MILP 最適解 $S^*$ に対し:
 
 $$
-\mathbb{E}\left[ \max_k W(\hat{S}, k) \right] \leq \varepsilon \cdot \sum_{j \in \hat{S}} \mathrm{cap}_j
+\mathrm{cost}(S_{\mathrm{greedy}}) \leq H_K \cdot \mathrm{cost}(S^*) \leq (\ln K + 1) \cdot \mathrm{cost}(S^*)
 $$
 
-帰結: $\varepsilon = 0.10$, $\sum \mathrm{cap}_j = 1500$ kW で expected loss ≤ 150 kW (= SLA 10%)。実験 §6.1.5 で実測 0.15% violation (M6) は理論内。
+ここで $H_K = \sum_{i=1}^K 1/i$ は $K$ 番目の調和数。
 
-#### 既存手法との理論的対比
+**Reduction (陽に明示)**: SDP の容量被覆 MILP は **加重多重被覆問題** (weighted multi-cover) の特殊形であり、demand $B_k > 1$ のため標準 set cover の Chvátal 1979 の証明は直接適用できない。Dobson (1982) [^Dobson1982] が weighted multi-cover への拡張を与え、min-ratio greedy が同じ $H_K$ 倍境界を満たすことを示した。`solve_sdp_greedy` は Dobson 流の min-ratio rule を実装する。
+
+**位置づけ**: 本結果は既知文献の直接適用であり、SDP 固有の新規性は **問題を multi-cover として明示的に reduce すること** にあり、定理自体は引用扱い。$K \in \{3, 4, 5\}$ で境界は $H_K \approx$ 1.83 / 2.08 / 2.28 倍。
+
+[^Dobson1982]: G. Dobson, "Worst-case analysis of greedy heuristics for integer programming with non-negative data", Mathematics of Operations Research, vol. 7, no. 4, pp. 515-531, 1982.
+
+#### 4.7.3 Theorem 1 (本リビジョンで唯一の Theorem) — 直交性下の label-noise ロバスト性
+
+**Setup**: 各 DER $j$ は真の曝露 $\mathbf{e}_j \in \{0,1\}^K$ を持つが、観測値 $\tilde{\mathbf{e}}_j$ は独立対称 label noise (rate $\varepsilon$) で得られる。標準 SDP は **観測曝露**に基づき $S$ を observation-orthogonal ($\tilde{e}_{j,k} = 0 \;\forall j \in S, k \in E(A)$) に選ぶ。
+
+**主張 (3 部構成)**:
+
+**(i) 期待 worst-case 容量損失境界**:
+
+$$
+\mathbb{E}\left[\max_{k \in E(A)} W(S, k) \,\Big|\, \tilde{e}_{j,k}=0 \;\forall j \in S, k \in E(A)\right] \leq \varepsilon \cdot \sum_{j \in S} \mathrm{cap}_j
+$$
+
+**(ii) Bernstein 型 high-probability bound**:
+
+$$
+P\left(W(S, k) \geq \varepsilon \sum_{j \in S} \mathrm{cap}_j + t\right) \leq \exp\left(-\frac{t^2}{2\varepsilon(1-\varepsilon)\sum_{j \in S} \mathrm{cap}_j^2 + \tfrac{2}{3} t \cdot \max_{j \in S} \mathrm{cap}_j}\right)
+$$
+
+(証明: $\mathrm{cap}_j$-weighted Bernoulli 和への Vershynin 2018 [^Vershynin2018] Theorem 2.8.4 適用。)
+
+**(iii) 直交性なし baseline との比較 (= 本 Theorem の本質的主張)**:
+
+直交性制約を **課さない** 場合の worst-case loss は $\mathbb{E}[\max_k W(S', k)] \leq p \cdot \sum_{j \in S'} \mathrm{cap}_j$、ただし $p = \max_{k \in E(A)} P(e_{j,k}=1)$ は marginal base-rate 曝露率 (実用域で $p \in [0.3, 0.5]$)。これに対し直交性下の bound (i) は $\varepsilon \cdot \sum \mathrm{cap}_j$ で:
+
+$$
+\frac{\text{Bound (i) (orthogonal)}}{\text{Bound (iii) (no orth)}} = \frac{\varepsilon}{p} \approx \frac{0.10}{0.40} = 0.25
+$$
+
+→ **直交性は期待 worst-case loss を $p/\varepsilon \approx 4$ 倍タイトにする**。これが trigger-orthogonal SDP の構造的優位の数学的説明。Markov 不等式の素朴適用ではなく **直交性制約自体の役割** を陽に分離した形で書ける。
+
+[^Vershynin2018]: R. Vershynin, "High-Dimensional Probability: An Introduction with Applications in Data Science", Cambridge Series in Statistical and Probabilistic Mathematics, 2018.
+
+#### 4.7.4 既存手法との理論的対比 (revised)
 
 | 手法 | worst-case 違反保証 | コスト最適性 |
 |---|---|---|
@@ -270,7 +302,9 @@ $$
 | B4 Markowitz | なし (correlation 仮定) | quadratic 最小分散 |
 | B5 金融 causal | causal graph 精度依存 | クラスタ均等性 |
 | B6 NN | なし (distribution shift) | 予測精度依存 |
-| **CTOP M1** | **active 単独軸 0 (Thm 1)** | **MILP 最適 + greedy ln K + 1 倍 (Thm 2)** |
+| **CTOP M1** | **Thm 1 (i) で $\varepsilon \sum \mathrm{cap}_j$ 期待値境界、(iii) で直交性なし baseline の $p / \varepsilon \approx 4$ 倍タイト**、(ii) で high-probability tail bound | Proposition 1 の MILP 最適 (Cor 1 で greedy $H_K \approx 2.3$ 倍境界) |
+
+**SDP の theoretical novelty (revised)**: Theorem 1 (iii) で示された **直交性制約が label-noise 下の期待 worst-case loss を $p/\varepsilon$ 倍タイトにする役割** が本論文の真の理論貢献。Proposition 1 は restatement、Corollary 1 は既知文献の直接適用であり独立貢献ではない (= reviewer M-5 への honest 対応)。
 
 ---
 

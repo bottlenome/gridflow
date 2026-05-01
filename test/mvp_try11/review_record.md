@@ -466,7 +466,7 @@ CAISO 系統需要 (= 需要側、20 GW、集約) を `weather` trigger に prox
 ### M-4 / M-5 / M-6 は Phase 2 課題として残存
 
 - M-4 DER siting / VVO 文献 (Atwa 2010, Borges 2006, Farivar-Low 2013) の positioning 書換 → Phase 2
-- M-5 Theorem 1-3 の貢献度再評価 → Phase 2
+- ✅ **M-5 Theorem 1-3 の貢献度再評価 → 本リビジョンで完遂**: theorems.md と report.md §4.7 を再構成。旧 Thm 1 (Pareto-optimality) → Proposition 1 (MILP optimality restatement)、旧 Thm 2 (greedy $\ln K + 1$ 倍) → Corollary 1 (Chvátal 1979 / Dobson 1982 の SDP-as-multi-cover への直接適用、reduction を陽に明示)、旧 Thm 3 (label noise) → **Theorem 1 (本リビジョンで唯一の Theorem)** を 3 部構成で書き直し: (i) 期待値 $\varepsilon \sum \mathrm{cap}_j$、(ii) Bernstein 型 high-probability tail bound (Vershynin 2018 Thm 2.8.4)、(iii) **直交性なし baseline ($p \sum \mathrm{cap}_j$) との比較で $p / \varepsilon \approx 4$ 倍タイト** = 直交性役割の陽な分解。reviewer M-5 (= Markov 素朴適用、独立性ゼロ) への構造的回答完了
 - M-6 headline 安定化 (実装 / 評価 freeze → 論文執筆) → Phase 2
 
 ### 本査読への対応後の判定
