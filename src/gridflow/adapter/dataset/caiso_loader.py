@@ -31,7 +31,6 @@ from gridflow.domain.dataset import (
     DatasetTimeSeries,
 )
 
-
 CAISO_SYSTEM_LOAD_METADATA: DatasetMetadata = DatasetMetadata(
     dataset_id="caiso/system_load_5min/v1",
     title="CAISO System Load (5-minute)",
@@ -56,10 +55,7 @@ CAISO_SYSTEM_LOAD_METADATA: DatasetMetadata = DatasetMetadata(
 
 def _resolve_local_path(dataset_id: str) -> Path:
     root = os.environ.get("GRIDFLOW_DATASET_ROOT")
-    if root:
-        base = Path(root)
-    else:
-        base = Path.home() / ".gridflow" / "datasets"
+    base = Path(root) if root else Path.home() / ".gridflow" / "datasets"
     return base.joinpath(*dataset_id.split("/")) / "data.csv"
 
 
@@ -93,12 +89,9 @@ class CAISOLoader:
 
         if spec.time_range:
             start_iso, end_iso = spec.time_range
-            kept = [
-                (t, l) for t, l in zip(timestamps, loads)
-                if start_iso <= t < end_iso
-            ]
+            kept = [(t, load) for t, load in zip(timestamps, loads, strict=True) if start_iso <= t < end_iso]
             timestamps = [t for t, _ in kept]
-            loads = [l for _, l in kept]
+            loads = [load for _, load in kept]
 
         all_channels = (("system_load_mw", "MW", tuple(loads)),)
         if spec.channel_filter:
@@ -112,6 +105,7 @@ class CAISOLoader:
                 h.update(str(v).encode())
 
         from dataclasses import replace
+
         sliced_metadata = replace(
             CAISO_SYSTEM_LOAD_METADATA,
             sha256=h.hexdigest(),

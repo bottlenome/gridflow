@@ -30,7 +30,6 @@ from gridflow.domain.dataset import (
     DatasetTimeSeries,
 )
 
-
 NREL_RESSTOCK_METADATA: DatasetMetadata = DatasetMetadata(
     dataset_id="nrel/resstock_residential/v1",
     title="NREL ResStock Residential Load (15-minute)",
@@ -100,12 +99,9 @@ class NRELResStockLoader:
             timestamps = [t for t in timestamps if start_iso <= t < end_iso]
 
         all_channels = (
-            ("total_electricity_kw", "kW",
-             tuple(per_ts_total.get(t, 0.0) for t in timestamps)),
-            ("hvac_electricity_kw", "kW",
-             tuple(per_ts_hvac.get(t, 0.0) for t in timestamps)),
-            ("ev_electricity_kw", "kW",
-             tuple(per_ts_ev.get(t, 0.0) for t in timestamps)),
+            ("total_electricity_kw", "kW", tuple(per_ts_total.get(t, 0.0) for t in timestamps)),
+            ("hvac_electricity_kw", "kW", tuple(per_ts_hvac.get(t, 0.0) for t in timestamps)),
+            ("ev_electricity_kw", "kW", tuple(per_ts_ev.get(t, 0.0) for t in timestamps)),
         )
         if spec.channel_filter:
             channels = tuple(c for c in all_channels if c[0] in set(spec.channel_filter))
@@ -118,6 +114,7 @@ class NRELResStockLoader:
                 h.update(str(v).encode())
 
         from dataclasses import replace
+
         sliced_metadata = replace(
             NREL_RESSTOCK_METADATA,
             sha256=h.hexdigest(),

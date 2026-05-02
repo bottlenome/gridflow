@@ -5,6 +5,8 @@ These mirror the contributor checklist in ``docs/dataset_contribution.md`` §2 S
 
 from __future__ import annotations
 
+# Add repo root so the ``test/mvp_try11.tools.*`` import inside the loader works
+import os as _os
 import sys
 from dataclasses import is_dataclass
 
@@ -13,16 +15,12 @@ import pytest
 from gridflow.adapter.dataset import SYNTHETIC_VPP_METADATA, SyntheticLoader
 from gridflow.domain.dataset import (
     DatasetLicense,
-    DatasetMetadata,
     DatasetSpec,
     DatasetTimeSeries,
 )
 from gridflow.domain.util.params import as_params
 from gridflow.infra.dataset import FilesystemDatasetRegistry, InMemoryDatasetRegistry
 
-
-# Add repo root so the ``test/mvp_try11.tools.*`` import inside the loader works
-import os as _os
 sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.dirname(__file__))))
 
 

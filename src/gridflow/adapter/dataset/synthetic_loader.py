@@ -15,16 +15,14 @@ Channels:
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from gridflow.domain.dataset import (
     DatasetLicense,
-    DatasetLoader,
     DatasetMetadata,
     DatasetSpec,
     DatasetTimeSeries,
 )
-
 
 SYNTHETIC_VPP_METADATA: DatasetMetadata = DatasetMetadata(
     dataset_id="gridflow/synthetic_vpp_churn/v1",
@@ -70,19 +68,19 @@ class SyntheticLoader:
         # has no side effects at module-import time. The synth modules
         # live under ``test/mvp_try11/tools/``; ensure that path is on
         # sys.path before importing.
-        import os
         import sys
         from pathlib import Path
+
         repo_root = Path(__file__).resolve().parents[4]
         try11_path = repo_root / "test" / "mvp_try11"
         if str(try11_path) not in sys.path:
             sys.path.insert(0, str(try11_path))
-        from tools.der_pool import make_default_pool
-        from tools.trace_synthesizer import synth_c1_single_trigger
+        from tools.der_pool import make_default_pool  # type: ignore[import-not-found]
+        from tools.trace_synthesizer import synth_c1_single_trigger  # type: ignore[import-not-found]
 
         params = dict(spec.params)
-        seed = int(params.get("seed", 0))
-        pool_size = int(params.get("pool_size", 200))
+        seed = int(params.get("seed", 0))  # type: ignore[call-overload]
+        pool_size = int(params.get("pool_size", 200))  # type: ignore[call-overload]
 
         # Map pool_size to make_default_pool kwargs preserving 40/15/15/15/15 ratios
         n_ev = int(pool_size * 0.40)
@@ -100,8 +98,7 @@ class SyntheticLoader:
         # Build time-axis as ISO timestamps
         start = datetime.fromisoformat("2026-01-01T00:00:00+00:00")
         timestamps_iso = tuple(
-            (start + timedelta(minutes=t * trace.timestep_min)).isoformat()
-            for t in range(trace.n_steps)
+            (start + timedelta(minutes=t * trace.timestep_min)).isoformat() for t in range(trace.n_steps)
         )
 
         # Per-step aggregate active count and capacity
@@ -110,17 +107,12 @@ class SyntheticLoader:
         cap_by_idx = tuple(d.capacity_kw for d in pool)
         for row in trace.der_active_status:
             active_count_series.append(float(sum(row)))
-            active_kw_series.append(
-                float(sum(cap_by_idx[i] for i, a in enumerate(row) if a))
-            )
+            active_kw_series.append(float(sum(cap_by_idx[i] for i, a in enumerate(row) if a)))
 
         # Apply time_range filter if any
         if spec.time_range:
             start_iso, end_iso = spec.time_range
-            keep = [
-                i for i, ts in enumerate(timestamps_iso)
-                if start_iso <= ts < end_iso
-            ]
+            keep = [i for i, ts in enumerate(timestamps_iso) if start_iso <= ts < end_iso]
             timestamps_iso = tuple(timestamps_iso[i] for i in keep)
             active_count_series = [active_count_series[i] for i in keep]
             active_kw_series = [active_kw_series[i] for i in keep]
@@ -145,6 +137,7 @@ class SyntheticLoader:
 
         # Replace metadata.sha256 with the actual one for this slice
         from dataclasses import replace
+
         sliced_metadata = replace(SYNTHETIC_VPP_METADATA, sha256=payload_hash)
 
         return DatasetTimeSeries(

@@ -1,0 +1,7 @@
+feeder,method_label,n,sla_v_mean,sla_v_ci_lo,sla_v_ci_hi,v_disp_mean,v_disp_ci_lo,v_disp_ci_hi,cost_mean
+cigre_lv,M1,12,0.0,0.0,0.0,0.0,0.0,0.0,8700.0
+cigre_lv,M9-bayes,12,0.0,0.0,0.0,0.0,0.0,0.0,9200.0
+kerber_dorf,M1,12,0.0,0.0,0.0,1.0,1.0,1.0,4500.0
+kerber_dorf,M9-bayes,12,0.0,0.0,0.0,1.0,1.0,1.0,4500.0
+kerber_landnetz,M1,12,0.7111441798941799,0.6711722883597884,0.7472304894179894,0.0,0.0,0.0,1800.0
+kerber_landnetz,M9-bayes,12,0.4658151455026455,0.3949239417989418,0.537161044973545,0.0,0.0,0.0,1850.0

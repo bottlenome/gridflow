@@ -25,7 +25,6 @@ from gridflow.domain.dataset import (
     DatasetTimeSeries,
 )
 
-
 JEPX_SPOT_PRICE_METADATA: DatasetMetadata = DatasetMetadata(
     dataset_id="jepx/spot_price/v1",
     title="JEPX Spot Market Price (30-minute)",
@@ -83,10 +82,7 @@ class JEPXLoader:
 
         if spec.time_range:
             start_iso, end_iso = spec.time_range
-            keep = [
-                i for i, t in enumerate(timestamps)
-                if start_iso <= t < end_iso
-            ]
+            keep = [i for i, t in enumerate(timestamps) if start_iso <= t < end_iso]
             timestamps = [timestamps[i] for i in keep]
             prices = [prices[i] for i in keep]
 
@@ -102,6 +98,7 @@ class JEPXLoader:
                 h.update(str(v).encode())
 
         from dataclasses import replace
+
         sliced_metadata = replace(
             JEPX_SPOT_PRICE_METADATA,
             sha256=h.hexdigest(),

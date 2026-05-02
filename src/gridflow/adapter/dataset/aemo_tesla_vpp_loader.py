@@ -32,7 +32,6 @@ from gridflow.domain.dataset import (
     DatasetTimeSeries,
 )
 
-
 AEMO_TESLA_VPP_METADATA: DatasetMetadata = DatasetMetadata(
     dataset_id="aemo/tesla_vpp_sa/v1",
     title="AEMO South Australia Tesla VPP — Aggregate Availability",
@@ -103,10 +102,7 @@ class AEMOTeslaVPPLoader:
 
         if spec.time_range:
             start_iso, end_iso = spec.time_range
-            keep = [
-                i for i, t in enumerate(timestamps)
-                if start_iso <= t < end_iso
-            ]
+            keep = [i for i, t in enumerate(timestamps) if start_iso <= t < end_iso]
             timestamps = [timestamps[i] for i in keep]
             units_online = [units_online[i] for i in keep]
             cap_kw = [cap_kw[i] for i in keep]
@@ -128,6 +124,7 @@ class AEMOTeslaVPPLoader:
                 h.update(str(v).encode())
 
         from dataclasses import replace
+
         sliced_metadata = replace(
             AEMO_TESLA_VPP_METADATA,
             sha256=h.hexdigest(),
