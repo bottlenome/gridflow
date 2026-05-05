@@ -67,3 +67,28 @@ PWRS / IEEE T-SG での publish には **(a) MV scale 問題の解決** か **(b
 - (ii) SimBench MV / IEEE 13/34 OpenDSS feeder を import
 - (iii) Pecan Street registration (PO 行動)
 - (iv) MV scale SLA / burst sizing の再 calibration (= 50 MVA で α=0.30 ではなく 0.10 等)
+
+---
+
+## 後日訂正: Rule 6 (Fixation 打破) 違反だった事実の記録
+
+実施: 2026-04-30 後段 (try15 立ち上げ時)
+
+`docs/mvp_review_policy.md` §2.5.2 Rule 6 を再読の結果、try11→12→13→14
+は **同一 paradigm (= trigger-orthogonal MILP set-cover) に MILP 制約を
+1 個ずつ追加する 4 連続の改善案** であり、Rule 6 が定める「同方向 3 連続
+で強制転換」に明確に違反していた。本来は try12 の Phase 0.5 で Rule 7
+(乱数アンカリング) → Rule 1 (≥10 候補, ranking なし) → Rule 9 v2 (≥ 3
+遠隔ドメイン並列 + invariant 検査) を実行し、MILP **以外** の paradigm を
+強制すべきだった。
+
+**訂正方針**: 本 try (12 / 13 / 14) は **try11 の Phase D-revisited
+拡張群** として位置づけ直し、独立 MVP cycle としては count しない。
+真の意味で次の MVP cycle となるのは **try15** であり、そこで Rule 7
+からやり直す。
+
+本 try で発見した数値 (Theorem 2 の prior-independent bound、kerber_dorf
+での M9-grid 単独勝者、cigre_mv での MILP infeasibility 等) は
+削除しない — これらは try11 の補強 evidence として有効。だが「独立した
+MVP cycle」と称した先行記述は誤りで、Rule 6 違反の自己診断として
+本記録を残す。
