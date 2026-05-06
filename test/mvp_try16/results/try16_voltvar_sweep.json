@@ -1,0 +1,4477 @@
+{
+  "config": {
+    "n_seeds": 24,
+    "duration_s": 180.0,
+    "dt_s": 0.5,
+    "feeder_sizes": [
+      32,
+      48,
+      64
+    ],
+    "pv_baseline_factors": [
+      0.85,
+      1.0
+    ],
+    "regime": "stress: r=0.018, x=0.012, vband=1.04/0.96, cloud_rate=0.1/s"
+  },
+  "summary": {
+    "per_method": {
+      "M0": {
+        "n_cells": 144,
+        "v_violation_frac_mean_lo_hi": [
+          0.17658059315390917,
+          0.1496108427737754,
+          0.20245920706165996
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.10372639902571314,
+          0.09321399263301079,
+          0.1143438603665789
+        ],
+        "q_energy_kvarh_mean_lo_hi": [
+          19.575669877514038,
+          17.708991458268102,
+          21.404117628269553
+        ]
+      },
+      "M3": {
+        "n_cells": 144,
+        "v_violation_frac_mean_lo_hi": [
+          0.038140090462581225,
+          0.03213694200576084,
+          0.0441783134235417
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.09778714994616582,
+          0.08649576267554421,
+          0.10897939368236008
+        ],
+        "q_energy_kvarh_mean_lo_hi": [
+          27.37686646342645,
+          25.17916049751828,
+          29.544160157697263
+        ]
+      },
+      "M11": {
+        "n_cells": 144,
+        "v_violation_frac_mean_lo_hi": [
+          0.09699336726479912,
+          0.07777001341729908,
+          0.11662531561087795
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.1273442308550566,
+          0.11379508791799853,
+          0.14070478136765618
+        ],
+        "q_energy_kvarh_mean_lo_hi": [
+          19.8521464090069,
+          18.084046245517133,
+          21.56894300963966
+        ]
+      }
+    },
+    "per_method_alpha": {
+      "M0@pv=0.85": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.11213808007251809,
+          0.08621769684512764,
+          0.1380832327338521
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.07127539881564524,
+          0.06425290833609557,
+          0.07818819530689661
+        ]
+      },
+      "M3@pv=0.85": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.02750446277801901,
+          0.020626986807331285,
+          0.03415961735363964
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.06245979636859644,
+          0.054149585641735935,
+          0.07049666775063106
+        ]
+      },
+      "M11@pv=0.85": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.04010349036536245,
+          0.03023106494688674,
+          0.049775769506053516
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.09285627787559862,
+          0.08108048073502333,
+          0.10415050903035904
+        ]
+      },
+      "M0@pv=1.0": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.24102310623530027,
+          0.2018530147766674,
+          0.2795916270623757
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.136177399235781,
+          0.11958520604583613,
+          0.15216530976553172
+        ]
+      },
+      "M3@pv=1.0": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.04877571814714346,
+          0.03958986019482145,
+          0.058258898363483795
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.13311450352373508,
+          0.11600893911529392,
+          0.14960147425682507
+        ]
+      },
+      "M11@pv=1.0": {
+        "n_cells": 72,
+        "v_violation_frac_mean_lo_hi": [
+          0.15388324416423577,
+          0.12241278885279934,
+          0.18675106172009473
+        ],
+        "v_excursion_max_mean_lo_hi": [
+          0.16183218383451445,
+          0.14135573402257282,
+          0.1816263888945462
+        ]
+      }
+    }
+  },
+  "cells": [
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0004608294930875576,
+      "v_excursion_max": 0.04097426651055369,
+      "q_energy_kvarh": 7.608586832011129
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.026026475688849526,
+      "q_energy_kvarh": 13.619470934405557
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03945869362601484,
+      "q_energy_kvarh": 8.344454885787748
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.036238318613587284,
+      "q_energy_kvarh": 5.402403945617768
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.01604476404715305,
+      "q_energy_kvarh": 9.697284951148234
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.030439469652634,
+      "q_energy_kvarh": 6.295229516871876
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0011981566820276498,
+      "v_excursion_max": 0.04207715238607346,
+      "q_energy_kvarh": 8.51327647864932
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.028620978720506285,
+      "q_energy_kvarh": 15.26942017279817
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0011981566820276498,
+      "v_excursion_max": 0.04185014102737594,
+      "q_energy_kvarh": 9.30001834581474
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.038575888237064815,
+      "q_energy_kvarh": 6.556076103432864
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.019354206080175906,
+      "q_energy_kvarh": 11.697730450790692
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.033554398147270126,
+      "q_energy_kvarh": 7.404694851682365
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.037487017334683514,
+      "q_energy_kvarh": 6.112488277597159
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.016206929458682184,
+      "q_energy_kvarh": 10.8564370259735
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.030853569233755263,
+      "q_energy_kvarh": 6.945091381369092
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03772325078746741,
+      "q_energy_kvarh": 5.280371839606062
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.02048381181759007,
+      "q_energy_kvarh": 9.472430780885468
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03429162369279881,
+      "q_energy_kvarh": 6.134617695254175
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0004608294930875576,
+      "v_excursion_max": 0.04090671844287064,
+      "q_energy_kvarh": 7.733923971767447
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.02687613037252068,
+      "q_energy_kvarh": 13.856467253898211
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0004608294930875576,
+      "v_excursion_max": 0.040182608422096866,
+      "q_energy_kvarh": 8.434594790435376
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.00018433179723502304,
+      "v_excursion_max": 0.040077186795513864,
+      "q_energy_kvarh": 6.515069246349054
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.02346915943990746,
+      "q_energy_kvarh": 11.465823384369399
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03716815179910404,
+      "q_energy_kvarh": 7.3367111350086835
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03745714002415168,
+      "q_energy_kvarh": 6.2945695069015075
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.017503714762062472,
+      "q_energy_kvarh": 11.291746370459656
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03187816532869281,
+      "q_energy_kvarh": 7.09716316786736
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.039512585959469826,
+      "q_energy_kvarh": 7.091817621919023
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.021759170859267707,
+      "q_energy_kvarh": 12.624042303316502
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03566995566871345,
+      "q_energy_kvarh": 7.825743752828858
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0004608294930875576,
+      "v_excursion_max": 0.04098511444185915,
+      "q_energy_kvarh": 6.545127072716045
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.025714169855952207,
+      "q_energy_kvarh": 11.716193615703105
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.039197628465092116,
+      "q_energy_kvarh": 7.465698867165207
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.037391374106242825,
+      "q_energy_kvarh": 4.982457966251116
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.01839884459953378,
+      "q_energy_kvarh": 9.081212200185497
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03254867142393536,
+      "q_energy_kvarh": 5.909752556625594
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.039868493240978964,
+      "q_energy_kvarh": 5.5594053305089535
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.023340520853046165,
+      "q_energy_kvarh": 10.15014156844209
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.037023198995422835,
+      "q_energy_kvarh": 6.450788383914598
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03900368651549946,
+      "q_energy_kvarh": 6.416595684180453
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.020350982921518046,
+      "q_energy_kvarh": 11.599095701330148
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.034428077985322325,
+      "q_energy_kvarh": 7.198610899542959
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.037577668895336425,
+      "q_energy_kvarh": 5.478468224770452
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.017357898117367654,
+      "q_energy_kvarh": 9.829235551803851
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03174824268148457,
+      "q_energy_kvarh": 6.361903613464474
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0007373271889400922,
+      "v_excursion_max": 0.04135393820307476,
+      "q_energy_kvarh": 10.384936093612964
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.02669803686265837,
+      "q_energy_kvarh": 18.82547414834706
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.00027649769585253456,
+      "v_excursion_max": 0.040080269017150005,
+      "q_energy_kvarh": 11.1877838385635
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03961118385513118,
+      "q_energy_kvarh": 7.509378944191214
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.022142398809297692,
+      "q_energy_kvarh": 13.43375930169946
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03599622102094324,
+      "q_energy_kvarh": 8.240671549043636
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03710598267695708,
+      "q_energy_kvarh": 5.549574226706305
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.01841818562338582,
+      "q_energy_kvarh": 9.992944967696907
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03250168920169583,
+      "q_energy_kvarh": 6.427511216401319
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03961866089754951,
+      "q_energy_kvarh": 7.402888404029923
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.02260709388956017,
+      "q_energy_kvarh": 13.227160373930875
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03637379257884299,
+      "q_energy_kvarh": 8.104575401153275
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0004608294930875576,
+      "v_excursion_max": 0.040903881048700574,
+      "q_energy_kvarh": 7.108057254655228
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.025776016507011335,
+      "q_energy_kvarh": 12.728358621283826
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.039236109930288254,
+      "q_energy_kvarh": 7.869876059671669
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0003686635944700461,
+      "v_excursion_max": 0.0407039074214246,
+      "q_energy_kvarh": 7.463846466736362
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.025409785630329695,
+      "q_energy_kvarh": 13.393317243828369
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03889633211599808,
+      "q_energy_kvarh": 8.208802335839223
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03741108993830178,
+      "q_energy_kvarh": 4.68762862517936
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.017362748462325994,
+      "q_energy_kvarh": 7.959055863913268
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.03171684461816904,
+      "q_energy_kvarh": 5.578495645098051
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0007373271889400922,
+      "v_excursion_max": 0.041440616579833334,
+      "q_energy_kvarh": 8.472841338999146
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.027108638017543596,
+      "q_energy_kvarh": 15.181693358629376
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0009216589861751152,
+      "v_excursion_max": 0.04045637202977037,
+      "q_energy_kvarh": 9.29372930985949
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0009216589861751152,
+      "v_excursion_max": 0.04152296124080945,
+      "q_energy_kvarh": 6.336791125663467
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0,
+      "v_excursion_max": 0.027148486465416344,
+      "q_energy_kvarh": 11.338194516248082
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0009216589861751152,
+      "v_excursion_max": 0.040493901686362355,
+      "q_energy_kvarh": 7.245295979947984
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.06442396313364056,
+      "v_excursion_max": 0.05932676762778,
+      "q_energy_kvarh": 9.03129057843715
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004423963133640553,
+      "v_excursion_max": 0.054695099689836546,
+      "q_energy_kvarh": 16.54201214813003
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.02359447004608295,
+      "v_excursion_max": 0.0666697079692331,
+      "q_energy_kvarh": 9.752961544718811
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.015023041474654377,
+      "v_excursion_max": 0.05036709523943106,
+      "q_energy_kvarh": 6.050766849045282
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0006451612903225806,
+      "v_excursion_max": 0.04245421179411024,
+      "q_energy_kvarh": 11.137830243875294
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.009216589861751152,
+      "v_excursion_max": 0.0549182524293621,
+      "q_energy_kvarh": 6.960013540434372
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.1287557603686636,
+      "v_excursion_max": 0.061763272953829995,
+      "q_energy_kvarh": 10.48805963950218
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0068202764976958525,
+      "v_excursion_max": 0.05780279273750444,
+      "q_energy_kvarh": 19.193427585162407
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.033732718894009216,
+      "v_excursion_max": 0.06967495458923056,
+      "q_energy_kvarh": 11.22857505849299
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.03391705069124424,
+      "v_excursion_max": 0.05366363022713383,
+      "q_energy_kvarh": 7.811457513320988
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0015668202764976959,
+      "v_excursion_max": 0.04652867015358075,
+      "q_energy_kvarh": 14.288571274357505
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.012903225806451613,
+      "v_excursion_max": 0.058878496114538326,
+      "q_energy_kvarh": 8.686273083781568
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.016866359447004608,
+      "v_excursion_max": 0.05129701249052743,
+      "q_energy_kvarh": 7.151412807036339
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0005529953917050691,
+      "v_excursion_max": 0.04243446730489553,
+      "q_energy_kvarh": 12.995515243903494
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.007557603686635945,
+      "v_excursion_max": 0.05503071433590234,
+      "q_energy_kvarh": 8.002602653084649
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.02847926267281106,
+      "v_excursion_max": 0.05390089606360493,
+      "q_energy_kvarh": 6.58885075585498
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0018433179723502304,
+      "v_excursion_max": 0.04798713240340824,
+      "q_energy_kvarh": 11.925874949884317
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.012995391705069125,
+      "v_excursion_max": 0.06016732613770559,
+      "q_energy_kvarh": 7.449320126084758
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.057788018433179725,
+      "v_excursion_max": 0.059942166007258546,
+      "q_energy_kvarh": 9.03502155751224
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004608294930875576,
+      "v_excursion_max": 0.055723078016497674,
+      "q_energy_kvarh": 16.530975865958116
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.025069124423963134,
+      "v_excursion_max": 0.0676382694347395,
+      "q_energy_kvarh": 9.710711882825494
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.06294930875576037,
+      "v_excursion_max": 0.057084380794448775,
+      "q_energy_kvarh": 8.224483141731296
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.00304147465437788,
+      "v_excursion_max": 0.05159357657264718,
+      "q_energy_kvarh": 14.788153328969287
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.019078341013824884,
+      "v_excursion_max": 0.06370134665264326,
+      "q_energy_kvarh": 9.039460082850587
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.022857142857142857,
+      "v_excursion_max": 0.052034239725652354,
+      "q_energy_kvarh": 7.396924904501517
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0008294930875576037,
+      "v_excursion_max": 0.04423202718832653,
+      "q_energy_kvarh": 13.482229754953387
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.010783410138248848,
+      "v_excursion_max": 0.05665280329140332,
+      "q_energy_kvarh": 8.201483495125872
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.033271889400921656,
+      "v_excursion_max": 0.05565466571997191,
+      "q_energy_kvarh": 8.381515936143344
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0018433179723502304,
+      "v_excursion_max": 0.0494539527420681,
+      "q_energy_kvarh": 15.209202725168442
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.01447004608294931,
+      "v_excursion_max": 0.061682151991192535,
+      "q_energy_kvarh": 9.12194008354063
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.06,
+      "v_excursion_max": 0.059103496607425976,
+      "q_energy_kvarh": 8.900256334064363
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0035944700460829493,
+      "v_excursion_max": 0.05428211678526251,
+      "q_energy_kvarh": 16.408647432829667
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.02055299539170507,
+      "v_excursion_max": 0.06629092624574451,
+      "q_energy_kvarh": 9.75551683985538
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.023317972350230413,
+      "v_excursion_max": 0.05249709243699363,
+      "q_energy_kvarh": 6.268700311781546
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0012903225806451613,
+      "v_excursion_max": 0.045366935727727986,
+      "q_energy_kvarh": 11.605984995926816
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.011336405529953917,
+      "v_excursion_max": 0.05769315022167265,
+      "q_energy_kvarh": 7.196647543834335
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.03649769585253456,
+      "v_excursion_max": 0.05690520936782306,
+      "q_energy_kvarh": 6.731641432901758
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0025806451612903226,
+      "v_excursion_max": 0.05141357211945685,
+      "q_energy_kvarh": 12.451302637603332
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.015852534562211983,
+      "v_excursion_max": 0.06352883142452015,
+      "q_energy_kvarh": 7.631442335379694
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.02119815668202765,
+      "v_excursion_max": 0.054505918613790616,
+      "q_energy_kvarh": 7.3738128583569305
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0013824884792626728,
+      "v_excursion_max": 0.04771407560281227,
+      "q_energy_kvarh": 13.569865991680226
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.012073732718894009,
+      "v_excursion_max": 0.0600282552921485,
+      "q_energy_kvarh": 8.152315318388338
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.017235023041474656,
+      "v_excursion_max": 0.05197866767463677,
+      "q_energy_kvarh": 6.169131108972601
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0007373271889400922,
+      "v_excursion_max": 0.0439542087004936,
+      "q_energy_kvarh": 11.3379135148508
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.009493087557603686,
+      "v_excursion_max": 0.056421435439086176,
+      "q_energy_kvarh": 7.071538360925795
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.1447926267281106,
+      "v_excursion_max": 0.05998851949506623,
+      "q_energy_kvarh": 13.532960514480383
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004331797235023042,
+      "v_excursion_max": 0.055467921058574454,
+      "q_energy_kvarh": 24.896718866607294
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.02552995391705069,
+      "v_excursion_max": 0.06742697927178853,
+      "q_energy_kvarh": 14.364232416972698
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.04764976958525346,
+      "v_excursion_max": 0.05597804389033767,
+      "q_energy_kvarh": 8.714704430989157
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0025806451612903226,
+      "v_excursion_max": 0.0499717598938223,
+      "q_energy_kvarh": 15.908430566630278
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.01815668202764977,
+      "v_excursion_max": 0.06215577397593641,
+      "q_energy_kvarh": 9.44512430401465
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.019631336405529953,
+      "v_excursion_max": 0.05223894571766663,
+      "q_energy_kvarh": 6.301698746728273
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0012903225806451613,
+      "v_excursion_max": 0.04542774054372134,
+      "q_energy_kvarh": 11.625972505139417
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.011244239631336406,
+      "v_excursion_max": 0.057746683475153215,
+      "q_energy_kvarh": 7.1939893441541125
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.04009216589861751,
+      "v_excursion_max": 0.05629098154287693,
+      "q_energy_kvarh": 8.545884331758474
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0027649769585253456,
+      "v_excursion_max": 0.05054392906400751,
+      "q_energy_kvarh": 15.572749239836806
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.016221198156682028,
+      "v_excursion_max": 0.0626888799200136,
+      "q_energy_kvarh": 9.249555464037957
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.04645161290322581,
+      "v_excursion_max": 0.05911613126317361,
+      "q_energy_kvarh": 8.213745898082129
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004423963133640553,
+      "v_excursion_max": 0.05438852501890956,
+      "q_energy_kvarh": 15.031625738055796
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.02055299539170507,
+      "v_excursion_max": 0.06637699774897787,
+      "q_energy_kvarh": 8.962878905352174
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.05161290322580645,
+      "v_excursion_max": 0.05875698961581155,
+      "q_energy_kvarh": 8.769693390098706
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004147465437788019,
+      "v_excursion_max": 0.053953723424160493,
+      "q_energy_kvarh": 16.07507957191042
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.022211981566820277,
+      "v_excursion_max": 0.06595425026759072,
+      "q_energy_kvarh": 9.494768916179972
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.015023041474654377,
+      "v_excursion_max": 0.051840929912190026,
+      "q_energy_kvarh": 5.79627574063401
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0007373271889400922,
+      "v_excursion_max": 0.04403399676740816,
+      "q_energy_kvarh": 10.160763609375236
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.008755760368663594,
+      "v_excursion_max": 0.05646276384219506,
+      "q_energy_kvarh": 6.676891312535232
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.11870967741935484,
+      "v_excursion_max": 0.06034589673786961,
+      "q_energy_kvarh": 10.526023652278809
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.005069124423963134,
+      "v_excursion_max": 0.055984221323770456,
+      "q_energy_kvarh": 19.23631518278989
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.026820276497695854,
+      "v_excursion_max": 0.06792268817516711,
+      "q_energy_kvarh": 11.349042663625603
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.06387096774193549,
+      "v_excursion_max": 0.06040262377414307,
+      "q_energy_kvarh": 7.997175738146896
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.004700460829493088,
+      "v_excursion_max": 0.0560193409102927,
+      "q_energy_kvarh": 14.718198073976994
+    },
+    {
+      "feeder_name": "rad32",
+      "n_bus": 32,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.02497695852534562,
+      "v_excursion_max": 0.06795767716196455,
+      "q_energy_kvarh": 8.867173561884945
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0982370820668693,
+      "v_excursion_max": 0.06650957573939809,
+      "q_energy_kvarh": 16.719095338778352
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.014650455927051671,
+      "v_excursion_max": 0.06137265344976206,
+      "q_energy_kvarh": 23.67532244737758
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.02492401215805471,
+      "v_excursion_max": 0.08927343824194778,
+      "q_energy_kvarh": 17.251645778585445
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.04389057750759878,
+      "v_excursion_max": 0.05870013637256388,
+      "q_energy_kvarh": 12.290018086881087
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017325227963525838,
+      "v_excursion_max": 0.052769665819756395,
+      "q_energy_kvarh": 17.744511951852953
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.01805471124620061,
+      "v_excursion_max": 0.07917260810445925,
+      "q_energy_kvarh": 13.232793209460514
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.1617629179331307,
+      "v_excursion_max": 0.06853956750613155,
+      "q_energy_kvarh": 19.746913649626403
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.004133738601823709,
+      "v_excursion_max": 0.06402971565315418,
+      "q_energy_kvarh": 27.88033858751883
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.03088145896656535,
+      "v_excursion_max": 0.0918415937489756,
+      "q_energy_kvarh": 20.088288373276082
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.0809726443768997,
+      "v_excursion_max": 0.0615965799522491,
+      "q_energy_kvarh": 15.789709375877965
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.015319148936170212,
+      "v_excursion_max": 0.05435400939521795,
+      "q_energy_kvarh": 22.265612262230455
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.01993920972644377,
+      "v_excursion_max": 0.08257351278107561,
+      "q_energy_kvarh": 16.51834343641497
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.05750759878419453,
+      "v_excursion_max": 0.059324085794134174,
+      "q_energy_kvarh": 14.7597195788303
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.016231003039513678,
+      "v_excursion_max": 0.05081521395515476,
+      "q_energy_kvarh": 20.522649564603206
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.016778115501519756,
+      "v_excursion_max": 0.07922778236227579,
+      "q_energy_kvarh": 15.494300910646455
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.06437689969604864,
+      "v_excursion_max": 0.061861063409260675,
+      "q_energy_kvarh": 14.334612380812072
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017872340425531916,
+      "v_excursion_max": 0.055620854480958215,
+      "q_energy_kvarh": 20.597731215152848
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.022857142857142857,
+      "v_excursion_max": 0.08370572385342867,
+      "q_energy_kvarh": 14.96450827832794
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.08650455927051671,
+      "v_excursion_max": 0.0670042852094419,
+      "q_energy_kvarh": 16.176746460802185
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.016231003039513678,
+      "v_excursion_max": 0.06225523228042862,
+      "q_energy_kvarh": 22.67971065077786
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.02601823708206687,
+      "v_excursion_max": 0.09010399423420123,
+      "q_energy_kvarh": 16.70056758792185
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.10352583586626139,
+      "v_excursion_max": 0.06459870488812158,
+      "q_energy_kvarh": 17.09183812737782
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.013495440729483282,
+      "v_excursion_max": 0.05871003540335207,
+      "q_energy_kvarh": 24.15018176411329
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.026443768996960486,
+      "v_excursion_max": 0.08672756456866249,
+      "q_energy_kvarh": 17.614981026046404
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.06711246200607902,
+      "v_excursion_max": 0.060116482175910146,
+      "q_energy_kvarh": 14.51285202603488
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.015562310030395137,
+      "v_excursion_max": 0.0523754329581998,
+      "q_energy_kvarh": 20.372212198780378
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.021337386018237082,
+      "v_excursion_max": 0.08065782601602645,
+      "q_energy_kvarh": 15.200747404435871
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.07319148936170213,
+      "v_excursion_max": 0.06334084536292162,
+      "q_energy_kvarh": 15.878083864703694
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.016474164133738603,
+      "v_excursion_max": 0.05686106718767703,
+      "q_energy_kvarh": 22.0510947906368
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.019756838905775075,
+      "v_excursion_max": 0.08498346424206882,
+      "q_energy_kvarh": 16.46794817512766
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.10662613981762918,
+      "v_excursion_max": 0.0663060007854599,
+      "q_energy_kvarh": 18.373751309642213
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.015075987841945289,
+      "v_excursion_max": 0.061008437102340496,
+      "q_energy_kvarh": 26.678286588788218
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.028145896656534955,
+      "v_excursion_max": 0.0889438684564623,
+      "q_energy_kvarh": 18.861263480261115
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.06656534954407295,
+      "v_excursion_max": 0.060594135086835976,
+      "q_energy_kvarh": 14.234983840378499
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.01762917933130699,
+      "v_excursion_max": 0.05335448860954761,
+      "q_energy_kvarh": 20.801506456023926
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.01866261398176292,
+      "v_excursion_max": 0.08156521657922289,
+      "q_energy_kvarh": 14.965703999336396
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.07562310030395136,
+      "v_excursion_max": 0.06443370975725005,
+      "q_energy_kvarh": 14.551078326612355
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017446808510638297,
+      "v_excursion_max": 0.05855060452788696,
+      "q_energy_kvarh": 20.925798576391518
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.02127659574468085,
+      "v_excursion_max": 0.08657722712566218,
+      "q_energy_kvarh": 15.22582852820593
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.05458966565349544,
+      "v_excursion_max": 0.06233370716739617,
+      "q_energy_kvarh": 14.218131003573983
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.018601823708206688,
+      "v_excursion_max": 0.055367932883426896,
+      "q_energy_kvarh": 19.952511781099595
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.019635258358662613,
+      "v_excursion_max": 0.08355880975309415,
+      "q_energy_kvarh": 14.907222247669512
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.04838905775075988,
+      "v_excursion_max": 0.06003931341855728,
+      "q_energy_kvarh": 12.95892839902438
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017203647416413375,
+      "v_excursion_max": 0.0532758905115015,
+      "q_energy_kvarh": 18.377817523432302
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.020486322188449847,
+      "v_excursion_max": 0.0804454921215303,
+      "q_energy_kvarh": 13.807872104065062
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.22772036474164134,
+      "v_excursion_max": 0.06704964531929569,
+      "q_energy_kvarh": 24.630362103223273
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.009604863221884499,
+      "v_excursion_max": 0.06202420566795874,
+      "q_energy_kvarh": 35.68960798533128
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.023404255319148935,
+      "v_excursion_max": 0.08991671802533396,
+      "q_energy_kvarh": 24.842721131061538
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.08121580547112461,
+      "v_excursion_max": 0.06364101848695247,
+      "q_energy_kvarh": 15.54214180524642
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.01398176291793313,
+      "v_excursion_max": 0.05731557152457256,
+      "q_energy_kvarh": 21.802644124895494
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.021519756838905776,
+      "v_excursion_max": 0.0853973873983378,
+      "q_energy_kvarh": 16.130334438282194
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.049969604863221884,
+      "v_excursion_max": 0.06039983946460148,
+      "q_energy_kvarh": 12.762648905165118
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.01817629179331307,
+      "v_excursion_max": 0.05342111931236948,
+      "q_energy_kvarh": 18.17404407258666
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.01817629179331307,
+      "v_excursion_max": 0.08161767178252921,
+      "q_energy_kvarh": 13.64703047732885
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.07343465045592705,
+      "v_excursion_max": 0.06391311328016513,
+      "q_energy_kvarh": 15.546713817190751
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.016656534954407293,
+      "v_excursion_max": 0.0578080873087663,
+      "q_energy_kvarh": 21.711044534957924
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.023525835866261398,
+      "v_excursion_max": 0.08585728586703922,
+      "q_energy_kvarh": 16.14104822673399
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.07519756838905775,
+      "v_excursion_max": 0.06633345749882258,
+      "q_energy_kvarh": 14.99182038223766
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017446808510638297,
+      "v_excursion_max": 0.06110859560998727,
+      "q_energy_kvarh": 21.082252540945756
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.023890577507598786,
+      "v_excursion_max": 0.08902224929200075,
+      "q_energy_kvarh": 15.598037682963627
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.08729483282674771,
+      "v_excursion_max": 0.06603202187121604,
+      "q_energy_kvarh": 15.96703666118512
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.017082066869300912,
+      "v_excursion_max": 0.0607380745619186,
+      "q_energy_kvarh": 22.36373675907424
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.02370820668693009,
+      "v_excursion_max": 0.08866183282778972,
+      "q_energy_kvarh": 16.57857788078393
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.04158054711246201,
+      "v_excursion_max": 0.059970447209400035,
+      "q_energy_kvarh": 13.110756219532165
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.01829787234042553,
+      "v_excursion_max": 0.05232317704831657,
+      "q_energy_kvarh": 18.559296623397287
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.019209726443768997,
+      "v_excursion_max": 0.08049262107978494,
+      "q_energy_kvarh": 13.857625941115801
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.16772036474164134,
+      "v_excursion_max": 0.0673527299612462,
+      "q_energy_kvarh": 20.282216877065693
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.010091185410334347,
+      "v_excursion_max": 0.06247364908933495,
+      "q_energy_kvarh": 28.683836051004214
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.02893617021276596,
+      "v_excursion_max": 0.09034249511745007,
+      "q_energy_kvarh": 20.65448710710204
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.09829787234042553,
+      "v_excursion_max": 0.06739794381943764,
+      "q_energy_kvarh": 16.78448266846939
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.014711246200607903,
+      "v_excursion_max": 0.06249958929409738,
+      "q_energy_kvarh": 24.042779832163152
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.030820668693009118,
+      "v_excursion_max": 0.09037088563434792,
+      "q_energy_kvarh": 17.403040187238094
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.26164133738601825,
+      "v_excursion_max": 0.1295623655220126,
+      "q_energy_kvarh": 20.992056758371763
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06103343465045593,
+      "v_excursion_max": 0.1278429965915584,
+      "q_energy_kvarh": 30.3503494062094
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.142370820668693,
+      "v_excursion_max": 0.1542462950500627,
+      "q_energy_kvarh": 21.149634780407137
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.16419452887537994,
+      "v_excursion_max": 0.1181333899413557,
+      "q_energy_kvarh": 15.334187495492532
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05544072948328267,
+      "v_excursion_max": 0.11543996260978484,
+      "q_energy_kvarh": 22.925145228704082
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.07434650455927051,
+      "v_excursion_max": 0.14208045300530903,
+      "q_energy_kvarh": 16.017217423384288
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3506990881458967,
+      "v_excursion_max": 0.13247002545932585,
+      "q_energy_kvarh": 25.222965039106416
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06595744680851064,
+      "v_excursion_max": 0.13097689322698658,
+      "q_energy_kvarh": 35.73677244597576
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.2307598784194529,
+      "v_excursion_max": 0.15732728040214483,
+      "q_energy_kvarh": 25.063125409112633
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.24978723404255318,
+      "v_excursion_max": 0.12203157882223747,
+      "q_energy_kvarh": 20.138512405154124
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.03483282674772036,
+      "v_excursion_max": 0.11956213705228524,
+      "q_energy_kvarh": 29.492125738170074
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.11082066869300912,
+      "v_excursion_max": 0.14614520661693398,
+      "q_energy_kvarh": 20.577643204779367
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.21677811550151976,
+      "v_excursion_max": 0.11829090346083349,
+      "q_energy_kvarh": 18.758757357817323
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.030395136778115502,
+      "v_excursion_max": 0.11538209050235881,
+      "q_energy_kvarh": 27.19830077588561
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.081580547112462,
+      "v_excursion_max": 0.14207520458274758,
+      "q_energy_kvarh": 19.270102308310328
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.20759878419452887,
+      "v_excursion_max": 0.12320056970729598,
+      "q_energy_kvarh": 18.51445588153955
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05185410334346505,
+      "v_excursion_max": 0.12106344703227623,
+      "q_energy_kvarh": 27.245166001006943
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.09519756838905775,
+      "v_excursion_max": 0.1475746856262823,
+      "q_energy_kvarh": 18.841344481970886
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.23416413373860182,
+      "v_excursion_max": 0.130473430587277,
+      "q_energy_kvarh": 19.996277821403464
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06455927051671732,
+      "v_excursion_max": 0.12888543164769262,
+      "q_energy_kvarh": 28.655874330211518
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.12723404255319148,
+      "v_excursion_max": 0.15525860506076672,
+      "q_energy_kvarh": 20.185740707371885
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.2693009118541033,
+      "v_excursion_max": 0.12668670855806674,
+      "q_energy_kvarh": 22.13667843775336
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05793313069908815,
+      "v_excursion_max": 0.12470173640849747,
+      "q_energy_kvarh": 32.10694240321147
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.15282674772036475,
+      "v_excursion_max": 0.1511716361029034,
+      "q_energy_kvarh": 22.306915351530836
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.20832826747720365,
+      "v_excursion_max": 0.11980994015437219,
+      "q_energy_kvarh": 18.344246241708543
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.04,
+      "v_excursion_max": 0.11722724905269444,
+      "q_energy_kvarh": 26.718230415032888
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.09416413373860183,
+      "v_excursion_max": 0.14384374386838084,
+      "q_energy_kvarh": 18.75263001319135
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.23562310030395137,
+      "v_excursion_max": 0.12471350234177292,
+      "q_energy_kvarh": 20.080748306560537
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.039270516717325225,
+      "v_excursion_max": 0.12252120374678155,
+      "q_energy_kvarh": 28.855188006314435
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.10346504559270517,
+      "v_excursion_max": 0.14905052872221924,
+      "q_energy_kvarh": 20.384978785391574
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.2866261398176292,
+      "v_excursion_max": 0.129193806717242,
+      "q_energy_kvarh": 24.003923180324016
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.039756838905775076,
+      "v_excursion_max": 0.12740938019528159,
+      "q_energy_kvarh": 35.38102234534961
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.14747720364741643,
+      "v_excursion_max": 0.15383491609547906,
+      "q_energy_kvarh": 24.060867778467447
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.21951367781155015,
+      "v_excursion_max": 0.12080528016444014,
+      "q_energy_kvarh": 18.660051333020938
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.029483282674772036,
+      "v_excursion_max": 0.11838241779130088,
+      "q_energy_kvarh": 27.968275181084067
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.0886322188449848,
+      "v_excursion_max": 0.14496203411705588,
+      "q_energy_kvarh": 19.026833565778002
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.22480243161094224,
+      "v_excursion_max": 0.12651929276450335,
+      "q_energy_kvarh": 18.644865443030245
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.044072948328267476,
+      "v_excursion_max": 0.12451342000482546,
+      "q_energy_kvarh": 27.61127644778863
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.1068693009118541,
+      "v_excursion_max": 0.1509904634584549,
+      "q_energy_kvarh": 18.94846417342669
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.18729483282674772,
+      "v_excursion_max": 0.12314870937809075,
+      "q_energy_kvarh": 17.572180328552015
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.047537993920972646,
+      "v_excursion_max": 0.12075916829365996,
+      "q_energy_kvarh": 25.5583107479763
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.08072948328267478,
+      "v_excursion_max": 0.14732862400568325,
+      "q_energy_kvarh": 17.99145407317171
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.17446808510638298,
+      "v_excursion_max": 0.11963947502239947,
+      "q_energy_kvarh": 16.046735748740712
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0521580547112462,
+      "v_excursion_max": 0.11692560593551748,
+      "q_energy_kvarh": 23.88349564856074
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.08170212765957446,
+      "v_excursion_max": 0.1435718205697616,
+      "q_energy_kvarh": 16.682651409087576
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.5054103343465045,
+      "v_excursion_max": 0.13029710446261356,
+      "q_energy_kvarh": 31.444852466431083
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.029483282674772036,
+      "v_excursion_max": 0.12860732340246517,
+      "q_energy_kvarh": 45.891292695320836
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.30838905775075987,
+      "v_excursion_max": 0.15500754313429987,
+      "q_energy_kvarh": 31.115981562937286
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.2206079027355623,
+      "v_excursion_max": 0.1252128942676456,
+      "q_energy_kvarh": 19.130198571744902
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06127659574468085,
+      "v_excursion_max": 0.1230576496953113,
+      "q_energy_kvarh": 27.652616028008083
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.12085106382978723,
+      "v_excursion_max": 0.14956443411010234,
+      "q_energy_kvarh": 19.41507569054133
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.17708206686930092,
+      "v_excursion_max": 0.1208501420103949,
+      "q_energy_kvarh": 16.124175588390237
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.054346504559270516,
+      "v_excursion_max": 0.1184683733449785,
+      "q_energy_kvarh": 23.742690627796513
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.07969604863221884,
+      "v_excursion_max": 0.1450400508263776,
+      "q_energy_kvarh": 16.730030752942284
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.21069908814589666,
+      "v_excursion_max": 0.1257173931473452,
+      "q_energy_kvarh": 19.054361465306634
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06,
+      "v_excursion_max": 0.12363847236584236,
+      "q_energy_kvarh": 27.42958057984033
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.10796352583586626,
+      "v_excursion_max": 0.15012771366899025,
+      "q_energy_kvarh": 19.370942124078116
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.21477203647416412,
+      "v_excursion_max": 0.1292813384106395,
+      "q_energy_kvarh": 18.41265593756939
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06370820668693009,
+      "v_excursion_max": 0.1275311950723177,
+      "q_energy_kvarh": 26.592117661631583
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.11227963525835866,
+      "v_excursion_max": 0.15394218357795086,
+      "q_energy_kvarh": 18.72269573779518
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.24,
+      "v_excursion_max": 0.12886945311101838,
+      "q_energy_kvarh": 19.93922890320315
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05544072948328267,
+      "v_excursion_max": 0.12709452587647907,
+      "q_energy_kvarh": 28.655501403121715
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.12468085106382978,
+      "v_excursion_max": 0.15351141228364407,
+      "q_energy_kvarh": 20.22970503727152
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.17422492401215806,
+      "v_excursion_max": 0.11968035693079782,
+      "q_energy_kvarh": 17.1622240560486
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05507598784194529,
+      "v_excursion_max": 0.11701560640548392,
+      "q_energy_kvarh": 25.114486985088906
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.07331306990881459,
+      "v_excursion_max": 0.1436447391279181,
+      "q_energy_kvarh": 17.662188768336502
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3660182370820669,
+      "v_excursion_max": 0.13077711430395333,
+      "q_energy_kvarh": 25.938941957582685
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.05708206686930091,
+      "v_excursion_max": 0.129141655696011,
+      "q_energy_kvarh": 37.42346300135627
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.24340425531914894,
+      "v_excursion_max": 0.15552702422510034,
+      "q_energy_kvarh": 25.849562785910937
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.2629787234042553,
+      "v_excursion_max": 0.13081366512175285,
+      "q_energy_kvarh": 21.895800829044408
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0547112462006079,
+      "v_excursion_max": 0.1291693877877298,
+      "q_energy_kvarh": 32.125822187764946
+    },
+    {
+      "feeder_name": "rad48",
+      "n_bus": 48,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.14346504559270518,
+      "v_excursion_max": 0.1555566855364543,
+      "q_energy_kvarh": 22.08730615944925
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.260453514739229,
+      "v_excursion_max": 0.11425324345312449,
+      "q_energy_kvarh": 30.057537249616505
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06807256235827665,
+      "v_excursion_max": 0.11160558887713146,
+      "q_energy_kvarh": 37.97147801209786
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09850340136054422,
+      "v_excursion_max": 0.16092430117653733,
+      "q_energy_kvarh": 29.79643139613445
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.1742403628117914,
+      "v_excursion_max": 0.10500285315842262,
+      "q_energy_kvarh": 24.558440046158257
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0654875283446712,
+      "v_excursion_max": 0.10105740502036853,
+      "q_energy_kvarh": 31.235471360301524
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.11587301587301588,
+      "v_excursion_max": 0.15061564744283573,
+      "q_energy_kvarh": 24.581525237311713
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.3406349206349206,
+      "v_excursion_max": 0.11660871340794698,
+      "q_energy_kvarh": 34.21278404511565
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06802721088435375,
+      "v_excursion_max": 0.114270139542747,
+      "q_energy_kvarh": 44.08502033694256
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.08326530612244898,
+      "v_excursion_max": 0.16353501923662028,
+      "q_energy_kvarh": 33.817527357859376
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.25755102040816324,
+      "v_excursion_max": 0.10821931319866596,
+      "q_energy_kvarh": 29.7776487798564
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0670294784580499,
+      "v_excursion_max": 0.10456176962128882,
+      "q_energy_kvarh": 38.219860471084566
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.08961451247165533,
+      "v_excursion_max": 0.15406516959758476,
+      "q_energy_kvarh": 29.839185248843556
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2341950113378685,
+      "v_excursion_max": 0.10524812614633428,
+      "q_energy_kvarh": 28.583658916355393
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06430839002267574,
+      "v_excursion_max": 0.10100700309301769,
+      "q_energy_kvarh": 36.13783429945163
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09387755102040816,
+      "v_excursion_max": 0.15061813732463958,
+      "q_energy_kvarh": 28.630490999993253
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2180498866213152,
+      "v_excursion_max": 0.10903459648892744,
+      "q_energy_kvarh": 28.075098717643993
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06775510204081632,
+      "v_excursion_max": 0.10584007995380729,
+      "q_energy_kvarh": 36.06312470537805
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10040816326530612,
+      "v_excursion_max": 0.15526827048098557,
+      "q_energy_kvarh": 27.909728968394948
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.23487528344671202,
+      "v_excursion_max": 0.11495381112767311,
+      "q_energy_kvarh": 28.773898648728085
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06875283446712017,
+      "v_excursion_max": 0.11249202282350068,
+      "q_energy_kvarh": 35.804500563497434
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10775510204081633,
+      "v_excursion_max": 0.1617799850472521,
+      "q_energy_kvarh": 28.422893460155265
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2728798185941043,
+      "v_excursion_max": 0.11194578707811287,
+      "q_energy_kvarh": 31.364731691510173
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06775510204081632,
+      "v_excursion_max": 0.1089342838679952,
+      "q_energy_kvarh": 40.530741282519166
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.0946938775510204,
+      "v_excursion_max": 0.158321364530154,
+      "q_energy_kvarh": 31.136115263466245
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.22299319727891156,
+      "v_excursion_max": 0.10643110670030609,
+      "q_energy_kvarh": 27.715249926299418
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06557823129251701,
+      "v_excursion_max": 0.10257673968345782,
+      "q_energy_kvarh": 35.011515363129575
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09886621315192744,
+      "v_excursion_max": 0.15211487470109408,
+      "q_energy_kvarh": 27.619892996422788
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.24458049886621316,
+      "v_excursion_max": 0.11037104084805449,
+      "q_energy_kvarh": 29.689102876385196
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06807256235827665,
+      "v_excursion_max": 0.1070787247725411,
+      "q_energy_kvarh": 37.25342548214671
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09197278911564626,
+      "v_excursion_max": 0.15652631049930998,
+      "q_energy_kvarh": 29.526678954332
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.29419501133786846,
+      "v_excursion_max": 0.11396529310136572,
+      "q_energy_kvarh": 32.979326308289245
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06789115646258503,
+      "v_excursion_max": 0.11123686658694498,
+      "q_energy_kvarh": 43.32743893821937
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.08512471655328799,
+      "v_excursion_max": 0.1605771918398291,
+      "q_energy_kvarh": 32.72063677584257
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2257142857142857,
+      "v_excursion_max": 0.10718617128996533,
+      "q_energy_kvarh": 28.23435458105764
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06684807256235828,
+      "v_excursion_max": 0.10355895974372586,
+      "q_energy_kvarh": 37.343693920918746
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09560090702947846,
+      "v_excursion_max": 0.15305839674178556,
+      "q_energy_kvarh": 28.229873925351416
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2327437641723356,
+      "v_excursion_max": 0.11179595097536921,
+      "q_energy_kvarh": 28.233358799934443
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.067437641723356,
+      "v_excursion_max": 0.1087736215284838,
+      "q_energy_kvarh": 36.680737440137115
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10331065759637188,
+      "v_excursion_max": 0.1581674716671242,
+      "q_energy_kvarh": 28.157779062544815
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.19668934240362812,
+      "v_excursion_max": 0.10911547237315111,
+      "q_energy_kvarh": 26.54274844903329
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06621315192743764,
+      "v_excursion_max": 0.10557945849220407,
+      "q_energy_kvarh": 33.10798949930634
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.11061224489795918,
+      "v_excursion_max": 0.15506763636850107,
+      "q_energy_kvarh": 26.407931263024444
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.19560090702947847,
+      "v_excursion_max": 0.10629605296712219,
+      "q_energy_kvarh": 25.2776461470812
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06589569160997732,
+      "v_excursion_max": 0.10231977862443964,
+      "q_energy_kvarh": 32.28764464489715
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09564625850340136,
+      "v_excursion_max": 0.15188388298376587,
+      "q_energy_kvarh": 25.438783204480938
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.4614965986394558,
+      "v_excursion_max": 0.1148535976530054,
+      "q_energy_kvarh": 39.38556418330673
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.0670294784580499,
+      "v_excursion_max": 0.11225523478660149,
+      "q_energy_kvarh": 51.5800494513102
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.048117913832199544,
+      "v_excursion_max": 0.16156993396236352,
+      "q_energy_kvarh": 38.83540465754775
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2235827664399093,
+      "v_excursion_max": 0.11076826788135552,
+      "q_energy_kvarh": 27.87730860048908
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06693877551020408,
+      "v_excursion_max": 0.10753507668308471,
+      "q_energy_kvarh": 34.69402537568218
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10789115646258503,
+      "v_excursion_max": 0.15696059166474519,
+      "q_energy_kvarh": 27.578493667873648
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.19034013605442177,
+      "v_excursion_max": 0.10716542175772714,
+      "q_energy_kvarh": 25.699806665832398
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06621315192743764,
+      "v_excursion_max": 0.10363219070631402,
+      "q_energy_kvarh": 32.5672116434077
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.11011337868480725,
+      "v_excursion_max": 0.15312285093722888,
+      "q_energy_kvarh": 25.7221018961643
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.21605442176870748,
+      "v_excursion_max": 0.1111564808866834,
+      "q_energy_kvarh": 27.548788854108352
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06798185941043083,
+      "v_excursion_max": 0.10802930339874806,
+      "q_energy_kvarh": 34.09876469255585
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.1091156462585034,
+      "v_excursion_max": 0.1574361581122039,
+      "q_energy_kvarh": 27.231204095778523
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.21605442176870748,
+      "v_excursion_max": 0.11403132617029255,
+      "q_energy_kvarh": 27.255268414225533
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06766439909297052,
+      "v_excursion_max": 0.11134051326406635,
+      "q_energy_kvarh": 33.91287215283875
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.11337868480725624,
+      "v_excursion_max": 0.1606672803117808,
+      "q_energy_kvarh": 26.997292607052366
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2438095238095238,
+      "v_excursion_max": 0.11369495796679052,
+      "q_energy_kvarh": 29.221663686928277
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06839002267573696,
+      "v_excursion_max": 0.11096934133234915,
+      "q_energy_kvarh": 36.5458472699853
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10163265306122449,
+      "v_excursion_max": 0.1603017192634726,
+      "q_energy_kvarh": 29.043077751095872
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.1945578231292517,
+      "v_excursion_max": 0.10630867529200261,
+      "q_energy_kvarh": 26.68033007469192
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06598639455782312,
+      "v_excursion_max": 0.10239624599268571,
+      "q_energy_kvarh": 34.139939886912934
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.10530612244897959,
+      "v_excursion_max": 0.15194391272974705,
+      "q_energy_kvarh": 26.613145788328698
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.3601360544217687,
+      "v_excursion_max": 0.11523587050411277,
+      "q_energy_kvarh": 34.83520263799058
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06770975056689342,
+      "v_excursion_max": 0.11270949729087243,
+      "q_energy_kvarh": 45.074795696916574
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.07505668934240363,
+      "v_excursion_max": 0.16200958485640515,
+      "q_energy_kvarh": 34.48037367807755
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M0",
+      "v_violation_frac": 0.2652154195011338,
+      "v_excursion_max": 0.11527009061003901,
+      "q_energy_kvarh": 30.8871490993321
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M3",
+      "v_violation_frac": 0.06798185941043083,
+      "v_excursion_max": 0.11273304135522033,
+      "q_energy_kvarh": 40.39373635946844
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 0.85,
+      "method": "M11",
+      "v_violation_frac": 0.09954648526077098,
+      "v_excursion_max": 0.16203491800449288,
+      "q_energy_kvarh": 30.746623452305567
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.44430839002267575,
+      "v_excursion_max": 0.23176941378442417,
+      "q_energy_kvarh": 38.03099506254591
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10476190476190476,
+      "v_excursion_max": 0.23085877399118937,
+      "q_energy_kvarh": 48.4430716384775
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 0,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.32820861678004537,
+      "v_excursion_max": 0.27827280644374186,
+      "q_energy_kvarh": 37.23056740451869
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.33374149659863944,
+      "v_excursion_max": 0.219782476405459,
+      "q_energy_kvarh": 31.43871481210237
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08435374149659863,
+      "v_excursion_max": 0.21843708820682117,
+      "q_energy_kvarh": 40.7357414131162
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 1,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.23233560090702948,
+      "v_excursion_max": 0.26599232679726037,
+      "q_energy_kvarh": 31.094835401074295
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.5396825396825397,
+      "v_excursion_max": 0.23479128026006868,
+      "q_energy_kvarh": 43.33671656692308
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.15895691609977325,
+      "v_excursion_max": 0.23399575112700188,
+      "q_energy_kvarh": 55.45635646449639
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 2,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.43210884353741497,
+      "v_excursion_max": 0.2813777309113501,
+      "q_energy_kvarh": 42.071223905944365
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.45714285714285713,
+      "v_excursion_max": 0.22380645316201053,
+      "q_energy_kvarh": 37.96003998275395
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.07968253968253969,
+      "v_excursion_max": 0.22256320607044455,
+      "q_energy_kvarh": 49.802652622171294
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 3,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.31560090702947846,
+      "v_excursion_max": 0.270085308420813,
+      "q_energy_kvarh": 37.50438496167652
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.42784580498866215,
+      "v_excursion_max": 0.21980327534997768,
+      "q_energy_kvarh": 36.43486209581209
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06866213151927437,
+      "v_excursion_max": 0.2183755667476701,
+      "q_energy_kvarh": 47.2545691740366
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 4,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.2761904761904762,
+      "v_excursion_max": 0.2659586970748409,
+      "q_energy_kvarh": 36.08967782141157
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.394875283446712,
+      "v_excursion_max": 0.2251776092115083,
+      "q_energy_kvarh": 36.029563363394324
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08312925170068028,
+      "v_excursion_max": 0.22407092232942483,
+      "q_energy_kvarh": 46.82149397183392
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 5,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.29038548752834464,
+      "v_excursion_max": 0.27155096284632796,
+      "q_energy_kvarh": 35.32944925167124
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.4089795918367347,
+      "v_excursion_max": 0.23274863007815627,
+      "q_energy_kvarh": 36.22046710775787
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10761904761904761,
+      "v_excursion_max": 0.23190301801077284,
+      "q_energy_kvarh": 45.554191097152916
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 6,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.2965986394557823,
+      "v_excursion_max": 0.2792994479365154,
+      "q_energy_kvarh": 35.4604842731004
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.4654421768707483,
+      "v_excursion_max": 0.22873834427150985,
+      "q_energy_kvarh": 40.06502687899706
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10149659863945579,
+      "v_excursion_max": 0.2277128207064547,
+      "q_energy_kvarh": 52.090888728370075
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 7,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.347437641723356,
+      "v_excursion_max": 0.2751668895641146,
+      "q_energy_kvarh": 39.15598642369692
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.392562358276644,
+      "v_excursion_max": 0.22150070799429544,
+      "q_energy_kvarh": 35.249724959165825
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08421768707482993,
+      "v_excursion_max": 0.22022644399366653,
+      "q_energy_kvarh": 45.4906999053267
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 8,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.28235827664399094,
+      "v_excursion_max": 0.26776500864100283,
+      "q_energy_kvarh": 34.735602800145465
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.44249433106575964,
+      "v_excursion_max": 0.22664632283351804,
+      "q_energy_kvarh": 37.62919165742169
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.07968253968253969,
+      "v_excursion_max": 0.22552780921825222,
+      "q_energy_kvarh": 48.08041664730712
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 9,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.29337868480725626,
+      "v_excursion_max": 0.2730164537384525,
+      "q_energy_kvarh": 37.04762649965972
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.4931972789115646,
+      "v_excursion_max": 0.2313630362120931,
+      "q_energy_kvarh": 42.27045558615049
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08653061224489796,
+      "v_excursion_max": 0.23042342105578228,
+      "q_energy_kvarh": 55.4858563302913
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 10,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.37464852607709753,
+      "v_excursion_max": 0.2778512085632263,
+      "q_energy_kvarh": 41.208723393635154
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.412562358276644,
+      "v_excursion_max": 0.222594212601541,
+      "q_energy_kvarh": 36.73314294545392
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.06712018140589569,
+      "v_excursion_max": 0.22138274255376422,
+      "q_energy_kvarh": 48.70047184159445
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 11,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.29192743764172335,
+      "v_excursion_max": 0.26890101891145823,
+      "q_energy_kvarh": 36.017116830025245
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.41278911564625853,
+      "v_excursion_max": 0.22856735684518226,
+      "q_energy_kvarh": 36.401676731276844
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0837641723356009,
+      "v_excursion_max": 0.22752310131974585,
+      "q_energy_kvarh": 47.78819476871498
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 12,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.2914285714285714,
+      "v_excursion_max": 0.2749823906314257,
+      "q_energy_kvarh": 35.67475961961517
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3677097505668934,
+      "v_excursion_max": 0.22497974131718812,
+      "q_energy_kvarh": 33.625089536356974
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0782312925170068,
+      "v_excursion_max": 0.22376178477508168,
+      "q_energy_kvarh": 42.80011518110817
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 13,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.25378684807256235,
+      "v_excursion_max": 0.271276186224495,
+      "q_energy_kvarh": 33.18117950104276
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3570068027210884,
+      "v_excursion_max": 0.22127823715716222,
+      "q_energy_kvarh": 32.24465423656614
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08158730158730158,
+      "v_excursion_max": 0.21992115451333705,
+      "q_energy_kvarh": 42.36916375417764
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 14,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.24335600907029478,
+      "v_excursion_max": 0.26748038046336786,
+      "q_energy_kvarh": 32.06548543102097
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.6524263038548753,
+      "v_excursion_max": 0.23251785887188392,
+      "q_energy_kvarh": 49.80304446882035
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10068027210884353,
+      "v_excursion_max": 0.23162217631320292,
+      "q_energy_kvarh": 64.9004292631528
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 15,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.6345578231292517,
+      "v_excursion_max": 0.27903495937433953,
+      "q_energy_kvarh": 48.0203033657015
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3909297052154195,
+      "v_excursion_max": 0.2271827782683069,
+      "q_energy_kvarh": 35.13602191249349
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10099773242630386,
+      "v_excursion_max": 0.22606452993917414,
+      "q_energy_kvarh": 44.29746283002122
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 16,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.28816326530612246,
+      "v_excursion_max": 0.2735424111197118,
+      "q_energy_kvarh": 34.44480617418054
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.3543310657596372,
+      "v_excursion_max": 0.2226769538027964,
+      "q_energy_kvarh": 32.904022295114764
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08326530612244898,
+      "v_excursion_max": 0.22147097674807736,
+      "q_energy_kvarh": 42.616274420810434
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 17,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.24634920634920635,
+      "v_excursion_max": 0.26898549871766186,
+      "q_energy_kvarh": 32.50765407290225
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.38335600907029477,
+      "v_excursion_max": 0.22772819125831445,
+      "q_energy_kvarh": 34.60804392718505
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.0980045351473923,
+      "v_excursion_max": 0.2266466912992373,
+      "q_energy_kvarh": 43.48941371782515
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 18,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.27904761904761904,
+      "v_excursion_max": 0.27411363597578386,
+      "q_energy_kvarh": 34.00764509311798
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.38294784580498864,
+      "v_excursion_max": 0.2314753113439907,
+      "q_energy_kvarh": 34.448327691656594
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.10326530612244898,
+      "v_excursion_max": 0.23054661621778738,
+      "q_energy_kvarh": 43.46237363629333
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 19,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.28217687074829934,
+      "v_excursion_max": 0.2779656277052467,
+      "q_energy_kvarh": 33.7637689869513
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.42965986394557826,
+      "v_excursion_max": 0.2310493236589759,
+      "q_energy_kvarh": 36.906916698332154
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.09759637188208617,
+      "v_excursion_max": 0.23010967812862515,
+      "q_energy_kvarh": 46.84356853520491
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 20,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.3055328798185941,
+      "v_excursion_max": 0.2775317216705271,
+      "q_energy_kvarh": 36.30254628172633
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.36793650793650795,
+      "v_excursion_max": 0.22134531411267644,
+      "q_energy_kvarh": 34.359923110529564
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.08244897959183674,
+      "v_excursion_max": 0.2200112240638039,
+      "q_energy_kvarh": 44.68895991055902
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 21,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.250249433106576,
+      "v_excursion_max": 0.26756115737864494,
+      "q_energy_kvarh": 33.859064292199534
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.5551020408163265,
+      "v_excursion_max": 0.23302838218371447,
+      "q_energy_kvarh": 44.13712776675694
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.12789115646258503,
+      "v_excursion_max": 0.23215896253638957,
+      "q_energy_kvarh": 57.071566789152826
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 22,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.4587301587301587,
+      "v_excursion_max": 0.2795624622009414,
+      "q_energy_kvarh": 42.90349498077724
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M0",
+      "v_violation_frac": 0.45360544217687077,
+      "v_excursion_max": 0.23305952012464637,
+      "q_energy_kvarh": 39.64425405190437
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M3",
+      "v_violation_frac": 0.09668934240362811,
+      "v_excursion_max": 0.23218538856180482,
+      "q_energy_kvarh": 51.85849235989934
+    },
+    {
+      "feeder_name": "rad64",
+      "n_bus": 64,
+      "cloud_seed": 23,
+      "pv_baseline_kw": 1.0,
+      "method": "M11",
+      "v_violation_frac": 0.33963718820861677,
+      "v_excursion_max": 0.27959034559086016,
+      "q_energy_kvarh": 38.72522070848928
+    }
+  ]
+}
