@@ -1,0 +1,6 @@
+# Large public dataset bundles — re-fetch via tools/fetch_*.py
+eia_930/*.csv
+opsd/*.csv
+
+# Allow per-directory README and small fixtures
+!README.md
