@@ -19,8 +19,7 @@ def test_pack_parameters_includes_provenance():
         params=as_params({"seed": 0, "pool_size": 50}),
     )
     ts = loader.load(spec)
-    params = pack_parameters_with_dataset(spec, ts.metadata,
-                                          base_params={"feeder": "cigre_lv"})
+    params = pack_parameters_with_dataset(spec, ts.metadata, base_params={"feeder": "cigre_lv"})
     keys = {k for k, _ in params}
     assert "dataset_id" in keys
     assert "dataset_sha256" in keys

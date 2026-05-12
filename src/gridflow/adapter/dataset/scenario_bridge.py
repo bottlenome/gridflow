@@ -32,7 +32,7 @@ from gridflow.domain.util.params import Params, as_params
 def pack_parameters_with_dataset(
     spec: DatasetSpec,
     metadata: DatasetMetadata,
-    base_params: Params | dict | None = None,
+    base_params: Params | dict[str, object] | None = None,
 ) -> Params:
     """Encode dataset reference into the canonical pack parameters tuple.
 
@@ -44,13 +44,15 @@ def pack_parameters_with_dataset(
     Hashable / immutable per CLAUDE.md §0.1.
     """
     base = dict(as_params(base_params or {}))
-    base.update({
-        "dataset_id": spec.dataset_id,
-        "dataset_sha256": metadata.sha256,
-        "dataset_doi": metadata.doi,
-        "dataset_license": metadata.license.value,
-        "dataset_resolution_seconds": metadata.time_resolution_seconds,
-    })
+    base.update(
+        {
+            "dataset_id": spec.dataset_id,
+            "dataset_sha256": metadata.sha256,
+            "dataset_doi": metadata.doi,
+            "dataset_license": metadata.license.value,
+            "dataset_resolution_seconds": metadata.time_resolution_seconds,
+        }
+    )
     if spec.time_range:
         base["dataset_time_range"] = f"{spec.time_range[0]}/{spec.time_range[1]}"
     return as_params(base)
@@ -84,4 +86,4 @@ def dataset_to_active_count(
     count_channel: str = "aggregate_active_count",
 ) -> tuple[int, ...]:
     """Extract integer per-step active counts."""
-    return tuple(int(round(v)) for v in ts.channel(count_channel))
+    return tuple(round(v) for v in ts.channel(count_channel))

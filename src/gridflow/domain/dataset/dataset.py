@@ -10,7 +10,7 @@ types here are frozen dataclasses with hashable equality.
 from __future__ import annotations
 
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from gridflow.domain.util.params import Params
 
@@ -99,7 +99,7 @@ class DatasetSpec:
     """
 
     dataset_id: str
-    time_range: tuple[str, str] = ()
+    time_range: tuple[str, str] | tuple[()] = ()
     channel_filter: tuple[str, ...] = ()
     params: Params = ()
 

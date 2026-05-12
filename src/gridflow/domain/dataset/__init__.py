@@ -25,20 +25,20 @@ Design (CLAUDE.md §0.1):
 """
 
 from .dataset import (
+    LICENSE_NAMES,
     DatasetLicense,
     DatasetMetadata,
     DatasetSpec,
     DatasetTimeSeries,
-    LICENSE_NAMES,
 )
 from .interfaces import DatasetLoader, DatasetRegistry
 
 __all__ = (
+    "LICENSE_NAMES",
     "DatasetLicense",
+    "DatasetLoader",
     "DatasetMetadata",
+    "DatasetRegistry",
     "DatasetSpec",
     "DatasetTimeSeries",
-    "LICENSE_NAMES",
-    "DatasetLoader",
-    "DatasetRegistry",
 )

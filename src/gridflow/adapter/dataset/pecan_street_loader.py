@@ -37,7 +37,6 @@ from gridflow.domain.dataset import (
     DatasetTimeSeries,
 )
 
-
 # Registered metadata for the canonical Pecan Street EV slice.
 # The sha256 is empty here because the actual file lives only on the
 # contributor's machine; the loader fills the sliced sha256 at load time.
@@ -76,10 +75,7 @@ def _resolve_local_path(dataset_id: str) -> Path:
       * default ``~/.gridflow/datasets/<dataset_id>/data.csv``
     """
     root = os.environ.get("GRIDFLOW_DATASET_ROOT")
-    if root:
-        base = Path(root)
-    else:
-        base = Path.home() / ".gridflow" / "datasets"
+    base = Path(root) if root else Path.home() / ".gridflow" / "datasets"
     return base.joinpath(*dataset_id.split("/")) / "data.csv"
 
 
@@ -98,8 +94,7 @@ class PecanStreetLoader:
         path = _resolve_local_path(spec.dataset_id)
         if not path.exists():
             raise FileNotFoundError(
-                f"Pecan Street CSV not found at {path}. "
-                f"See docstring of pecan_street_loader.py for setup."
+                f"Pecan Street CSV not found at {path}. See docstring of pecan_street_loader.py for setup."
             )
 
         # Read CSV; expect columns: ts_iso, household_id, ev_power_kw, ev_connected
@@ -141,6 +136,7 @@ class PecanStreetLoader:
         sliced_sha = h.hexdigest()
 
         from dataclasses import replace
+
         sliced_metadata = replace(
             PECAN_STREET_RESIDENTIAL_EV_METADATA,
             sha256=sliced_sha,

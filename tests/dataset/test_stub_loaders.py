@@ -7,22 +7,20 @@ under ``$GRIDFLOW_DATASET_ROOT``.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from gridflow.adapter.dataset import (
     AEMO_TESLA_VPP_METADATA,
-    AEMOTeslaVPPLoader,
     ALL_LOADERS,
     ALL_REGISTERED_METADATAS,
     CAISO_SYSTEM_LOAD_METADATA,
-    CAISOLoader,
     JEPX_SPOT_PRICE_METADATA,
-    JEPXLoader,
     NREL_RESSTOCK_METADATA,
-    NRELResStockLoader,
     PECAN_STREET_RESIDENTIAL_EV_METADATA,
+    AEMOTeslaVPPLoader,
+    CAISOLoader,
+    JEPXLoader,
+    NRELResStockLoader,
     PecanStreetLoader,
 )
 from gridflow.domain.dataset import (
@@ -33,13 +31,16 @@ from gridflow.domain.dataset import (
 from gridflow.infra.dataset import InMemoryDatasetRegistry
 
 
-@pytest.mark.parametrize("metadata", [
-    PECAN_STREET_RESIDENTIAL_EV_METADATA,
-    CAISO_SYSTEM_LOAD_METADATA,
-    AEMO_TESLA_VPP_METADATA,
-    JEPX_SPOT_PRICE_METADATA,
-    NREL_RESSTOCK_METADATA,
-])
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        PECAN_STREET_RESIDENTIAL_EV_METADATA,
+        CAISO_SYSTEM_LOAD_METADATA,
+        AEMO_TESLA_VPP_METADATA,
+        JEPX_SPOT_PRICE_METADATA,
+        NREL_RESSTOCK_METADATA,
+    ],
+)
 def test_metadata_required_fields(metadata: DatasetMetadata):
     assert metadata.dataset_id != ""
     assert metadata.title != ""
@@ -53,25 +54,31 @@ def test_metadata_required_fields(metadata: DatasetMetadata):
         assert unit != ""
 
 
-@pytest.mark.parametrize("loader,supported_id,unsupported_id", [
-    (PecanStreetLoader(), "pecanstreet/residential_ev/v1", "caiso/x/v1"),
-    (CAISOLoader(), "caiso/system_load_5min/v1", "jepx/x/v1"),
-    (AEMOTeslaVPPLoader(), "aemo/tesla_vpp_sa/v1", "aemo/other/v1"),
-    (JEPXLoader(), "jepx/spot_price/v1", "caiso/x/v1"),
-    (NRELResStockLoader(), "nrel/resstock_residential/v1", "nrel/other/v1"),
-])
+@pytest.mark.parametrize(
+    "loader,supported_id,unsupported_id",
+    [
+        (PecanStreetLoader(), "pecanstreet/residential_ev/v1", "caiso/x/v1"),
+        (CAISOLoader(), "caiso/system_load_5min/v1", "jepx/x/v1"),
+        (AEMOTeslaVPPLoader(), "aemo/tesla_vpp_sa/v1", "aemo/other/v1"),
+        (JEPXLoader(), "jepx/spot_price/v1", "caiso/x/v1"),
+        (NRELResStockLoader(), "nrel/resstock_residential/v1", "nrel/other/v1"),
+    ],
+)
 def test_supports_dispatch(loader, supported_id, unsupported_id):
     assert loader.supports(supported_id)
     assert not loader.supports(unsupported_id)
 
 
-@pytest.mark.parametrize("loader,dataset_id", [
-    (PecanStreetLoader(), "pecanstreet/residential_ev/v1"),
-    (CAISOLoader(), "caiso/system_load_5min/v1"),
-    (AEMOTeslaVPPLoader(), "aemo/tesla_vpp_sa/v1"),
-    (JEPXLoader(), "jepx/spot_price/v1"),
-    (NRELResStockLoader(), "nrel/resstock_residential/v1"),
-])
+@pytest.mark.parametrize(
+    "loader,dataset_id",
+    [
+        (PecanStreetLoader(), "pecanstreet/residential_ev/v1"),
+        (CAISOLoader(), "caiso/system_load_5min/v1"),
+        (AEMOTeslaVPPLoader(), "aemo/tesla_vpp_sa/v1"),
+        (JEPXLoader(), "jepx/spot_price/v1"),
+        (NRELResStockLoader(), "nrel/resstock_residential/v1"),
+    ],
+)
 def test_load_raises_when_missing(loader, dataset_id, tmp_path, monkeypatch):
     monkeypatch.setenv("GRIDFLOW_DATASET_ROOT", str(tmp_path))
     spec = DatasetSpec(dataset_id=dataset_id)

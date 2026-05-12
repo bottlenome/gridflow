@@ -1,0 +1,5091 @@
+{
+  "config": {
+    "feeders": [
+      "cigre_lv",
+      "kerber_dorf",
+      "kerber_landnetz"
+    ],
+    "methods": [
+      "M1",
+      "M9"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "theta_fraction": 0.05,
+    "traces": [
+      "C1",
+      "C2",
+      "C3",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "C8"
+    ]
+  },
+  "elapsed_s": 6.1,
+  "n_cells": 144,
+  "n_errors": 0,
+  "n_infeasible": 0,
+  "records": [
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.509,
+      "elapsed_s": 0.811,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.497,
+      "elapsed_s": 0.809,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.498,
+      "elapsed_s": 0.835,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.491,
+      "elapsed_s": 0.859,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.165,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.173,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.171,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.159,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.159,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.175,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.3538377192982456,
+        "ood_gap": 0.020833333333333332,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.020833333333333332,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.154,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.2873684210526316,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.163,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.33157894736842103,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.155,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.156,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.157,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.16,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.155,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.169,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.154,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.168,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.137,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.193,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.019,
+      "elapsed_s": 0.177,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.174,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.167,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.183,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.188,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.185,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.163,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.017,
+      "elapsed_s": 0.164,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.166,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.159,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.17,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.3538377192982456,
+        "ood_gap": 0.020833333333333332,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.020833333333333332,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.017,
+      "elapsed_s": 0.171,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.164,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.33157894736842103,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.167,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.2873684210526316,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.016,
+      "elapsed_s": 0.18,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.016,
+      "elapsed_s": 0.179,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.16,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.168,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.158,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.157,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.154,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.15,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.137,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.135,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.15,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 6000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.144,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.3812154696132601
+          ],
+          [
+            "weather",
+            1.3812154696132601
+          ],
+          [
+            "market",
+            1.3812154696132601
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            23.75
+          ],
+          [
+            "weather",
+            7.125
+          ],
+          [
+            "market",
+            7.125
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.134,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7525,
+        "ood_gap": 0.0025731646825396825,
+        "sla_violation_ratio": 0.0016203703703703703,
+        "sla_violation_ratio_test": 0.0028211805555555555,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.135,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.675,
+        "ood_gap": -0.000775049603174603,
+        "sla_violation_ratio": 0.0023148148148148147,
+        "sla_violation_ratio_test": 0.001953125,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.137,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8171875,
+        "ood_gap": 0.001147073412698413,
+        "sla_violation_ratio": 0.001851851851851852,
+        "sla_violation_ratio_test": 0.002387152777777778,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.147,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.131,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8435185185185186,
+        "ood_gap": -0.006696428571428571,
+        "sla_violation_ratio": 0.003125,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.006696428571428571,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.135,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9091379310344827,
+        "ood_gap": 0.006293402777777778,
+        "sla_violation_ratio": 0.0033564814814814816,
+        "sla_violation_ratio_test": 0.006293402777777778,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7435211267605634,
+        "ood_gap": 0.014942956349206348,
+        "sla_violation_ratio": 0.008217592592592592,
+        "sla_violation_ratio_test": 0.015190972222222222,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.14,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7164084507042253,
+        "ood_gap": 0.010292658730158732,
+        "sla_violation_ratio": 0.008217592592592592,
+        "sla_violation_ratio_test": 0.013020833333333334,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7357142857142858,
+        "ood_gap": 0.008308531746031748,
+        "sla_violation_ratio": 0.005671296296296297,
+        "sla_violation_ratio_test": 0.009548611111111112,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.134,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.855236220472441,
+        "ood_gap": 0.027560763888888888,
+        "sla_violation_ratio": 0.014699074074074074,
+        "sla_violation_ratio_test": 0.027560763888888888,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.141,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.59125,
+        "ood_gap": 0.020833333333333332,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.020833333333333332,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.6796762589928057,
+        "ood_gap": 0.00923859126984127,
+        "sla_violation_ratio": 0.016087962962962964,
+        "sla_violation_ratio_test": 0.020399305555555556,
+        "sla_violation_ratio_train": 0.011160714285714286,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.133,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.72,
+        "ood_gap": 0.009114583333333334,
+        "sla_violation_ratio": 0.004861111111111111,
+        "sla_violation_ratio_test": 0.009114583333333334,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.132,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7288461538461538,
+        "ood_gap": 0.005642361111111111,
+        "sla_violation_ratio": 0.0030092592592592593,
+        "sla_violation_ratio_test": 0.005642361111111111,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.134,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7,
+        "ood_gap": 3.100198412698445e-05,
+        "sla_violation_ratio": 0.0032407407407407406,
+        "sla_violation_ratio_test": 0.0032552083333333335,
+        "sla_violation_ratio_train": 0.003224206349206349,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.136,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.136,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.75375,
+        "ood_gap": -0.023809523809523808,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.023809523809523808,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.73,
+        "ood_gap": -0.020833333333333332,
+        "sla_violation_ratio": 0.009722222222222222,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.020833333333333332,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.124,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.764090909090909,
+        "ood_gap": -0.03273809523809524,
+        "sla_violation_ratio": 0.015277777777777777,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.03273809523809524,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.112,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7688,
+        "ood_gap": 0.00496031746031746,
+        "sla_violation_ratio": 0.0028935185185185184,
+        "sla_violation_ratio_test": 0.005208333333333333,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.008,
+      "elapsed_s": 0.113,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.78,
+        "ood_gap": -0.002728174603174603,
+        "sla_violation_ratio": 0.0012731481481481483,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.113,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7879032258064517,
+        "ood_gap": 0.003472222222222222,
+        "sla_violation_ratio": 0.003587962962962963,
+        "sla_violation_ratio_test": 0.005208333333333333,
+        "sla_violation_ratio_train": 0.001736111111111111,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.675,
+        "ood_gap": -0.000775049603174603,
+        "sla_violation_ratio": 0.0023148148148148147,
+        "sla_violation_ratio_test": 0.001953125,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.133,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7525,
+        "ood_gap": 0.0025731646825396825,
+        "sla_violation_ratio": 0.0016203703703703703,
+        "sla_violation_ratio_test": 0.0028211805555555555,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.8171875,
+        "ood_gap": 0.001147073412698413,
+        "sla_violation_ratio": 0.001851851851851852,
+        "sla_violation_ratio_test": 0.002387152777777778,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.8435185185185186,
+        "ood_gap": -0.006696428571428571,
+        "sla_violation_ratio": 0.003125,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.006696428571428571,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.133,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9091379310344827,
+        "ood_gap": 0.006293402777777778,
+        "sla_violation_ratio": 0.0033564814814814816,
+        "sla_violation_ratio_test": 0.006293402777777778,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.135,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7435211267605634,
+        "ood_gap": 0.014942956349206348,
+        "sla_violation_ratio": 0.008217592592592592,
+        "sla_violation_ratio_test": 0.015190972222222222,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7164084507042253,
+        "ood_gap": 0.010292658730158732,
+        "sla_violation_ratio": 0.008217592592592592,
+        "sla_violation_ratio_test": 0.013020833333333334,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.132,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7357142857142858,
+        "ood_gap": 0.008308531746031748,
+        "sla_violation_ratio": 0.005671296296296297,
+        "sla_violation_ratio_test": 0.009548611111111112,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.59125,
+        "ood_gap": 0.020833333333333332,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.020833333333333332,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.855236220472441,
+        "ood_gap": 0.027560763888888888,
+        "sla_violation_ratio": 0.014699074074074074,
+        "sla_violation_ratio_test": 0.027560763888888888,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.6796762589928057,
+        "ood_gap": 0.00923859126984127,
+        "sla_violation_ratio": 0.016087962962962964,
+        "sla_violation_ratio_test": 0.020399305555555556,
+        "sla_violation_ratio_train": 0.011160714285714286,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.131,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.72,
+        "ood_gap": 0.009114583333333334,
+        "sla_violation_ratio": 0.004861111111111111,
+        "sla_violation_ratio_test": 0.009114583333333334,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.136,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7288461538461538,
+        "ood_gap": 0.005642361111111111,
+        "sla_violation_ratio": 0.0030092592592592593,
+        "sla_violation_ratio_test": 0.005642361111111111,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.13,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7,
+        "ood_gap": 3.100198412698445e-05,
+        "sla_violation_ratio": 0.0032407407407407406,
+        "sla_violation_ratio_test": 0.0032552083333333335,
+        "sla_violation_ratio_train": 0.003224206349206349,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 3700.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.162,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.5552486187845306
+          ],
+          [
+            "weather",
+            2.0469613259668504
+          ],
+          [
+            "market",
+            0.5552486187845306
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ],
+          [
+            "weather",
+            3.0
+          ],
+          [
+            "market",
+            3.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 10.0
+      },
+      "n_standby": 10,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.138,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.75375,
+        "ood_gap": -0.023809523809523808,
+        "sla_violation_ratio": 0.011111111111111112,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.023809523809523808,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3700.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.166,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.5552486187845306
+          ],
+          [
+            "weather",
+            2.0469613259668504
+          ],
+          [
+            "market",
+            0.5552486187845306
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ],
+          [
+            "weather",
+            3.0
+          ],
+          [
+            "market",
+            3.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 10.0
+      },
+      "n_standby": 10,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3700.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.169,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.5552486187845306
+          ],
+          [
+            "market",
+            0.5552486187845306
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ],
+          [
+            "market",
+            3.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9554761904761905,
+        "ood_gap": -0.001023065476190476,
+        "sla_violation_ratio": 0.0024305555555555556,
+        "sla_violation_ratio_test": 0.001953125,
+        "sla_violation_ratio_train": 0.002976190476190476,
+        "standby_pool_size": 10.0
+      },
+      "n_standby": 10,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.133,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.73,
+        "ood_gap": -0.020833333333333332,
+        "sla_violation_ratio": 0.009722222222222222,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.020833333333333332,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.117,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7688,
+        "ood_gap": 0.00496031746031746,
+        "sla_violation_ratio": 0.0028935185185185184,
+        "sla_violation_ratio_test": 0.005208333333333333,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.118,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.78,
+        "ood_gap": -0.002728174603174603,
+        "sla_violation_ratio": 0.0012731481481481483,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.133,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.764090909090909,
+        "ood_gap": -0.03273809523809524,
+        "sla_violation_ratio": 0.015277777777777777,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.03273809523809524,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 3000.0,
+      "design_solve_time_s": 0.009,
+      "elapsed_s": 0.115,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.552486187845304
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            10.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.7879032258064517,
+        "ood_gap": 0.003472222222222222,
+        "sla_violation_ratio": 0.003587962962962963,
+        "sla_violation_ratio_test": 0.005208333333333333,
+        "sla_violation_ratio_train": 0.001736111111111111,
+        "standby_pool_size": 2.0
+      },
+      "n_standby": 2,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8576086956521739,
+        "ood_gap": 0.004526289682539683,
+        "sla_violation_ratio": 0.002662037037037037,
+        "sla_violation_ratio_test": 0.004774305555555556,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.128,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.735625,
+        "ood_gap": 0.0020151289682539685,
+        "sla_violation_ratio": 0.0023148148148148147,
+        "sla_violation_ratio_test": 0.0032552083333333335,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.143,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7947580645161291,
+        "ood_gap": -0.003503224206349206,
+        "sla_violation_ratio": 0.003587962962962963,
+        "sla_violation_ratio_test": 0.001953125,
+        "sla_violation_ratio_train": 0.005456349206349206,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.123,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.122,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.01,
+      "elapsed_s": 0.121,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7951807228915663,
+        "ood_gap": 0.017547123015873016,
+        "sla_violation_ratio": 0.009606481481481481,
+        "sla_violation_ratio_test": 0.017795138888888888,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.121,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8229885057471265,
+        "ood_gap": 0.008649553571428572,
+        "sla_violation_ratio": 0.010069444444444445,
+        "sla_violation_ratio_test": 0.014105902777777778,
+        "sla_violation_ratio_train": 0.005456349206349206,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8711397058823529,
+        "ood_gap": 0.012431795634920636,
+        "sla_violation_ratio": 0.00787037037037037,
+        "sla_violation_ratio_test": 0.013671875,
+        "sla_violation_ratio_train": 0.001240079365079365,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.13,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7329861111111111,
+        "ood_gap": 0.015625,
+        "sla_violation_ratio": 0.008333333333333333,
+        "sla_violation_ratio_test": 0.015625,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8375,
+        "ood_gap": 0.015625,
+        "sla_violation_ratio": 0.008333333333333333,
+        "sla_violation_ratio_test": 0.015625,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.125,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9122807017543859,
+        "ood_gap": 0.012369791666666666,
+        "sla_violation_ratio": 0.006597222222222222,
+        "sla_violation_ratio_test": 0.012369791666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.7048076923076924,
+        "ood_gap": 0.008463541666666666,
+        "sla_violation_ratio": 0.0045138888888888885,
+        "sla_violation_ratio_test": 0.008463541666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8083333333333333,
+        "ood_gap": 0.006510416666666667,
+        "sla_violation_ratio": 0.003472222222222222,
+        "sla_violation_ratio_test": 0.006510416666666667,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.011,
+      "elapsed_s": 0.136,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8759259259259259,
+        "ood_gap": 0.004743303571428571,
+        "sla_violation_ratio": 0.00625,
+        "sla_violation_ratio_test": 0.008463541666666666,
+        "sla_violation_ratio_train": 0.003720238095238095,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9875,
+        "ood_gap": -0.002728174603174603,
+        "sla_violation_ratio": 0.0012731481481481483,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.129,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8825,
+        "ood_gap": -0.02976190476190476,
+        "sla_violation_ratio": 0.013888888888888888,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.02976190476190476,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.132,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9291666666666667,
+        "ood_gap": -0.026785714285714284,
+        "sla_violation_ratio": 0.0125,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.026785714285714284,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.118,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8775,
+        "ood_gap": -0.000775049603174603,
+        "sla_violation_ratio": 0.0023148148148148147,
+        "sla_violation_ratio_test": 0.001953125,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.653125,
+        "ood_gap": 0.002139136904761905,
+        "sla_violation_ratio": 0.001388888888888889,
+        "sla_violation_ratio_test": 0.002387152777777778,
+        "sla_violation_ratio_train": 0.000248015873015873,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.131,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9097222222222222,
+        "ood_gap": -0.026785714285714284,
+        "sla_violation_ratio": 0.0125,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.026785714285714284,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.124,
+      "error": null,
+      "extras": {
+        "epsilon": null,
+        "expected_loss_per_axis": [],
+        "threshold_per_axis": []
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.8691666666666666,
+        "ood_gap": -0.0013950892857142855,
+        "sla_violation_ratio": 0.003472222222222222,
+        "sla_violation_ratio_test": 0.0028211805555555555,
+        "sla_violation_ratio_train": 0.004216269841269841,
+        "standby_pool_size": 5.0
+      },
+      "n_standby": 5,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.123,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.12,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.13,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C1"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.124,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.115,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.123,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C2"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.116,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.021,
+      "elapsed_s": 0.13,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.12,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C3"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.124,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.35,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.2625,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.122,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.2625,
+        "ood_gap": 0.010416666666666666,
+        "sla_violation_ratio": 0.005555555555555556,
+        "sla_violation_ratio_test": 0.010416666666666666,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C4"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.12,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.127,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.126,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C5"
+    },
+    {
+      "design_cost": 1600.0,
+      "design_solve_time_s": 0.018,
+      "elapsed_s": 0.143,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.24309392265193377
+          ],
+          [
+            "weather",
+            0.24309392265193377
+          ],
+          [
+            "market",
+            0.24309392265193377
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ],
+          [
+            "weather",
+            1.2000000000000002
+          ],
+          [
+            "market",
+            1.2000000000000002
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 4.0
+      },
+      "n_standby": 4,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1600.0,
+      "design_solve_time_s": 0.018,
+      "elapsed_s": 0.136,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.24309392265193377
+          ],
+          [
+            "market",
+            0.24309392265193377
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ],
+          [
+            "market",
+            1.2000000000000002
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.8125,
+        "ood_gap": -0.002728174603174603,
+        "sla_violation_ratio": 0.0012731481481481483,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.002728174603174603,
+        "standby_pool_size": 4.0
+      },
+      "n_standby": 4,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.014,
+      "elapsed_s": 0.143,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C6"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.141,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.124,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.013,
+      "elapsed_s": 0.122,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C7"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.015,
+      "elapsed_s": 0.112,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 0,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.012,
+      "elapsed_s": 0.109,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 2,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    },
+    {
+      "design_cost": 1500.0,
+      "design_solve_time_s": 0.019,
+      "elapsed_s": 0.113,
+      "error": null,
+      "extras": {
+        "epsilon": 0.05,
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.276243093922652
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            4.0
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 1.0
+      },
+      "n_standby": 1,
+      "seed": 1,
+      "theta_fraction": 0.05,
+      "trace_id": "C8"
+    }
+  ]
+}

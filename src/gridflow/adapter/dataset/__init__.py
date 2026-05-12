@@ -17,6 +17,8 @@ Stubs (Pecan/CAISO/AEMO/JEPX/NREL) require user-provided cached CSV at
 ``$GRIDFLOW_DATASET_ROOT/<dataset_id>/data.csv``. See each loader docstring.
 """
 
+from gridflow.domain.dataset import DatasetLoader, DatasetMetadata
+
 from .aemo_tesla_vpp_loader import AEMO_TESLA_VPP_METADATA, AEMOTeslaVPPLoader
 from .caiso_loader import CAISO_SYSTEM_LOAD_METADATA, CAISOLoader
 from .jepx_loader import JEPX_SPOT_PRICE_METADATA, JEPXLoader
@@ -27,9 +29,8 @@ from .pecan_street_loader import (
 )
 from .synthetic_loader import SYNTHETIC_VPP_METADATA, SyntheticLoader
 
-
 # Convenience: every metadata block in one tuple for catalog seeding
-ALL_REGISTERED_METADATAS: tuple = (
+ALL_REGISTERED_METADATAS: tuple[DatasetMetadata, ...] = (
     SYNTHETIC_VPP_METADATA,
     PECAN_STREET_RESIDENTIAL_EV_METADATA,
     CAISO_SYSTEM_LOAD_METADATA,
@@ -39,7 +40,7 @@ ALL_REGISTERED_METADATAS: tuple = (
 )
 
 # Convenience: every loader available
-ALL_LOADERS: tuple = (
+ALL_LOADERS: tuple[DatasetLoader, ...] = (
     SyntheticLoader(),
     PecanStreetLoader(),
     CAISOLoader(),
@@ -50,18 +51,18 @@ ALL_LOADERS: tuple = (
 
 
 __all__ = (
-    "SyntheticLoader",
-    "PecanStreetLoader",
-    "CAISOLoader",
-    "AEMOTeslaVPPLoader",
-    "JEPXLoader",
-    "NRELResStockLoader",
-    "SYNTHETIC_VPP_METADATA",
-    "PECAN_STREET_RESIDENTIAL_EV_METADATA",
-    "CAISO_SYSTEM_LOAD_METADATA",
     "AEMO_TESLA_VPP_METADATA",
+    "ALL_LOADERS",
+    "ALL_REGISTERED_METADATAS",
+    "CAISO_SYSTEM_LOAD_METADATA",
     "JEPX_SPOT_PRICE_METADATA",
     "NREL_RESSTOCK_METADATA",
-    "ALL_REGISTERED_METADATAS",
-    "ALL_LOADERS",
+    "PECAN_STREET_RESIDENTIAL_EV_METADATA",
+    "SYNTHETIC_VPP_METADATA",
+    "AEMOTeslaVPPLoader",
+    "CAISOLoader",
+    "JEPXLoader",
+    "NRELResStockLoader",
+    "PecanStreetLoader",
+    "SyntheticLoader",
 )

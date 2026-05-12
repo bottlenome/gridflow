@@ -1,0 +1,2783 @@
+{
+  "config": {
+    "alpha": 0.7,
+    "feeders": [
+      "cigre_lv",
+      "kerber_dorf",
+      "kerber_landnetz"
+    ],
+    "methods": [
+      "M1",
+      "M9"
+    ],
+    "n_workers": 4,
+    "output": "/home/user/gridflow/test/mvp_try12/results",
+    "pairing_seeds": [
+      0,
+      1,
+      2
+    ],
+    "sessions_csv": "/home/user/gridflow/test/mvp_try11/data/acn_caltech_sessions_2019_01.csv",
+    "week_offsets": [
+      0,
+      7,
+      14,
+      21
+    ],
+    "window_days": 7
+  },
+  "elapsed_s": 74.0,
+  "n_cells": 72,
+  "n_errors": 0,
+  "n_infeasible": 0,
+  "records": [
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 5.033,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 69.24737542094849,
+        "max_voltage_pu": 1.0881425720858755,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 5.034,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.53729797851958,
+        "max_voltage_pu": 1.0867702575508889,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 5.04,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 69.0259877474139,
+        "max_voltage_pu": 1.091622157298853,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 5.062,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 69.2788733593645,
+        "max_voltage_pu": 1.088974577769368,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.365,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 69.24186821765382,
+        "max_voltage_pu": 1.0900265162931473,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.413,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.52937507362891,
+        "max_voltage_pu": 1.0864021364980363,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.413,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.52937507362891,
+        "max_voltage_pu": 1.0868755062453406,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.466,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 69.28674448001756,
+        "max_voltage_pu": 1.0890597213930167,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.389,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.53729797851958,
+        "max_voltage_pu": 1.0860789749119428,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.406,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.46025390146791,
+        "max_voltage_pu": 1.0894256311363915,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.424,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.49103846267835,
+        "max_voltage_pu": 1.0877812575950052,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 1,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 8700.0,
+      "elapsed_s": 4.488,
+      "error": null,
+      "extras": {},
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 68.48317226834203,
+        "max_voltage_pu": 1.0878128375861043,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 5.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 5,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.432,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 59.18094902671669,
+        "max_voltage_pu": 1.2998482450372741,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.449,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.790960335037376,
+        "max_voltage_pu": 1.2952815345829478,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.462,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.72930644802384,
+        "max_voltage_pu": 1.2964001884931031,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.507,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 57.3904028898089,
+        "max_voltage_pu": 1.3003518634945728,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.54,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.7039517225903,
+        "max_voltage_pu": 1.2952798655459212,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.541,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.66900916056065,
+        "max_voltage_pu": 1.2960785454307504,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.546,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 57.3249310401383,
+        "max_voltage_pu": 1.2988649281429154,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.598,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.75521803776831,
+        "max_voltage_pu": 1.2941098545912555,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.431,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.68941544413075,
+        "max_voltage_pu": 1.2956120007225298,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.429,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.656229322831564,
+        "max_voltage_pu": 1.296879458306462,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.42,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.790960335037376,
+        "max_voltage_pu": 1.2932953858893965,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 1,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 9200.0,
+      "elapsed_s": 4.472,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            1.8674033149171276
+          ],
+          [
+            "weather",
+            1.8674033149171276
+          ],
+          [
+            "market",
+            1.8674033149171276
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            33.25
+          ],
+          [
+            "weather",
+            9.975000000000001
+          ],
+          [
+            "market",
+            9.975000000000001
+          ]
+        ]
+      },
+      "feeder": "cigre_lv",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 56.724538784789814,
+        "max_voltage_pu": 1.2965610050821466,
+        "min_voltage_pu": 0.9122689602538204,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 9.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 9,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.416,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 93.10472671578485,
+        "max_voltage_pu": 1.0810356982316256,
+        "min_voltage_pu": 0.9831524132714299,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.422,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 89.64499128384583,
+        "max_voltage_pu": 1.0728118486298819,
+        "min_voltage_pu": 0.9831526073918233,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.441,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.28123409194279,
+        "max_voltage_pu": 1.0748659880108378,
+        "min_voltage_pu": 0.9831528913230442,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.477,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 93.22854893268759,
+        "max_voltage_pu": 1.0803363102360037,
+        "min_voltage_pu": 0.9831524800226729,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.529,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 93.627737754583,
+        "max_voltage_pu": 1.078506087781174,
+        "min_voltage_pu": 0.9831522203623905,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.511,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.48234080552079,
+        "max_voltage_pu": 1.0754554375234966,
+        "min_voltage_pu": 0.9831528878678315,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.499,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 96.94279934588671,
+        "max_voltage_pu": 1.0848826584987394,
+        "min_voltage_pu": 0.9831529963052776,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.559,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.28123871937078,
+        "max_voltage_pu": 1.0716725311140987,
+        "min_voltage_pu": 0.9831527090898825,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.488,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.421806486276,
+        "max_voltage_pu": 1.0761698186778725,
+        "min_voltage_pu": 0.983152843516953,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.515,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 96.41833387470884,
+        "max_voltage_pu": 1.0860115039070206,
+        "min_voltage_pu": 0.9831525054378348,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.504,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.28125390754356,
+        "max_voltage_pu": 1.0746618185761228,
+        "min_voltage_pu": 0.9831522313990292,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.534,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 90.4638569679655,
+        "max_voltage_pu": 1.0756324124528716,
+        "min_voltage_pu": 0.9831525457541871,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.517,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.68041656801294,
+        "max_voltage_pu": 1.0766972436572162,
+        "min_voltage_pu": 0.9830375230249516,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.516,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.66176050690797,
+        "max_voltage_pu": 1.0726368154549981,
+        "min_voltage_pu": 0.9830381521516657,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.475,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.60068423082649,
+        "max_voltage_pu": 1.075158297121527,
+        "min_voltage_pu": 0.9830378782193455,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.548,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 93.89778357635964,
+        "max_voltage_pu": 1.0778169136704787,
+        "min_voltage_pu": 0.9830370608367336,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.454,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.68052697307738,
+        "max_voltage_pu": 1.0744265735355838,
+        "min_voltage_pu": 0.9830374656361779,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.463,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.68053514366424,
+        "max_voltage_pu": 1.0772990339819524,
+        "min_voltage_pu": 0.9830373831419732,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.59,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.64109259204405,
+        "max_voltage_pu": 1.072866142425136,
+        "min_voltage_pu": 0.9830374767937278,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.485,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.39971074974089,
+        "max_voltage_pu": 1.0767931358628549,
+        "min_voltage_pu": 0.9830379822226205,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.411,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.5795068150924,
+        "max_voltage_pu": 1.0740736935264137,
+        "min_voltage_pu": 0.9830382076799596,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.484,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.18005084896373,
+        "max_voltage_pu": 1.0805649983208787,
+        "min_voltage_pu": 0.9830380427111608,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.576,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.68051327071437,
+        "max_voltage_pu": 1.0738411544413329,
+        "min_voltage_pu": 0.9830375104895365,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 4500.0,
+      "elapsed_s": 4.465,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            0.828729281767956
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            14.0
+          ]
+        ]
+      },
+      "feeder": "kerber_dorf",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 1.0,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 95.68053143949878,
+        "max_voltage_pu": 1.0750491873589136,
+        "min_voltage_pu": 0.983037335625795,
+        "ood_gap": 0.0,
+        "sla_violation_ratio": 0.0,
+        "sla_violation_ratio_test": 0.0,
+        "sla_violation_ratio_train": 0.0,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 0.0,
+        "voltage_violation_dispatch_induced": 1.0,
+        "voltage_violation_ratio": 1.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.285,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.916947861920688,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 49.658860749423425,
+        "max_voltage_pu": 1.0444800333239532,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.08043981481481477,
+        "sla_violation_ratio": 0.5932539682539683,
+        "sla_violation_ratio_test": 0.5243055555555556,
+        "sla_violation_ratio_train": 0.6047453703703703,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.259,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9135149523192297,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 43.22544931141504,
+        "max_voltage_pu": 1.0329897262617833,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.12731481481481477,
+        "sla_violation_ratio": 0.7653769841269841,
+        "sla_violation_ratio_test": 0.65625,
+        "sla_violation_ratio_train": 0.7835648148148148,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.305,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9193623784592371,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 46.43480734423563,
+        "max_voltage_pu": 1.0363298836881227,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.08622685185185186,
+        "sla_violation_ratio": 0.7579365079365079,
+        "sla_violation_ratio_test": 0.6840277777777778,
+        "sla_violation_ratio_train": 0.7702546296296297,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.239,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9263723416100657,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 49.476278909542856,
+        "max_voltage_pu": 1.0531218184070974,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": 0.03530092592592593,
+        "sla_violation_ratio": 0.6364087301587301,
+        "sla_violation_ratio_test": 0.6666666666666666,
+        "sla_violation_ratio_train": 0.6313657407407407,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.047619047619047616
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.129,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9039107260261107,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 46.19423504039792,
+        "max_voltage_pu": 1.0415234519754064,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.02951388888888895,
+        "sla_violation_ratio": 0.7544642857142857,
+        "sla_violation_ratio_test": 0.7291666666666666,
+        "sla_violation_ratio_train": 0.7586805555555556,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.196,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9071079571893904,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 43.22373913043284,
+        "max_voltage_pu": 1.0345305795691924,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.05381944444444442,
+        "sla_violation_ratio": 0.7614087301587301,
+        "sla_violation_ratio_test": 0.7152777777777778,
+        "sla_violation_ratio_train": 0.7690972222222222,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.177,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9132832570088238,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 52.892410130794495,
+        "max_voltage_pu": 1.0543789208628909,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": 0.08217592592592593,
+        "sla_violation_ratio": 0.6344246031746031,
+        "sla_violation_ratio_test": 0.7048611111111112,
+        "sla_violation_ratio_train": 0.6226851851851852,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.07142857142857142
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.186,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9217549923195084,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 43.22544931141504,
+        "max_voltage_pu": 1.035281211367093,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": 0.2934027777777778,
+        "sla_violation_ratio": 0.7380952380952381,
+        "sla_violation_ratio_test": 0.9895833333333334,
+        "sla_violation_ratio_train": 0.6961805555555556,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.141,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9003156623210867,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 46.62057319014,
+        "max_voltage_pu": 1.034285927788919,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": 0.17071759259259267,
+        "sla_violation_ratio": 0.777281746031746,
+        "sla_violation_ratio_test": 0.9236111111111112,
+        "sla_violation_ratio_train": 0.7528935185185185,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.159,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9308337115624645,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 49.546638814563686,
+        "max_voltage_pu": 1.050387175864998,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": 0.04513888888888884,
+        "sla_violation_ratio": 0.6245039682539683,
+        "sla_violation_ratio_test": 0.6631944444444444,
+        "sla_violation_ratio_train": 0.6180555555555556,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.011904761904761904
+      },
+      "n_standby": 3,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.242,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9204366366923148,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 43.22544931141504,
+        "max_voltage_pu": 1.0342673405576555,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.06944444444444442,
+        "sla_violation_ratio": 0.7643849206349206,
+        "sla_violation_ratio_test": 0.7048611111111112,
+        "sla_violation_ratio_train": 0.7743055555555556,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 1,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1800.0,
+      "elapsed_s": 3.206,
+      "error": null,
+      "extras": {},
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M1",
+      "method_label": "M1",
+      "metrics": {
+        "burst_compensation_rate": 0.9083967603434816,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 46.385920242623655,
+        "max_voltage_pu": 1.0396349245430068,
+        "min_voltage_pu": 0.9992269468547088,
+        "ood_gap": -0.02083333333333326,
+        "sla_violation_ratio": 0.7261904761904762,
+        "sla_violation_ratio_test": 0.7083333333333334,
+        "sla_violation_ratio_train": 0.7291666666666666,
+        "standby_pool_size": 3.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 3,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.172,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 48.097403002924466,
+        "max_voltage_pu": 1.0414710905797233,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.02314814814814814,
+        "sla_violation_ratio": 0.3655753968253968,
+        "sla_violation_ratio_test": 0.3854166666666667,
+        "sla_violation_ratio_train": 0.36226851851851855,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 0,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.208,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.67765124285619,
+        "max_voltage_pu": 1.0355199545118106,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": -0.5896990740740741,
+        "sla_violation_ratio": 0.533234126984127,
+        "sla_violation_ratio_test": 0.027777777777777776,
+        "sla_violation_ratio_train": 0.6174768518518519,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 1,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.266,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 47.82621058400091,
+        "max_voltage_pu": 1.0398884534229282,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": -0.04224537037037035,
+        "sla_violation_ratio": 0.42162698412698413,
+        "sla_violation_ratio_test": 0.3854166666666667,
+        "sla_violation_ratio_train": 0.42766203703703703,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 2,
+      "week": 0
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.198,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 50.92138675022806,
+        "max_voltage_pu": 1.0548704456387217,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.3402777777777778,
+        "sla_violation_ratio": 0.2951388888888889,
+        "sla_violation_ratio_test": 0.5868055555555556,
+        "sla_violation_ratio_train": 0.2465277777777778,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.08333333333333333
+      },
+      "n_standby": 4,
+      "pairing": 0,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.172,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.63855670853914,
+        "max_voltage_pu": 1.0394548094464797,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": -0.1342592592592592,
+        "sla_violation_ratio": 0.6359126984126984,
+        "sla_violation_ratio_test": 0.5208333333333334,
+        "sla_violation_ratio_train": 0.6550925925925926,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 1,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.154,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.675957953051416,
+        "max_voltage_pu": 1.0370544601548433,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.14120370370370372,
+        "sla_violation_ratio": 0.5838293650793651,
+        "sla_violation_ratio_test": 0.7048611111111112,
+        "sla_violation_ratio_train": 0.5636574074074074,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 2,
+      "week": 7
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.181,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 51.09122859927302,
+        "max_voltage_pu": 1.0529972685780895,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.12615740740740738,
+        "sla_violation_ratio": 0.43353174603174605,
+        "sla_violation_ratio_test": 0.5416666666666666,
+        "sla_violation_ratio_train": 0.41550925925925924,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.05952380952380952
+      },
+      "n_standby": 4,
+      "pairing": 0,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.158,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.67765124285619,
+        "max_voltage_pu": 1.038684629227238,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.12789351851851855,
+        "sla_violation_ratio": 0.4146825396825397,
+        "sla_violation_ratio_test": 0.5243055555555556,
+        "sla_violation_ratio_train": 0.39641203703703703,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 1,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.214,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 48.056758712624806,
+        "max_voltage_pu": 1.0376898609991725,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.11053240740740744,
+        "sla_violation_ratio": 0.6830357142857143,
+        "sla_violation_ratio_test": 0.7777777777777778,
+        "sla_violation_ratio_train": 0.6672453703703703,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 2,
+      "week": 14
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.223,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 50.958173352950475,
+        "max_voltage_pu": 1.0529972685780895,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.25925925925925924,
+        "sla_violation_ratio": 0.2673611111111111,
+        "sla_violation_ratio_test": 0.4895833333333333,
+        "sla_violation_ratio_train": 0.23032407407407407,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.09523809523809523
+      },
+      "n_standby": 4,
+      "pairing": 0,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.23,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.675957953051416,
+        "max_voltage_pu": 1.0418549270186908,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.04513888888888884,
+        "sla_violation_ratio": 0.5654761904761905,
+        "sla_violation_ratio_test": 0.6041666666666666,
+        "sla_violation_ratio_train": 0.5590277777777778,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 2,
+      "week": 21
+    },
+    {
+      "alpha": 0.7,
+      "design_cost": 1850.0,
+      "elapsed_s": 3.301,
+      "error": null,
+      "extras": {
+        "expected_loss_per_axis": [
+          [
+            "commute",
+            3.7928176795580093
+          ]
+        ],
+        "threshold_per_axis": [
+          [
+            "commute",
+            5.6000000000000005
+          ]
+        ]
+      },
+      "feeder": "kerber_landnetz",
+      "infeasible": false,
+      "method": "M9",
+      "method_label": "M9-bayes",
+      "metrics": {
+        "burst_compensation_rate": 0.9464285714285714,
+        "line_overload_ratio": 0.0,
+        "max_line_load_pct": 44.67765124285619,
+        "max_voltage_pu": 1.0321645866582094,
+        "min_voltage_pu": 0.9999675395543368,
+        "ood_gap": 0.24942129629629628,
+        "sla_violation_ratio": 0.39037698412698413,
+        "sla_violation_ratio_test": 0.6041666666666666,
+        "sla_violation_ratio_train": 0.35474537037037035,
+        "standby_pool_size": 4.0,
+        "voltage_violation_baseline_only": 1.0,
+        "voltage_violation_dispatch_induced": 0.0,
+        "voltage_violation_ratio": 0.0
+      },
+      "n_standby": 4,
+      "pairing": 1,
+      "week": 21
+    }
+  ]
+}
