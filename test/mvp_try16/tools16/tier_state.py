@@ -55,28 +55,31 @@ def apply_drop(s: TierState, t: float, d_drop: int = 1) -> TierState:
     )
 
 
-def maybe_promote(s: TierState, t: float, dt_up_s: float) -> TierState:
+def maybe_promote(s: TierState, t: float, dt_up_s: float,
+                  k_max: int = K_MAX) -> TierState:
     """If sustained online >= dt_up_s, promote one tier (slow)."""
-    if s.tier >= K_MAX:
+    if s.tier >= k_max:
         return s
     if (t - s.last_promotion_t) < dt_up_s:
         return s
     return TierState(
         der_id=s.der_id,
-        tier=min(K_MAX, s.tier + 1),
+        tier=min(k_max, s.tier + 1),
         last_promotion_t=t,
         last_drop_t=s.last_drop_t,
         n_drops=s.n_drops,
     )
 
 
-def init_pool_state(pool_ids: tuple[str, ...]) -> dict[str, TierState]:
-    return {d: TierState(der_id=d) for d in pool_ids}
+def init_pool_state(pool_ids: tuple[str, ...],
+                    k_max: int = K_MAX) -> dict[str, TierState]:
+    return {d: TierState(der_id=d, tier=k_max) for d in pool_ids}
 
 
-def tier_summary(state: dict[str, TierState]) -> dict[int, int]:
+def tier_summary(state: dict[str, TierState],
+                 k_max: int = K_MAX) -> dict[int, int]:
     """Return histogram tier -> count."""
-    h = {k: 0 for k in range(1, K_MAX + 1)}
+    h = {k: 0 for k in range(1, k_max + 1)}
     for s in state.values():
         h[s.tier] += 1
     return h
