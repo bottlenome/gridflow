@@ -56,8 +56,20 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
 | `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs |
+| `gridflow sweep --plan <sweep_plan.yaml>` | Run a parameter sweep |
+| `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
+| `gridflow export paper <comparison.json> -o <dir>` | Paper-ready artifacts: LaTeX table, CSV, matplotlib script, caption |
 
 All commands accept `--format plain|json|table`.
+
+### Paper export (publication workflow)
+
+`gridflow export paper` turns a comparison result into artifacts you can
+drop into a paper (booktabs LaTeX table with best values in bold and 95% CI
+brackets, a flat `data.csv`, a standalone matplotlib script, and a caption
+template auto-describing the experiment conditions). It accepts either the
+JSON written by `gridflow benchmark --output` or a canonical comparison
+table JSON (methods x metrics with mean / CI).
 
 ## For contributors (local development)
 
