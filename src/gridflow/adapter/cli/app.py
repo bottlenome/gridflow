@@ -439,6 +439,39 @@ def scenario_get(pack_id: str = _PACK_ID_ARG) -> None:
     typer.echo(ctx.formatter.render(pack.to_dict()))
 
 
+_CLONE_NEW_ID_OPT = typer.Option(..., "--id", help="pack_id for the clone")
+
+
+@scenario_app.command("clone")
+def scenario_clone(
+    pack_id: str = _PACK_ID_ARG,
+    new_id: str = _CLONE_NEW_ID_OPT,
+) -> None:
+    """Clone a registered pack under a new pack_id (AS-5 baseline workflow).
+
+    The clone keeps all content and the citation, drops the baseline flag,
+    records ``cloned_from`` provenance, and is registered immediately so the
+    researcher can edit parameters and run a comparison experiment.
+    """
+    ctx = _build_context()
+    try:
+        original = ctx.registry.get(pack_id)
+        registered = ctx.registry.register(original.clone(new_id))
+    except GridflowError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        ctx.formatter.render(
+            {
+                "pack_id": registered.pack_id,
+                "cloned_from": registered.cloned_from,
+                "baseline": registered.metadata.baseline,
+                "status": registered.status.value,
+            }
+        )
+    )
+
+
 @app.command("run")
 def run_command(
     pack_id: str = _RUN_PACK_ARG,

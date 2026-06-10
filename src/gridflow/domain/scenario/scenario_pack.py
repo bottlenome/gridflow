@@ -37,6 +37,10 @@ class PackMetadata:
         connector: Connector name to use.
         seed: Random seed for reproducibility.
         parameters: Additional parameters.
+        baseline: True if this pack is an official baseline researchers
+            are expected to clone and compare against (AS-5 (1)).
+        citation: Bibliographic reference for the baseline (paper /
+            dataset the pack reproduces); empty when not applicable.
     """
 
     name: str
@@ -47,6 +51,8 @@ class PackMetadata:
     connector: str
     seed: int | None = None
     parameters: Params = ()
+    baseline: bool = False
+    citation: str = ""
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation."""
@@ -59,6 +65,8 @@ class PackMetadata:
             "connector": self.connector,
             "seed": self.seed,
             "parameters": params_to_dict(self.parameters),
+            "baseline": self.baseline,
+            "citation": self.citation,
         }
 
 
@@ -79,6 +87,9 @@ class ScenarioPack:
         timeseries_dir: Path to time series data directory.
         config_dir: Path to configuration directory.
         status: Current lifecycle status.
+        cloned_from: ``pack_id`` of the pack this one was cloned from
+            (provenance for baseline-comparison studies, AS-5 (1));
+            empty for packs created from scratch.
     """
 
     pack_id: str
@@ -89,6 +100,7 @@ class ScenarioPack:
     timeseries_dir: Path
     config_dir: Path
     status: PackStatus = PackStatus.DRAFT
+    cloned_from: str = ""
 
     def with_status(self, new_status: PackStatus) -> ScenarioPack:
         """Return a copy of this pack with ``status`` replaced.
@@ -99,6 +111,35 @@ class ScenarioPack:
         from dataclasses import replace
 
         return replace(self, status=new_status)
+
+    def clone(self, new_pack_id: str) -> ScenarioPack:
+        """Return a derivative copy of this pack under a new identity.
+
+        AS-5 (1): researchers clone a baseline pack and swap in their own
+        method to write comparison papers. The clone keeps all content and
+        the ``citation`` (provenance), but:
+
+        * starts in ``DRAFT`` status,
+        * is never itself a baseline (``metadata.baseline = False``),
+        * records this pack's ``pack_id`` in ``cloned_from``.
+
+        Raises:
+            PackValidationError: If ``new_pack_id`` is empty or identical
+                to this pack's ``pack_id``.
+        """
+        from dataclasses import replace
+
+        if not new_pack_id:
+            raise PackValidationError("clone: new_pack_id must not be empty")
+        if new_pack_id == self.pack_id:
+            raise PackValidationError(f"clone: new_pack_id must differ from the original pack_id '{self.pack_id}'")
+        return replace(
+            self,
+            pack_id=new_pack_id,
+            metadata=replace(self.metadata, baseline=False),
+            status=PackStatus.DRAFT,
+            cloned_from=self.pack_id,
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary representation (JSON-serialisable)."""
@@ -111,6 +152,7 @@ class ScenarioPack:
             "timeseries_dir": str(self.timeseries_dir),
             "config_dir": str(self.config_dir),
             "status": self.status.value,
+            "cloned_from": self.cloned_from,
         }
 
     def validate(self) -> None:

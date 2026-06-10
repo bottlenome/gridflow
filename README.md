@@ -53,6 +53,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow scenario register <pack.yaml>` | Register a Scenario Pack |
 | `gridflow scenario list` | List registered packs |
 | `gridflow scenario get <pack_id>` | Show a single pack |
+| `gridflow scenario clone <pack_id> --id <new_id>` | Clone a baseline pack to start a comparison study |
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
 | `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs |
@@ -70,6 +71,14 @@ brackets, a flat `data.csv`, a standalone matplotlib script, and a caption
 template auto-describing the experiment conditions). It accepts either the
 JSON written by `gridflow benchmark --output` or a canonical comparison
 table JSON (methods x metrics with mean / CI).
+
+### Baseline packs (comparison studies)
+
+Packs can be marked `baseline: true` with a `citation` in `pack.yaml`
+(e.g. `examples/ieee13/`). Clone a baseline with
+`gridflow scenario clone <pack_id> --id <your_id>`, edit the parameters or
+swap in your own method, and run both packs — the clone records
+`cloned_from` provenance so the comparison stays traceable.
 
 ## For contributors (local development)
 
