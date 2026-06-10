@@ -36,9 +36,11 @@ from gridflow.adapter.cli.evaluate_dsl import (
 )
 from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
+from gridflow.adapter.export import PaperExporter, load_comparison_table_json
 from gridflow.domain.error import (
     ConfigError,
     ExperimentNotFoundError,
+    ExportError,
     GridflowError,
     PackNotFoundError,
 )
@@ -81,6 +83,12 @@ app = typer.Typer(
 
 scenario_app = typer.Typer(help="Manage Scenario Packs.", no_args_is_help=True)
 app.add_typer(scenario_app, name="scenario")
+
+export_app = typer.Typer(
+    help="Export results into publication-ready artifacts.",
+    no_args_is_help=True,
+)
+app.add_typer(export_app, name="export")
 
 
 # Typer default singletons (ruff B008: Option/Argument must not be inline defaults).
@@ -521,6 +529,41 @@ def benchmark_command(
         typer.echo(ctx.report_gen.render_comparison_text(report))
     else:
         typer.echo(ctx.formatter.render(report.to_dict()))
+
+
+_EXPORT_INPUT_ARG = typer.Argument(
+    ...,
+    exists=True,
+    readable=True,
+    help="Comparison JSON: canonical table or `gridflow benchmark --output` report",
+)
+_EXPORT_OUTPUT_OPT = typer.Option(
+    Path("paper_export"),
+    "--output",
+    "-o",
+    help="Directory to write the artifacts into",
+)
+
+
+@export_app.command("paper")
+def export_paper_command(
+    input_json: Path = _EXPORT_INPUT_ARG,
+    output: Path = _EXPORT_OUTPUT_OPT,
+) -> None:
+    """Export a comparison result into paper-ready artifacts (AS-5).
+
+    Writes ``table.tex`` (booktabs comparison table, best values bold),
+    ``data.csv``, ``plot_comparison.py`` (matplotlib, reads data.csv)
+    and ``caption.txt`` (caption template with experiment conditions).
+    """
+    try:
+        table = load_comparison_table_json(input_json)
+        written = PaperExporter().export(table, output)
+    except ExportError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    for path in written:
+        typer.echo(str(path))
 
 
 @app.command("sweep")
