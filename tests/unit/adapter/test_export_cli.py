@@ -38,9 +38,7 @@ class TestExportPaper:
         src = tmp_path / "table.json"
         src.write_text(json.dumps(_TABLE), encoding="utf-8")
         out_dir = tmp_path / "paper"
-        result = runner.invoke(
-            app, ["export", "paper", str(src), "--output", str(out_dir)]
-        )
+        result = runner.invoke(app, ["export", "paper", str(src), "--output", str(out_dir)])
         assert result.exit_code == 0, result.output
         assert (out_dir / "table.tex").exists()
         assert (out_dir / "data.csv").exists()
@@ -50,8 +48,6 @@ class TestExportPaper:
     def test_export_paper_rejects_bad_schema(self, tmp_path: Path) -> None:
         src = tmp_path / "bad.json"
         src.write_text(json.dumps({"foo": 1}), encoding="utf-8")
-        result = runner.invoke(
-            app, ["export", "paper", str(src), "--output", str(tmp_path / "o")]
-        )
+        result = runner.invoke(app, ["export", "paper", str(src), "--output", str(tmp_path / "o")])
         assert result.exit_code == 1
         assert "E-30008" in result.output

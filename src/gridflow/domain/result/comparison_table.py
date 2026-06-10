@@ -43,9 +43,7 @@ class MetricSpec:
         if not self.name:
             raise CDLValidationError("MetricSpec.name must be non-empty")
         if self.objective not in _OBJECTIVES:
-            raise CDLValidationError(
-                f"MetricSpec.objective must be one of {_OBJECTIVES}, got {self.objective!r}"
-            )
+            raise CDLValidationError(f"MetricSpec.objective must be one of {_OBJECTIVES}, got {self.objective!r}")
 
     def to_dict(self) -> dict[str, object]:
         return {"name": self.name, "unit": self.unit, "objective": self.objective}
@@ -73,18 +71,9 @@ class MetricValue:
 
     def __post_init__(self) -> None:
         if (self.ci_low is None) != (self.ci_high is None):
-            raise CDLValidationError(
-                "MetricValue: ci_low and ci_high must be both present or both absent"
-            )
-        if (
-            self.ci_low is not None
-            and self.ci_high is not None
-            and not (self.ci_low <= self.mean <= self.ci_high)
-        ):
-            raise CDLValidationError(
-                f"MetricValue: CI [{self.ci_low}, {self.ci_high}] "
-                f"must bracket mean {self.mean}"
-            )
+            raise CDLValidationError("MetricValue: ci_low and ci_high must be both present or both absent")
+        if self.ci_low is not None and self.ci_high is not None and not (self.ci_low <= self.mean <= self.ci_high):
+            raise CDLValidationError(f"MetricValue: CI [{self.ci_low}, {self.ci_high}] must bracket mean {self.mean}")
         if not math.isfinite(self.mean):
             raise CDLValidationError("MetricValue.mean must be finite")
 
@@ -173,18 +162,14 @@ class ComparisonTable:
         if len(names) != len(set(names)):
             raise CDLValidationError("ComparisonTable: duplicate method names in rows")
         if self.highlight and self.highlight not in names:
-            raise CDLValidationError(
-                f"ComparisonTable.highlight {self.highlight!r} is not a row method"
-            )
+            raise CDLValidationError(f"ComparisonTable.highlight {self.highlight!r} is not a row method")
 
     def best_method(self, metric_index: int) -> str:
         """Return the method with the best mean for the given metric column."""
         if not self.rows:
             raise CDLValidationError("ComparisonTable.best_method: table has no rows")
         spec = self.metrics[metric_index]
-        key = (min if spec.objective == "min" else max)(
-            self.rows, key=lambda row: row.values[metric_index].mean
-        )
+        key = (min if spec.objective == "min" else max)(self.rows, key=lambda row: row.values[metric_index].mean)
         return key.method
 
     def to_dict(self) -> dict[str, object]:
@@ -202,8 +187,6 @@ class ComparisonTable:
             title=str(data.get("title", "")),
             metrics=tuple(MetricSpec.from_dict(m) for m in data.get("metrics", ())),
             rows=tuple(MethodRow.from_dict(r) for r in data.get("rows", ())),
-            conditions=tuple(
-                (str(k), str(v)) for k, v in data.get("conditions", ())
-            ),
+            conditions=tuple((str(k), str(v)) for k, v in data.get("conditions", ())),
             highlight=str(data.get("highlight", "")),
         )

@@ -31,16 +31,9 @@ def comparison_table_from_benchmark_report(data: dict[str, Any]) -> ComparisonTa
         baseline = str(data["baseline"])
         candidate = str(data["candidate"])
         metric_entries = list(data["metrics"])
-        specs = tuple(
-            MetricSpec(name=str(m["name"]), unit="", objective="min")
-            for m in metric_entries
-        )
-        baseline_values = tuple(
-            MetricValue(mean=float(m["baseline"])) for m in metric_entries
-        )
-        candidate_values = tuple(
-            MetricValue(mean=float(m["candidate"])) for m in metric_entries
-        )
+        specs = tuple(MetricSpec(name=str(m["name"]), unit="", objective="min") for m in metric_entries)
+        baseline_values = tuple(MetricValue(mean=float(m["baseline"])) for m in metric_entries)
+        candidate_values = tuple(MetricValue(mean=float(m["candidate"])) for m in metric_entries)
     except (KeyError, TypeError, ValueError) as exc:
         raise ExportError(
             f"benchmark comparison report is malformed: {exc!r}. "
@@ -78,9 +71,7 @@ def load_comparison_table_json(path: Path) -> ComparisonTable:
     except (OSError, json.JSONDecodeError) as exc:
         raise ExportError(f"cannot read comparison JSON from {path}: {exc}") from exc
     if not isinstance(data, dict):
-        raise ExportError(
-            f"comparison JSON at {path} must be an object, got {type(data).__name__}"
-        )
+        raise ExportError(f"comparison JSON at {path} must be an object, got {type(data).__name__}")
     if _is_benchmark_report(data):
         return comparison_table_from_benchmark_report(data)
     if _is_canonical_table(data):

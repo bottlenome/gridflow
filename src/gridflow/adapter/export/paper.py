@@ -189,10 +189,8 @@ class CaptionRenderer:
     def render(self, table: ComparisonTable) -> str:
         methods = ", ".join(row.method for row in table.rows)
         lines = [
-            f"{table.title}. Comparison of {len(table.rows)} methods "
-            f"({methods}).",
-            "Error bounds are 95% confidence intervals; "
-            "the best value per metric is shown in bold.",
+            f"{table.title}. Comparison of {len(table.rows)} methods ({methods}).",
+            "Error bounds are 95% confidence intervals; the best value per metric is shown in bold.",
         ]
         if table.highlight:
             lines.append(f"{table.highlight} is the proposed method.")
