@@ -185,6 +185,12 @@ class ConnectorRequestError(ConnectorError):
     error_code = "E-30007"
 
 
+class ExportError(AdapterError):
+    """Paper / data export failure (malformed input, unknown schema)."""
+
+    error_code = "E-30008"
+
+
 # === Infrastructure layer errors (E-40xxx) ===
 
 

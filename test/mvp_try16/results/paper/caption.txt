@@ -1,0 +1,4 @@
+VPP standby selection under heavy-tail churn (ACN-Data). Comparison of 5 methods (M1, M10, M11, Fang, Singh).
+Error bounds are 95% confidence intervals; the best value per metric is shown in bold.
+M11 is the proposed method.
+Experiment conditions: datasets: ACN-Data Caltech 2019-01..03 + JPL 2019-01; n_cells: 480; perm_seeds: 12; sla_alphas: 0.1, 0.2; bootstrap: percentile, n=2000.

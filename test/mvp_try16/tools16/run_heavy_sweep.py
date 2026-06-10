@@ -40,9 +40,12 @@ from tools16.baselines_lit import (  # noqa: E402
 )
 from tools16.heavy_tail_fit import HeavyTailFit, design_hysteresis  # noqa: E402
 from tools16.m11_selection import select_m11  # noqa: E402
+from tools16.stable_hash import stable_hash  # noqa: E402
 from tools16.tier_state import (  # noqa: E402
-    TierState, apply_drop, init_pool_state, maybe_promote,
+    K_MAX, TierState, apply_drop, init_pool_state, maybe_promote,
 )
+
+METHODS_ALL = ("M1", "M10", "M11", "Fang", "Singh")
 
 
 AXES = ("commute", "weather", "market", "comm_fault", "cold_snap")
@@ -64,11 +67,16 @@ class CellResult:
 
 def _build_pool_with_caps(pool_ids: tuple[str, ...],
                           rng: random.Random) -> tuple[tuple[str, float, float, float], ...]:
-    """Assign deterministic capacity (kW) and cost ($/kW) and tau (s) per stationID."""
+    """Assign deterministic capacity (kW) and cost ($/kW) and tau (s) per stationID.
+
+    Uses :func:`stable_hash` (SHA-256) — builtin ``hash`` is salted per
+    process and silently broke cross-run reproducibility in the
+    pre-revision sweep.
+    """
     out: list[tuple[str, float, float, float]] = []
-    # Synthetic but deterministic mapping (station id hash -> features)
+    # Synthetic but deterministic mapping (station id digest -> features)
     for sid in pool_ids:
-        h = abs(hash(sid))
+        h = stable_hash(sid)
         cap = 6.0 + (h % 30)            # 6..35 kW
         cost = 1.5 + ((h // 31) % 25) / 10.0  # 1.5..3.9 $/kW
         # tau: 5 type buckets matching try15 DEFAULT_TAU_DROP_S
@@ -116,6 +124,9 @@ def simulate_one_method(
     burst_kw: dict[str, float],
     exposure: dict[str, frozenset[str]],
     fit: HeavyTailFit,
+    k_max: int = K_MAX,
+    active_resample_every: int | None = None,
+    active_seed: int = 0,
 ) -> tuple[float, float, float, float, float, int]:
     """Causal replay of events with *committed-standby-drop* violation model.
 
@@ -139,14 +150,20 @@ def simulate_one_method(
     pool_with_tau = pool_caps
     cap_lookup = {d: c for (d, c, _, _) in pool_with_tau}
     if method == "M11":
-        tier = init_pool_state(pool_ids)
+        tier = init_pool_state(pool_ids, k_max=k_max)
     elif method == "Fang":
         fang = fang_init(pool_ids)
     elif method == "Singh":
         singh = singh_init(pool_ids)
     last_online_t: dict[str, float] = {d: events[0].t_drop if events else 0.0
                                        for d in pool_ids}
-    active_ids = frozenset(pool_ids[:max(2, len(pool_ids) // 10)])
+    n_active = max(2, len(pool_ids) // 10)
+    active_ids = frozenset(pool_ids[:n_active])
+    # Dynamic-active extension: the active set itself churns — every
+    # `active_resample_every` events it is re-drawn (deterministically
+    # from `active_seed`) from the full pool, so standby members get
+    # pulled into active duty and vice versa.
+    active_rng = random.Random(active_seed)
 
     # Initial standby set selection (before any drops)
     def _select(method_name: str,
@@ -163,7 +180,7 @@ def simulate_one_method(
             sol = select_m11(
                 pool=pool_no_tau, active_ids=active_ids,
                 burst_kw_per_axis=burst_kw, exposure_per_axis=exposure,
-                tier_state=tier,
+                tier_state=tier, k_max=k_max,
             )
             return sol.standby_ids, sol.objective_cost, sol.feasible
         if method_name == "Fang":
@@ -191,7 +208,7 @@ def simulate_one_method(
         # 1. metric A: is the dropping DER in committed standby?
         is_committed_drop = ev.der_id in standby_set
         # 2. metric B: unmet kW on this event's trigger axis
-        ax = AXES[hash(ev.der_id) % len(AXES)]
+        ax = AXES[stable_hash(ev.der_id) % len(AXES)]
         burst_required = burst_kw[ax]
         cov = sum(cap_lookup[d] for d in standby_set
                   if d != ev.der_id and d not in exposure.get(ax, frozenset()))
@@ -208,7 +225,8 @@ def simulate_one_method(
             tier[ev.der_id] = apply_drop(tier[ev.der_id], ev.t_drop,
                                          d_drop=fit.d_drop)
             for d in pool_ids:
-                tier[d] = maybe_promote(tier[d], ev.t_drop, fit.dt_up_s)
+                tier[d] = maybe_promote(tier[d], ev.t_drop, fit.dt_up_s,
+                                        k_max=k_max)
         elif method == "Fang":
             fang[ev.der_id] = fang_update_drop(fang[ev.der_id])
         elif method == "Singh":
@@ -217,7 +235,10 @@ def simulate_one_method(
             t_recover = ev.t_drop + 3600.0
             singh[ev.der_id] = singh_register_recovery(singh[ev.der_id], 3600.0)
             last_online_t[ev.der_id] = t_recover
-        # 4. Re-select committed standby for next event
+        # 4. Dynamic-active churn: periodically re-draw the active set
+        if active_resample_every and n_events % active_resample_every == 0:
+            active_ids = frozenset(active_rng.sample(list(pool_ids), n_active))
+        # 5. Re-select committed standby for next event
         standby, cost, _ = _select(method, ev.t_drop)
         standby_set = set(standby)
         cost_running_sum += cost
@@ -237,6 +258,9 @@ def run_sweep(
     csv_paths: tuple[Path, ...],
     n_perm: int = 12,
     alphas: tuple[float, ...] = (0.10, 0.20),
+    methods: tuple[str, ...] = METHODS_ALL,
+    k_max: int = K_MAX,
+    active_resample_every: int | None = None,
 ) -> list[CellResult]:
     results: list[CellResult] = []
     for csv_path in csv_paths:
@@ -255,11 +279,14 @@ def run_sweep(
             exposure = _build_axis_exposure(pool_ids, perm_seed)
             for alpha in alphas:
                 burst = _burst_kw(pool_caps, alpha)
-                for method in ("M1", "M10", "M11", "Fang", "Singh"):
+                for method in methods:
                     cd, cg, av, c_avg, p99, n_ev = simulate_one_method(
                         method,
                         events=events, pool_caps=pool_caps, pool_ids=pool_ids,
                         burst_kw=burst, exposure=exposure, fit=fit,
+                        k_max=k_max,
+                        active_resample_every=active_resample_every,
+                        active_seed=perm_seed,
                     )
                     results.append(CellResult(
                         dataset=csv_path.stem, alpha_sla=alpha,
@@ -342,6 +369,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=str, default=str(_ROOT / "results"))
     parser.add_argument("--n-perm", type=int, default=12)
+    parser.add_argument("--k-max", type=int, default=K_MAX,
+                        help="M11 tier count K (sensitivity sweeps)")
+    parser.add_argument("--active-resample-every", type=int, default=0,
+                        help="If > 0, re-draw the active set every N events "
+                             "(dynamic active+standby churn scenario)")
+    parser.add_argument("--out-name", type=str, default="try16_heavy_sweep.json")
     args = parser.parse_args(argv)
     out_dir = Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -349,8 +382,12 @@ def main(argv: list[str] | None = None) -> int:
     if not csv_paths:
         print("[try16] no ACN csv found", file=sys.stderr)
         return 2
-    print(f"[try16] heavy sweep over {len(csv_paths)} ACN datasets, n_perm={args.n_perm}")
-    results = run_sweep(csv_paths=csv_paths, n_perm=args.n_perm)
+    resample = args.active_resample_every or None
+    print(f"[try16] heavy sweep over {len(csv_paths)} ACN datasets, "
+          f"n_perm={args.n_perm} k_max={args.k_max} "
+          f"active_resample_every={resample}")
+    results = run_sweep(csv_paths=csv_paths, n_perm=args.n_perm,
+                        k_max=args.k_max, active_resample_every=resample)
     summary = summarise(results)
     payload = {
         "config": {
@@ -358,16 +395,19 @@ def main(argv: list[str] | None = None) -> int:
             "axes": list(AXES),
             "datasets": [str(p) for p in csv_paths],
             "regime": "ACN-Data Caltech 2019 Q1 (3 months) + JPL 2019-01",
+            "k_max": args.k_max,
+            "active_resample_every": resample,
+            "hash": "sha256 stable_hash (process-independent)",
         },
         "summary": summary,
         "cells": [asdict(r) for r in results],
     }
-    out_file = out_dir / "try16_heavy_sweep.json"
+    out_file = out_dir / args.out_name
     out_file.write_text(json.dumps(payload, indent=2))
     print(f"[try16] wrote {out_file} ({len(results)} cells)")
     print("--- summary ---")
     pm = summary["per_method"]
-    for m in ("M1", "M10", "M11", "Fang", "Singh"):
+    for m in METHODS_ALL:
         if m not in pm:
             continue
         s = pm[m]

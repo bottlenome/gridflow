@@ -41,6 +41,7 @@ def select_m11(
     burst_kw_per_axis: dict[str, float],
     exposure_per_axis: dict[str, frozenset[str]],
     tier_state: dict[str, TierState],
+    k_max: int = K_MAX,
 ) -> M11Solution:
     """Greedy tier-priority selection.
 
@@ -60,7 +61,7 @@ def select_m11(
         (d, cap, cost) for (d, cap, cost) in pool if d not in active_ids
     ]
     by_tier: dict[int, list[tuple[str, float, float]]] = {
-        k: [] for k in range(1, K_MAX + 1)
+        k: [] for k in range(1, k_max + 1)
     }
     for d, cap, cost in eligible:
         t = tier_state.get(d, TierState(der_id=d)).tier
@@ -79,7 +80,7 @@ def select_m11(
         return all(coverage[ax] >= burst_kw_per_axis[ax]
                    for ax in burst_kw_per_axis)
 
-    for tier in range(K_MAX, 0, -1):
+    for tier in range(k_max, 0, -1):
         if _all_axes_covered():
             break
         for d, cap, cost in by_tier[tier]:
@@ -97,7 +98,7 @@ def select_m11(
     standby_ids = tuple(d for d, _, _ in chosen)
     cost_total = float(sum(cost for _, _, cost in chosen))
 
-    th: dict[int, int] = {k: 0 for k in range(1, K_MAX + 1)}
+    th: dict[int, int] = {k: 0 for k in range(1, k_max + 1)}
     for d in standby_ids:
         th[tier_state.get(d, TierState(der_id=d)).tier] += 1
     return M11Solution(

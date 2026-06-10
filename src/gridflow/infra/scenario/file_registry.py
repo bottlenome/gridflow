@@ -123,6 +123,8 @@ class FileScenarioRegistry(ScenarioRegistry):
             connector=meta_raw["connector"],
             seed=meta_raw.get("seed"),
             parameters=as_params(meta_raw.get("parameters") or {}),
+            baseline=bool(meta_raw.get("baseline", False)),
+            citation=str(meta_raw.get("citation", "") or ""),
         )
         return ScenarioPack(
             pack_id=data["pack_id"],
@@ -133,4 +135,5 @@ class FileScenarioRegistry(ScenarioRegistry):
             timeseries_dir=Path(data["timeseries_dir"]),
             config_dir=Path(data["config_dir"]),
             status=PackStatus(data["status"]),
+            cloned_from=str(data.get("cloned_from", "") or ""),
         )

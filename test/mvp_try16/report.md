@@ -1,6 +1,6 @@
 # try16 — Tier-Hysteresis Reliability Bonding for Heavy-Tail VPP Standby
 
-実施: 2026-05-06 (差替え版)
+実施: 2026-05-06 (差替え版) / 2026-06-10 (revision)
 著者: 仮想研究者 (gridflow MVP virtual scientist)
 位置づけ: PWRS / IEEE T-SG 級論文の MVP 草稿、CLAUDE.md §0.1 妥協なき 1-cycle
 
@@ -15,12 +15,15 @@ $\tau$-diversification) は SLA 違反 tail を制御できない。本論文で
 **Tier-Hysteresis Reliability Bonding (THRB, M11)** を提案する。各 DER は離散 tier
 $T_j \in \{$ Probation, Bronze, Silver, Gold $\}$ を online 保持し、drop で速降格・継続稼働で遅昇格する。
 ACN-Data Caltech 2019 Q1 + JPL Q1 (4 datasets, 4242 charging sessions, 198 unique stations)
-の実 churn 系列で 480 cell sweep を実行し、commit-drop probability (= dispatched standby
-DER が drop する確率) を M1/M10 比 1.4-1.9 倍 (CI 完全分離) 改善することを示す。
-連続スコア手法 (Fang 2015 reputation, Singh 2010 Markov reliability) は平均 commit-drop で
-M11 を上回るが、tail (P99 unmet kW) では M11 と同等。Theorem 4 で重尾 Pareto $\alpha < 2$ 下の
-commit-drop 確率を $|S|/N \cdot N^{-(\alpha-1)/\alpha}$ で解析的に bound し、closed-form 設計則
-(Theorem 5) と MIMO admissibility (Theorem 6) を提示する。
+の実 churn 系列で 1,536 cell sweep (本比較 480 + K sensitivity 576 + 動的 churn 480) を実行し、
+commit-drop probability (= dispatched standby DER が drop する確率) を M1/M10 比 1.27-1.78 倍
+(全条件 CI 完全分離) 改善することを示す。tier 数 $K$ は設計時 only 性能と連続スコア性能を
+滑らかに補間するノブであり (Theorem 8 (iv))、$K=4$ で M1→連続スコア (Fang 2015) ギャップの
+75% を 4 状態の監査可能 state machine だけで回収、$K=16$ で Fang と統計的に区別不能 (99.7% 回収)
+となる。Theorem 4 で重尾 Pareto $\alpha < 2$ 下の commit-drop 確率を
+$|S|/N \cdot N^{-(\alpha-1)/\alpha}$ で解析的に bound (Theorem 4′ で sharpened)、closed-form 設計則
+(Theorem 5)、MIMO admissibility (Theorem 6)、Foster–Lyapunov 閉ループ保証と $K$-線形適応ラグ
+(Theorem 8) を提示する。active set 自体が churn する動的シナリオでも改善幅は保存される (1.39-1.46×)。
 
 ---
 
@@ -59,11 +62,12 @@ dispatch は tier-priority lex order: tier-K (Gold) 機を最優先、ties は c
 ### 1.4 Contributions
 
 1. **M11 (THRB) 設計則**: Pareto $\alpha$ 自動推定からの $d_{\text{drop}}, \Delta t_{\text{up}}$ closed-form 設計 ($\S 4$, theorems.md $\S 4$)
-2. **Theorem 4** — heavy-tail $\alpha < 2$ 下の commit-drop probability $|S|/N \cdot N^{-(\alpha-1)/\alpha}$ tight bound (theorems.md $\S 3$)
+2. **Theorem 4 / 4′** — heavy-tail $\alpha < 2$ 下の commit-drop probability $|S|/N \cdot N^{-(\alpha-1)/\alpha}$ bound と order-statistics model 下の sharpened bound $((s+1)/N)^{(\alpha+1)/\alpha}$ ($C=1$) (theorems.md $\S 3$, $\S 3b$)
 3. **Theorem 5** — design rule $d_{\text{drop}} = \lceil 1/\alpha \rceil$, $\Delta t_{\text{up}} = c \cdot Q_{99}(X)$ derivation
-4. **Theorem 6** — MIMO admissibility (= state machine の global pool dynamics 有界性、PWRS reviewer M-1 応答)
-5. **480-cell empirical sweep on real ACN-Data**: M11 vs M1/M10 commit-drop CI 完全分離 1.4-1.9× 改善、Fang/Singh とは tail (P99) で同等
-6. **方針**: gridflow 自体は contribution として claim しない (policy §3.1)
+4. **Theorem 6 / 8** — MIMO admissibility + Foster–Lyapunov drift による閉ループ positive recurrence、$K$-線形 re-entry bound (PWRS reviewer M-1 への完全応答)
+5. **Theorem 8 (iv) $K$-interpolation**: tier 数 $K$ が設計時 only ↔ 連続スコアの性能を単調補間することの理論予言と、$K \in \{2,...,16\}$ empirical sweep (576 cells) による検証 — **$K=4$ でギャップ 75% 回収、$K=16$ で連続スコアと統計的同等**
+6. **1,536-cell empirical sweep on real ACN-Data**: 静的 480 cells で M11 vs M1/M10 commit-drop CI 完全分離 1.27-1.78× 改善、動的 active churn 480 cells でも 1.39-1.46× 改善が保存
+7. **方針**: gridflow 自体は contribution として claim しない (policy §3.1)
 
 ---
 
@@ -169,9 +173,11 @@ INPUT:  pool, active_ids, burst_kw_per_axis, exposure, tier_state
 theorems.md $\S 3$-$\S 7$ 参照、要点:
 
 - **Theorem 4** (heavy-tail tail bound): $\alpha < 2$ 下、$\Pr[V_{\text{cd}}=1] \leq |S|/N \cdot N^{-(\alpha-1)/\alpha} \cdot C_\alpha$. 同 order で Fang/Singh も到達するが、closed-form bound は M11 のみ
+- **Theorem 4′** (sharpened, revision): hazard order-statistics model 下で $\Pr[V_{\text{cd}}=1] \leq ((|S|+1)/N)^{(\alpha+1)/\alpha}$ ($C = 1$、実験 regime で約 3.5 倍 tight)。適用条件 (perfect history discrimination) は明示
 - **Theorem 5** (design rule): $d_{\text{drop}} = \lceil 1/\alpha \rceil$, $\Delta t_{\text{up}} = 1.5 \cdot Q_{99}$
 - **Theorem 6** (MIMO admissibility): per-DER 有限 Markov × $N$-fold product × global greedy selection の system は bounded、Lyapunov $L(T) = -\sum_j T_j$ で証明
 - **Theorem 7** (comparison): M1/M10 は $|S|/N$、M11/Fang/Singh は $|S|/N \cdot N^{-(\alpha-1)/\alpha}$ で M1/M10 を strict 改善
+- **Theorem 8** (Foster–Lyapunov, revision): drift $\leq -(1 - p_j(1+d_{\text{drop}}))$ により reliable subpopulation は Gold に positive recurrent、re-entry time は $K$ に線形 (= 適応ラグの代償)、閉ループ (selection × product chain) は安定。**(iv) $K \to \infty$ で tier ranking は連続スコア ranking に収束** — §6.7 で empirical 検証
 
 ---
 
@@ -186,9 +192,14 @@ theorems.md $\S 3$-$\S 7$ 参照、要点:
 - **SLA tightness**: $\alpha_{\text{SLA}} \in \{0.10, 0.20\}$ × pool capacity が axis-burst 閾値
 - **Permutation seeds**: 12 (axis-exposure mask, capacity, cost を seed 別に決定論的生成)
 - **Trigger axes**: 5 (commute / weather / market / comm_fault / cold_snap)
-- **Total cells**: 4 datasets × 12 perms × 2 αs × 5 methods = **480 cells**
+- **Total cells**: 本比較 4 datasets × 12 perms × 2 αs × 5 methods = **480 cells**、
+  K sensitivity 576 cells (§6.7)、動的 active churn 480 cells (§6.8) = 計 1,536 cells
 - **Bootstrap**: percentile, $n_{\text{boot}} = 2000$
-- **Reproducibility**: `python -m tools16.run_heavy_sweep --n-perm 12`
+- **Reproducibility**: `python -m tools16.run_heavy_sweep --n-perm 12`。
+  **revision で全合成属性 (capacity/cost/τ/axis 帰属) の導出を builtin `hash` (プロセスごとに
+  salt される、PEP 456) から SHA-256 `stable_hash` に置換** — 置換前の数値はプロセス間で
+  再現不能だった (CRITICAL 級の再現性欠陥)。置換後は同一コマンドの 2 回実行で出力 JSON の
+  SHA-256 が一致することを確認済。本節以降の全数値は stable_hash 版から転記
 
 ### 6.2 Heavy-tail fit (Pareto α MLE)
 
@@ -203,51 +214,97 @@ theorems.md $\S 3$-$\S 7$ 参照、要点:
 
 ### 6.3 Primary metric (commit_drop_frac)
 
+(`results/try16_heavy_sweep.json` summary.per_method から転記)
+
 | Method | n | commit_drop% mean | 95% CI | online state |
 |---|---|---|---|---|
-| **M1** (cost-min, no history) | 96 | **29.30%** | [26.91, 31.99] | × |
-| **M10** ($\tau$-diverse) | 96 | **28.20%** | [25.96, 30.71] | × |
-| **M11** (THRB, ours) | 96 | **19.45%** | [17.01, 21.91] | ✅ discrete tier |
-| Fang 2015 | 96 | 15.67% | [13.46, 18.00] | ✅ continuous |
-| Singh 2010 | 96 | 14.99% | [13.21, 16.85] | ✅ continuous |
+| **M1** (cost-min, no history) | 96 | **25.95%** | [23.42, 28.63] | × |
+| **M10** ($\tau$-diverse) | 96 | **24.11%** | [21.58, 26.84] | × |
+| **M11** (THRB, ours) | 96 | **17.53%** | [14.91, 20.22] | ✅ discrete tier |
+| Fang 2015 | 96 | 14.76% | [12.40, 17.14] | ✅ continuous |
+| Singh 2010 | 96 | 14.09% | [12.18, 16.02] | ✅ continuous |
 
-→ **M11 vs M1**: $1.51\times$ 改善, **CI 完全分離**
-→ **M11 vs M10**: $1.45\times$ 改善, **CI 完全分離**
-→ M11 vs Fang/Singh: 連続 score 法に劣るが、tail metric では同等 (§6.5)
+→ **M11 vs M1**: $1.48\times$ 改善 (25.95/17.53), **CI 完全分離** (20.22 < 23.42)
+→ **M11 vs M10**: $1.38\times$ 改善 (24.11/17.53), **CI 完全分離** (20.22 < 21.58)
+→ M11 vs Fang/Singh: 連続 score 法に平均で劣る (honest)。ただし $K$ を上げると
+  連続スコア性能に漸近する (§6.7、Theorem 8 (iv))
 
 ### 6.4 Per-α breakdown
 
 | α | M1 [CI] | M10 [CI] | **M11 [CI]** | Fang [CI] | Singh [CI] |
 |---|---|---|---|---|---|
-| 0.10 | 20.13% [18.46, 21.93] | 19.55% [18.01, 21.18] | **10.81% [8.85, 12.84]** | 9.32% [7.29, 11.36] | 8.81% [7.46, 10.07] |
-| 0.20 | 38.48% [35.69, 41.52] | 36.84% [34.10, 39.79] | **28.09% [25.41, 30.82]** | 22.01% [19.04, 24.91] | 21.16% [18.93, 23.34] |
+| 0.10 | 15.76% [14.43, 17.18] | 14.91% [13.26, 16.71] | **8.83% [6.88, 10.75]** | 8.55% [6.45, 10.67] | 7.95% [6.56, 9.28] |
+| 0.20 | 36.14% [33.33, 38.99] | 33.30% [30.10, 36.82] | **26.23% [22.77, 29.39]** | 20.96% [17.60, 24.20] | 20.22% [17.69, 22.73] |
 
-→ α=0.10 で **M11 vs M1 = 1.86× CI 完全分離**、α=0.20 で 1.37× CI 完全分離.
+→ α=0.10 で **M11 vs M1 = 1.78×, vs M10 = 1.69×**、α=0.20 で **1.38× / 1.27×** — 全条件 CI 完全分離
+(α=0.10: 10.75 < 13.26; α=0.20: 29.39 < 30.10)。α=0.10 では M11 は Fang と CI 重複 (= 統計的同等)。
 
 ### 6.5 Tail metric — P99 unmet kW (= worst-case violation severity)
 
 | Method | P99 unmet [kW] mean | 95% CI |
 |---|---|---|
-| M1 | 3.57 | [2.20, 5.10] |
-| M10 | 7.44 | [5.91, 9.03] |
-| **M11** | **3.39** | [2.07, 4.88] |
-| Fang | 4.47 | [2.92, 6.11] |
-| Singh | 3.95 | [2.58, 5.37] |
+| M1 | 10.85 | [9.03, 12.75] |
+| M10 | 14.37 | [12.63, 16.07] |
+| **M11** | 8.51 | [6.66, 10.34] |
+| Fang | 8.12 | [6.39, 9.82] |
+| Singh | **6.26** | [4.78, 7.75] |
 
-→ **M11 が tail metric で最低**。Theorem 4 の予言通り、heavy-tail 下では M11 が tail を最も抑える。
-ただし M11 vs Fang/Singh の P99 CI は重複 (= 同等)、M11 vs M10 は分離。
+→ M11 は M10 に対し CI 分離で優位、M1 に対し平均で優位 (CI は一部重複)、Fang とは同等
+(CI 重複)、**Singh が最低**。**Honest correction**: 置換前 (salted hash 版) は「M11 が 5 手法中
+最低 P99」と報告していたが、これは再現不能な属性割当に依存した artifact であり、stable_hash
+版では成立しない。tail に関する主張は「M11 は設計時 only 手法 (M1/M10) より tail を抑え、
+連続スコア手法とは同等以下」に修正する。
 
 ### 6.6 Coverage gap (auxiliary)
 
 | Method | coverage_gap% mean | 95% CI |
 |---|---|---|
-| M1 | 0.86% | [0.57, 1.17] |
-| M10 | 2.80% | [2.32, 3.32] |
-| **M11** | 1.01% | [0.75, 1.28] |
-| Fang | 1.09% | [0.84, 1.36] |
-| Singh | 1.04% | [0.82, 1.25] |
+| M1 | 2.36% | [2.02, 2.72] |
+| M10 | 4.74% | [4.16, 5.36] |
+| **M11** | **1.67%** | [1.39, 1.97] |
+| Fang | 1.44% | [1.21, 1.68] |
+| Singh | 1.34% | [1.16, 1.52] |
 
-→ M10 のみ顕著に高い (= τ-diverse selection が exposure axis に対して非効率)、他は同水準.
+→ M11 は M1 (CI 分離: 1.97 < 2.02) / M10 (大差) より低く、Fang/Singh と CI 重複 (= 同等)。
+M10 のみ顕著に高い (= τ-diverse selection が exposure axis に対して非効率)。
+
+### 6.7 K (tier 数) sensitivity — Theorem 8 (iv) の検証
+
+(`results/try16_k_sensitivity.json`, M11 のみ、96 cells/K、計 576 cells)
+
+| K | commit_drop% [CI] | P99 unmet kW [CI] | M1→Fang ギャップ回収率 |
+|---|---|---|---|
+| 2 | 21.67 [19.24, 24.26] | 10.61 [8.94, 12.36] | 38.2% |
+| 3 | 18.39 [15.86, 21.07] | 9.37 [7.59, 11.10] | 67.5% |
+| **4** | **17.53 [14.91, 20.22]** | **8.51 [6.66, 10.34]** | **75.2%** |
+| 6 | 16.92 [14.34, 19.63] | 8.15 [6.32, 10.01] | 80.7% |
+| 8 | 16.68 [14.13, 19.36] | 8.37 [6.45, 10.22] | 82.8% |
+| 16 | 14.79 [12.43, 17.23] | 8.00 [6.28, 9.72] | 99.7% |
+
+(ギャップ回収率 = (M1 25.95 − M11(K)) / (M1 25.95 − Fang 14.76))
+
+→ **commit_drop は K について単調改善・逓減** (K≥3 同士は CI 重複)。**K=16 で Fang
+(14.76 [12.40, 17.14]) と統計的に区別不能** — Theorem 8 (iv) の「離散 tier ladder は
+K→∞ で連続スコア ranking に収束する」予言と一致。**K=4 はギャップの 75% をわずか
+4 状態の監査可能 state machine で回収**しており、auditability (状態数) と性能の
+trade-off の実用的な knee と位置づけられる。
+
+### 6.8 動的 active churn — active set 自体が入れ替わるシナリオ
+
+(`results/try16_dynamic_active.json`, 25 event ごとに active set を pool から再抽選、480 cells)
+
+| Method | commit_drop% [CI] | coverage_gap% [CI] | 静的比 (§6.3) |
+|---|---|---|---|
+| M1 | 27.37 [25.06, 29.95] | 2.97 [2.69, 3.29] | +1.42 pp |
+| M10 | 25.94 [23.66, 28.45] | 4.57 [4.15, 5.00] | +1.83 pp |
+| **M11** | **18.69 [16.07, 21.37]** | **2.00 [1.72, 2.29]** | +1.16 pp |
+| Fang | 14.28 [12.05, 16.60] | 1.30 [1.09, 1.52] | −0.48 pp |
+| Singh | 13.49 [11.66, 15.46] | 1.22 [1.05, 1.40] | −0.60 pp |
+
+→ **M11 vs M1 = 1.46×, vs M10 = 1.39×、いずれも CI 完全分離 (21.37 < 23.66 < 25.06)** —
+静的シナリオ (1.48× / 1.38×) と同水準で、**M11 の改善は active set churn に対して頑健**。
+M11 の劣化幅 (+1.16 pp) は M1 (+1.42) / M10 (+1.83) より小さい。連続スコア手法は
+わずかに改善する (active 抜けで標本が増えるため) が、序列は変わらない。
 
 ---
 
@@ -255,20 +312,38 @@ theorems.md $\S 3$-$\S 7$ 参照、要点:
 
 ### 7.1 主張のスコープと正直な比較
 
-- **主張 1 (確立)**: M11 は **設計時 only 手法 (M1/M10)** に対して online tier-hysteresis が 1.4-1.9× の commit_drop 改善をもたらす。CI 完全分離。
-- **主張 2 (確立)**: M11 は **重尾 P99 tail metric** で全手法中最低、Fang/Singh と同等以下。
-- **主張 3 (確立、honest)**: 平均 commit_drop で M11 は連続スコア手法 (Fang, Singh) に劣る。これは discrete tier の必然的コスト。
-- **主張 4 (確立)**: M11 は (a) closed-form design rule, (b) discrete auditable state, (c) Theorem 4 tail bound — の 3 点で Fang/Singh より regulator/operator-friendly。
+- **主張 1 (確立)**: M11 は **設計時 only 手法 (M1/M10)** に対して online tier-hysteresis が
+  1.27-1.78× の commit_drop 改善をもたらす (静的 §6.3-6.4)。動的 active churn 下でも
+  1.39-1.46× が保存される (§6.8)。全条件 CI 完全分離。
+- **主張 2 (revision で修正)**: tail (P99 unmet) で M11 は M10 に CI 分離で優位、M1 より
+  平均で優位、Fang と同等、Singh に劣る。**置換前の「5 手法中最低」主張は salted-hash
+  artifact であり撤回** (§6.5)。
+- **主張 3 (確立、honest)**: $K=4$ の平均 commit_drop で M11 は連続スコア手法 (Fang, Singh)
+  に劣る。これは discrete tier の情報量コストであり、**$K$ で定量的に制御可能** —
+  $K=16$ で Fang と統計的同等 (§6.7、Theorem 8 (iv))。
+- **主張 4 (確立)**: M11 は (a) closed-form design rule (Theorem 5)、(b) discrete auditable
+  state、(c) tail bound (Theorem 4/4′)、(d) 閉ループ保証 (Theorem 8) — の 4 点で
+  Fang/Singh より regulator/operator-friendly。**性能-監査可能性 trade-off を $K$ という
+  単一ノブに集約した点が本手法の中核価値**。
 
 ### 7.2 Limitations (= future work で逃げない)
 
 - **dataset**: ACN-Data は EV charging のみ、住宅蓄電池や heat pump など他 DER の churn 未含。
   ただし heavy-tail churn は他 DER でも文献報告 (Crook 2007 credit scoring,
   Lee 2019 ACN survey) → Pareto α 自動推定で application generalisation 可能
-- **active set 固定**: シミュレーションでは active = 10% pool 固定。実 VPP では active も churn する; 拡張で active+standby 両プールに M11 適用は自明
-- **tail bound の constant**: $C_\alpha$ の sharp value は未導出 (現在は $C_\alpha = 2$ で bounding)。tighter bound は order-statistic Pareto extreme-value theory の精緻化で可
-- **K=4 tier 数**: $K$ の最適値は dataset 依存; theorems.md Theorem 4 は任意 $K$ で成立だが empirical sweep は K=4 のみ。K=2, 8, 16 の sensitivity は appendix 候補
-- **MIMO 安定性**: state machine 自体は admissible (Theorem 6) だが、selection rule との閉ループの spectral analysis は未含 — 連続 state Lyapunov でなく離散 transition の Foster-Lyapunov 議論で扱える、PWRS revision で拡充
+- ~~active set 固定~~ → **revision で解消**: §6.8 で 25 event ごとの active 再抽選シナリオを
+  実施、改善幅は保存 (1.39-1.46×)
+- ~~tail bound の constant~~ → **revision で解消**: Theorem 4′ で order-statistics model 下の
+  $C=1$ bound を導出 (適用条件付き)。model-free には Theorem 4 ($C_\alpha=2$) が残る
+- ~~K=4 tier 数~~ → **revision で解消**: §6.7 で $K \in \{2,3,4,6,8,16\}$ sweep を実施、
+  Theorem 8 (iv) の補間予言を検証
+- ~~MIMO 安定性 (閉ループ)~~ → **revision で解消**: Theorem 8 で Foster–Lyapunov drift
+  条件・re-entry bound・閉ループ positive recurrence を導出。残課題は spectral gap の
+  定量化 (mixing time の sharp constant) のみ
+- **再現性 (revision で発見・修正)**: 置換前実装は builtin `hash` (PEP 456 salted) で合成属性を
+  導出しており、プロセス間再現が不能だった。SHA-256 `stable_hash` に置換し、同一コマンド
+  2 回実行で出力 JSON の SHA-256 一致を確認。**数値が変わった主張 (P99) は §6.5 / §7.1 で
+  明示的に訂正**
 
 ### 7.3 PWRS reviewer 観点 self-check (M-1〜M-6 への応答)
 
@@ -279,7 +354,7 @@ review_record.md $\S 7$ で詳細; 要点:
 - **M-3 (baseline 不足)**: Fang 2015 + Singh 2010 を直接実装、5 method 比較
 - **M-4 (simulator 現実性)**: 実 ACN-Data 4242 sessions、合成データ依存なし
 - **M-5 (実データ未照合)**: ACN-Caltech + JPL 2019-01〜03 の 4 dataset を使用済
-- **M-6 (max excursion trade-off)**: P99 metric を report、M11 が tail で最低
+- **M-6 (max excursion trade-off)**: P99 metric を report。revision で M11 は M10 に CI 分離優位・M1 に平均優位・Fang 同等・Singh に劣後と訂正 (§6.5)
 
 ---
 
@@ -288,25 +363,42 @@ review_record.md $\S 7$ で詳細; 要点:
 ```
 test/mvp_try16/
 ├── ideation_record.md           Phase 0.5 (Rule 1-9 v2 完全準拠)
-├── theorems.md                   Theorems 4-7
+├── theorems.md                   Theorems 4-8 (4′/8 は revision)
 ├── tools16/
 │   ├── acn_drop_events.py       ACN csv → drop event stream
 │   ├── heavy_tail_fit.py        Hill MLE + design rule
-│   ├── tier_state.py             M11 core state machine
+│   ├── stable_hash.py            SHA-256 digest (再現性修正, revision)
+│   ├── tier_state.py             M11 core state machine (K パラメータ化)
 │   ├── m11_selection.py          M11 selection algorithm
 │   ├── baselines_lit.py          Fang 2015 + Singh 2010 + M1/M10 stand-ins
-│   └── run_heavy_sweep.py       sweep + bootstrap CI
+│   ├── run_heavy_sweep.py       sweep + bootstrap CI (+ --k-max / --active-resample-every)
+│   ├── run_k_sensitivity.py     K ∈ {2,3,4,6,8,16} sweep (revision)
+│   └── export_comparison_table.py  sweep JSON → 論文表 JSON (revision)
 ├── results/
-│   └── try16_heavy_sweep.json   480 cells primary results
+│   ├── try16_heavy_sweep.json   480 cells primary results (stable_hash 版)
+│   ├── try16_k_sensitivity.json 576 cells K sweep
+│   ├── try16_dynamic_active.json 480 cells dynamic churn
+│   ├── try16_comparison_table.json  正準比較表 (workflow tool 入力)
+│   └── paper/                    table.tex / data.csv / plot_comparison.py / caption.txt
 └── review_record.md             Phase 2 + PWRS reviewer M-1〜M-6 応答
 ```
 
-CLI:
+CLI (論文成果物まで 3 ステップ、QA-6):
 ```bash
-python -m tools16.run_heavy_sweep --n-perm 12
+python -m tools16.run_heavy_sweep --n-perm 12                       # 1. 本比較 sweep
+python -m tools16.export_comparison_table                           # 2. 比較表 JSON 生成
+gridflow export paper results/try16_comparison_table.json -o results/paper  # 3. LaTeX 表+図script+caption
 ```
 
-real time: ≈ 20 秒 (4 datasets × 12 perms × 5 methods × 2 αs).
+追加 sweep:
+```bash
+python -m tools16.run_k_sensitivity --n-perm 12                     # K sensitivity (§6.7)
+python -m tools16.run_heavy_sweep --active-resample-every 25 \
+    --out-name try16_dynamic_active.json                            # 動的 churn (§6.8)
+```
+
+real time: ≈ 20 秒/sweep (4 datasets × 12 perms × 5 methods × 2 αs)。
+決定性: 同一コマンド 2 回実行で出力 JSON の SHA-256 一致を確認済 (stable_hash 化による)。
 
 データ来源:
 - Caltech 2019-01: `test/mvp_try11/data/acn_caltech_sessions_2019_01.csv` (try11 から再利用)
@@ -320,3 +412,4 @@ real time: ≈ 20 秒 (4 datasets × 12 perms × 5 methods × 2 αs).
 | 日付 | 内容 |
 |---|---|
 | 2026-05-06 (差替え版) | 初版。前 try16 (Volt-VAR、課題切替の独断) を撤回し candidate 2 で再実施。policy §2.5.2 完全準拠 + CLAUDE.md §0.1 重量 1-cycle 適用。M11 = penal_apparatus 由来 tier-hysteresis state machine、ACN-Data 4242 sessions で M1/M10 比 1.4-1.9× CI 完全分離 改善、Theorem 4 で heavy-tail $N^{-(\alpha-1)/\alpha}$ tail bound、Fang 2015 / Singh 2010 と直接比較 |
+| 2026-06-10 (revision) | PWRS revision 残課題 4 件を完遂: (1) K sensitivity sweep 576 cells — Theorem 8 (iv) の K-interpolation を発見・検証 (K=4 でギャップ 75% 回収、K=16 で Fang と統計的同等)、(2) 動的 active churn 480 cells — 改善幅保存 (1.39-1.46×)、(3) Theorem 8 Foster–Lyapunov 閉ループ保証、(4) Theorem 4′ sharpened bound ($C=1$)。**再現性 CRITICAL 修正**: builtin salted `hash` → SHA-256 `stable_hash`、全数値再導出 (M11 vs M1 = 1.48×、CI 分離維持; P99 最低主張は artifact と判明し撤回)。論文成果物生成を workflow tool の export 機能で 3 ステップ化 |

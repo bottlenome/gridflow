@@ -330,12 +330,17 @@ class SweepOrchestrator:
             connector=base.metadata.connector,
             seed=base.metadata.seed,
             parameters=merged,
+            # Sweep children are derivatives: never the official baseline,
+            # but they keep the citation for provenance (AS-5 (1)).
+            baseline=False,
+            citation=base.metadata.citation,
         )
         return replace(
             base,
             pack_id=child_pack_id,
             name=child_name,
             metadata=new_metadata,
+            cloned_from=base.pack_id,
         )
 
     @staticmethod

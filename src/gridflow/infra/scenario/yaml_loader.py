@@ -43,6 +43,8 @@ def load_pack_from_yaml(yaml_path: Path, *, pack_id: str | None = None) -> Scena
           connector: str
           seed: int | null
           created_at: ISO8601 datetime (optional, defaults to now)
+          baseline: bool (optional, default false — AS-5 official baseline)
+          citation: str (optional — bibliographic reference for the baseline)
         parameters:           # optional, becomes metadata.parameters
           key: value
           ...
@@ -93,6 +95,8 @@ def load_pack_from_yaml(yaml_path: Path, *, pack_id: str | None = None) -> Scena
         connector=str(pack_section["connector"]),
         seed=cast("int | None", pack_section.get("seed")),
         parameters=as_params(cast("dict[str, object] | None", data.get("parameters"))),
+        baseline=bool(pack_section.get("baseline", False)),
+        citation=str(pack_section.get("citation", "") or ""),
     )
 
     base_dir = yaml_path.parent

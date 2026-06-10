@@ -187,8 +187,64 @@ policy §2.3 「同一問題複数手法は奨励」の趣旨に完全合致。
 
 ---
 
+## 10. Revision レビュー (2026-06-10) — 残課題完遂後の再判定
+
+### 10.1 論文主張のリフレーズ (revision 版)
+
+- **課題**: VPP standby selection において DER churn が重尾 Pareto ($\alpha \approx 1.3 < 2$) で、
+  設計時最適化は dispatch した standby の drop (commit-drop) を制御できない
+- **先行研究**: MILP/greedy (M1/M10) は履歴無視、連続スコア (Fang 2015 / Singh 2010) は
+  closed-form 設計則がなく state が監査不能。「離散監査可能 state + closed-form bound +
+  自動 tuning」の同時達成が gap
+- **方法**: 刑事保護観察制度の非対称 hysteresis を移植した K-tier state machine (M11)。
+  Pareto α 推定から閉形式で rate を決定 (Theorem 5)、tail bound (Theorem 4/4′)、
+  Foster–Lyapunov 閉ループ保証と K-線形適応ラグ (Theorem 8)
+- **実験結果**: 実 ACN-Data 1,536 cells。M11 vs M1/M10 = 1.27-1.78× CI 完全分離 (静的)、
+  1.39-1.46× (動的 churn)。K sweep で K=4 が M1→Fang ギャップの 75% を 4 状態で回収、
+  K=16 で Fang と統計的同等 (Theorem 8 (iv) 検証)
+- **考察**: 性能と監査可能性 (状態数) の trade-off が単一ノブ K に集約される。
+  平均では連続スコアに劣る (K で制御可能)、tail では M10 に優位・Fang 同等・Singh 劣後
+
+### 10.2 残課題 4 件の完遂確認
+
+| §8 残課題 | 対応 | 判定 |
+|---|---|---|
+| closed-loop spectral analysis | Theorem 8 (Foster–Lyapunov drift, re-entry bound, positive recurrence) | ✅ (spectral gap 定量化のみ将来) |
+| K sensitivity | §6.7、576 cells、K ∈ {2,3,4,6,8,16} | ✅ + K-interpolation 発見 |
+| 動的 active+standby 同時 churn | §6.8、480 cells、25 event ごと再抽選 | ✅ 改善幅保存を確認 |
+| $C_\alpha$ tighter bound | Theorem 4′ ($C=1$、適用条件明示) | ✅ |
+
+### 10.3 Revision で発見された問題と対処 (honest reporting)
+
+- **CRITICAL (再現性)**: 置換前実装が builtin salted `hash` で合成属性を導出 → プロセス間
+  再現不能。policy §4.2 B 違反状態だった。SHA-256 `stable_hash` へ置換、決定性を
+  2 回実行 SHA-256 一致で検証。**全数値を再導出し report.md を全面更新**
+- **主張の訂正**: 「M11 が P99 で 5 手法中最低」は salted-hash 配置の artifact と判明 → 撤回し
+  「M10 に CI 分離優位・M1 に平均優位・Fang 同等・Singh 劣後」に修正 (§6.5)。
+  主要主張 (M1/M10 比 CI 完全分離改善) は stable_hash 版でも維持 (1.48× / 1.38×)
+
+### 10.4 再判定
+
+**○ 投稿可 (Tier 2 venue) / Top venue は Minor-to-Major Revision 級**
+
+- E-1 (新規性): ✅ K-interpolation (離散 tier ladder の連続スコア収束) は理論+実証の独立 contribution として強化
+- E-2 (規模): ✅ 1,536 cells、実データ 4 datasets、6 K 値、2 シナリオ (静的/動的)
+- E-3 (厳密性): ✅ bootstrap CI、K sensitivity、交絡分離 (同一 seed/同一 pool で method のみ変更)、
+  再現性は決定性検証付きで pre-revision より強化
+- E-4 (実用): ✅ 「監査可能性と性能の trade-off を K で定量制御」は regulator/operator への
+  actionable message
+- 残弱点: dataset が EV charging のみ (limitation 明示済)、spectral gap 定量化
+
+### 10.5 SOTA 位置づけ (MVP 判定用)
+
+- **閉形式設計・離散監査可能クラスでは M11 が SOTA**: 同クラス (M1/M10) に全条件 CI 分離で優位
+- **無制約クラスでも K=16 で SOTA パリティ**: Fang (14.79 vs 14.76, CI 重複) と統計的同等、
+  かつ M11 のみが closed-form 設計則 + tail bound + 閉ループ保証を併せ持つ
+- → 「性能同等 + 保証/監査可能性で strict 優位」= Pareto-dominant な SOTA 主張として成立
+
 ## 9. 更新履歴
 
 | 日付 | 内容 |
 |---|---|
 | 2026-05-06 後段 (差替え版) | 初版。前 try16 (Volt-VAR) 撤回後の candidate 2 fresh ideation cycle を policy + §0.1 完全準拠で実施。M11 = THRB、ACN-Data 4242 sessions で 1.4-1.9× CI 完全分離 改善、Fang 2015 + Singh 2010 直接比較、PWRS M-1〜M-6 全正面応答 |
+| 2026-06-10 (revision) | §10 を追加。残課題 4 件完遂 (Theorem 4′/8、K sweep、動的 churn)、再現性 CRITICAL (salted hash) を発見・修正・全数値再導出、P99 主張を honest に訂正。再判定: 投稿可 (Tier 2) / Top venue minor-to-major revision 級。SOTA 位置づけを §10.5 に明文化 |

@@ -83,6 +83,44 @@ baseline 比較:
 
 → **M11 strictly beats M1/M10 in expected commit_drop rate by factor $N^{-(\alpha-1)/\alpha}$**
 
+## 3b. Theorem 4′ — Sharpened constant (order-statistics model)
+
+**Claim** (revision: $C_\alpha$ tightening):
+
+Hazard order statistics を explicit にモデル化する: $N$ 機の平均 drop rate が Pareto quantile 変換で
+$\lambda_{(i)} = \Lambda \cdot (i/(N+1))^{1/\alpha}$ ($i$ 番目に小さい hazard) に従い、selection が
+最小 hazard の $s = |S|$ 機を選ぶ (= tier ranking が hazard ranking と一致する long-history 極限、
+Theorem 8 (iv)) とき:
+
+$$
+\Pr[V = 1] \;=\; \frac{\sum_{i \leq s} \lambda_{(i)}}{\sum_{i \leq N} \lambda_{(i)}}
+\;\leq\; \left(\frac{s+1}{N}\right)^{\frac{\alpha+1}{\alpha}}
+$$
+
+すなわち **定数 $C = 1$** で、Theorem 4 の $C_\alpha = 2$ bound より tight。
+
+**Proof**:
+
+$$\sum_{i=1}^{s} i^{1/\alpha} \leq \int_1^{s+1} x^{1/\alpha}\,dx \leq \frac{(s+1)^{1+1/\alpha}}{1+1/\alpha},
+\qquad
+\sum_{i=1}^{N} i^{1/\alpha} \geq \int_0^{N} x^{1/\alpha}\,dx = \frac{N^{1+1/\alpha}}{1+1/\alpha}.$$
+
+比を取ると $(N+1)^{-1/\alpha}$ 因子は分子分母で相殺し
+$\Pr[V=1] \leq ((s+1)/N)^{(\alpha+1)/\alpha}$. ∎
+
+**数値比較** ($\alpha = 1.3$, $N = 50$, $s = 5$):
+
+| Bound | 値 |
+|---|---|
+| Theorem 4 ($C_\alpha = 2$) | $0.1 \cdot 50^{-0.231} \cdot 2 = 0.081$ |
+| **Theorem 4′** | $(6/50)^{1.769} = 0.024$ |
+
+→ 約 **3.5 倍 tight**。
+
+**適用条件 (honest)**: Theorem 4′ は「tier ranking = hazard ranking」(perfect history
+discrimination) を仮定する。有限 $K$・有限履歴ではこの仮定は近似であり、model-free な
+保証としては Theorem 4 ($C_\alpha = 2$) が安全側の statement として残る。
+
 ## 4. Theorem 5 — Tier-hysteresis design rule
 
 **Claim**:
@@ -138,6 +176,45 @@ M11 の per-DER state machine は admissible で、global pool dynamics は boun
 
 → M11 は Pareto-optimal な選択肢: closed-form 設計、discrete auditable state、Theorem 4 の bound、bounded tail.
 
+## 6b. Theorem 8 — Foster–Lyapunov closed-loop bound と K-interpolation
+
+**Claim** (PWRS reviewer M-1 / report §7.2 limitation-5 への revision 応答。Theorem 6 の
+admissibility を閉ループの定量保証に拡張):
+
+per-DER tier chain を promotion-window 境界 (= 持続稼働 $\Delta t_{\text{up}}$ ごと、
+または drop 時刻) でサンプリングした離散時間 chain とみなし、
+$p_j := \Pr[\text{DER } j \text{ が 1 window 内に drop}]$ とする。
+Lyapunov 関数 $V(T) = K - T \geq 0$ について:
+
+**(i) Drift 条件**: 各 window で
+
+$$\mathbb{E}[V(T_{n+1}) - V(T_n) \mid T_n] \;\leq\; -(1 - p_j) + p_j \, d_{\text{drop}}
+\;=\; -\bigl(1 - p_j (1 + d_{\text{drop}})\bigr).$$
+
+$p_j < 1/(1 + d_{\text{drop}})$ なる DER (= "reliable subpopulation") では drift
+$\leq -\varepsilon_j < 0$, $\varepsilon_j = 1 - p_j(1 + d_{\text{drop}})$。
+
+**(ii) Re-entry bound**: Foster–Lyapunov drift criterion により chain は tier $K$ (Gold)
+に positive recurrent で、tier $T$ から Gold への期待到達 window 数は
+$\leq (K - T)/\varepsilon_j$。1 回の drop 後の Gold 復帰は
+$\leq d_{\text{drop}}/\varepsilon_j$ windows、最下層からは $\leq (K-1)/\varepsilon_j$ windows
+— **適応ラグは $K$ に線形**。
+
+**(iii) Closed-loop boundedness**: selection rule は joint tier state の決定的関数であり、
+(ii) より reliable subpopulation の Gold 集合は infinitely often 非空 (= selection の
+starvation なし)。状態空間 $\{1,\ldots,K\}^N$ は有限、selection は bounded → 閉ループ
+全体 (selection × $N$-fold product chain) は positive recurrent class 上で安定。∎
+
+**(iv) K-interpolation corollary**: $K \to \infty$ ($\Delta t_{\text{up}}$ 固定) の極限で、
+tier 値 $T_j$ は DER $j$ の drop/uptime 履歴の深い単調統計となり、tier ranking は
+経験 hazard ranking (= Fang/Singh ら連続スコア手法の ranking) に収束する。従って
+**M11(K) の commit-drop 性能は $K$ について単調に連続スコア性能へ漸近し、その代償は
+(ii) の $K$-線形適応ラグと state 数 (= auditability コスト)**。
+
+**Empirical 検証** (`results/try16_k_sensitivity.json`, §6.7): $K = 2 \to 16$ で
+commit-drop 21.67% → 14.79% と単調改善 (逓減)、$K=16$ で Fang (14.76%) と CI 重複 =
+統計的に区別不能。(iv) の予言と一致。
+
 ## 7. 既存手法との理論対比
 
 | 手法 | online state | history 圧縮 | 設計 closed-form | $\Pr[V]$ asymptotic | tail bound? |
@@ -158,3 +235,4 @@ M11 の per-DER state machine は admissible で、global pool dynamics は boun
 | 日付 | 内容 |
 |---|---|
 | 2026-05-06 (差替え版) | 初版。Rule 9 v2 で生存した penal_apparatus invariant を tier-hysteresis state machine として formalise。Theorem 4 (heavy-tail $N^{-(\alpha-1)/\alpha}$ tail bound) + Theorem 5 (design rule) + Theorem 6 (MIMO admissibility, PWRS M-1 応答) + Theorem 7 (M1/M10/Fang/Singh 比較系) |
+| 2026-06-10 (revision) | Theorem 4′ (order-statistics model 下の sharpened bound $((s+1)/N)^{(\alpha+1)/\alpha}$, $C=1$、適用条件明示) + Theorem 8 (Foster–Lyapunov drift による閉ループ positive recurrence、$K$-線形 re-entry bound、$K \to \infty$ で連続スコア ranking への収束 corollary)。Theorem 8 (iv) は K sensitivity sweep (§6.7) で empirical 検証済 |
