@@ -70,6 +70,7 @@ from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
 from gridflow.usecase.sensitivity import SensitivityAnalyzer
 from gridflow.usecase.sweep import (
+    ChildProgress,
     SweepOrchestrator,
     build_default_aggregator_registry,
 )
@@ -137,6 +138,15 @@ _SWEEP_OUTPUT_OPT = typer.Option(
     help="Write SweepResult JSON to this path (default: stdout)",
 )
 _SWEEP_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
+_SWEEP_RESUME_OPT = typer.Option(
+    False,
+    "--resume",
+    help=(
+        "Reuse already-computed child results under GRIDFLOW_HOME/results "
+        "(matched by the plan's deterministic experiment ids). Only the "
+        "missing cells are simulated; skipped cells are logged."
+    ),
+)
 _SWEEP_METRIC_PLUGIN_OPT = typer.Option(
     None,
     "--metric-plugin",
@@ -668,6 +678,7 @@ def sweep_command(
     output: Path | None = _SWEEP_OUTPUT_OPT,
     fmt: str = _SWEEP_FMT_OPT,
     metric_plugins: list[str] | None = _SWEEP_METRIC_PLUGIN_OPT,
+    resume: bool = _SWEEP_RESUME_OPT,
 ) -> None:
     """Run a parameter sweep defined by a sweep_plan.yaml file.
 
@@ -733,9 +744,19 @@ def sweep_command(
         # targets 'metric:<name>' (§5.1.1 Option A).
         metric_specs=bundle.metric_specs,
         results_dir=ctx.results_dir,
+        result_loader=FilesystemResultLoader(),
     )
+    # Count cache hits so a --resume run reports what it skipped (never
+    # silently — a skipped cell must not read as "recomputed", issue #21).
+    cache_hits = 0
+
+    def _on_child(progress: ChildProgress) -> None:
+        nonlocal cache_hits
+        if progress.cached:
+            cache_hits += 1
+
     try:
-        result = sweep_orchestrator.run(sweep_plan)
+        result = sweep_orchestrator.run(sweep_plan, resume=resume, on_child=_on_child)
     except GridflowError as exc:
         log.error(
             "sweep_failed",
@@ -758,6 +779,9 @@ def sweep_command(
         "sweep_completed",
         sweep_id=result.sweep_id,
         n_experiments=len(result.experiment_ids),
+        cache_hits=cache_hits,
+        computed=len(result.experiment_ids) - cache_hits,
+        resume=resume,
         elapsed_s=result.elapsed_s,
     )
 

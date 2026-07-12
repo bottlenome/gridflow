@@ -235,6 +235,54 @@ axes:
         # missing file).
         assert result.exit_code != 0
 
+    def test_sweep_resume_reuses_deterministic_results(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Issue #21: a second `sweep --resume` reuses the persisted child
+        results (deterministic ids) instead of re-simulating."""
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+
+        plan_path = tmp_path / "sweep.yaml"
+        plan_path.write_text(
+            """
+sweep:
+  id: resume_smoke
+  base_pack_id: demo@1.0.0
+  aggregator: statistics
+axes:
+  - name: pv_kw
+    type: range
+    start: 100
+    stop: 400
+    step: 100
+""",
+            encoding="utf-8",
+        )
+        base_args = ["sweep", "--plan", str(plan_path), "--connector", "fake", "--format", "json"]
+
+        first = tmp_path / "r1.json"
+        r1 = runner.invoke(app, [*base_args, "--output", str(first)])
+        assert r1.exit_code == 0, r1.output
+        ids1 = json.loads(first.read_text())["experiment_ids"]
+        # Deterministic, content-addressable ids landed on disk.
+        assert all(eid.startswith("sweep-") for eid in ids1)
+        assert all((gridflow_home / "results" / f"{eid}.json").exists() for eid in ids1)
+
+        second = tmp_path / "r2.json"
+        r2 = runner.invoke(app, [*base_args, "--resume", "--output", str(second)])
+        assert r2.exit_code == 0, r2.output
+        ids2 = json.loads(second.read_text())["experiment_ids"]
+        assert ids2 == ids1
+
 
 class TestEvaluateCommand:
     """Phase 2 §5.1.1 Option B: ``gridflow evaluate --plan ...``."""

@@ -140,6 +140,34 @@ def _make_orchestrator_fixture(tmp_path: Path) -> tuple[FileScenarioRegistry, Sw
     return reg, sweep, fake
 
 
+def _make_cached_fixture(
+    tmp_path: Path,
+) -> tuple[SweepOrchestrator, _FakeConnector, Path]:
+    """Like :func:`_make_orchestrator_fixture` but with a results dir + loader
+    so cache/resume (issue #21) can be exercised end-to-end."""
+    from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+    from gridflow.usecase.evaluation import FilesystemResultLoader
+    from gridflow.usecase.orchestrator import Orchestrator
+
+    reg = FileScenarioRegistry(tmp_path / "packs")
+    reg.register(_make_pack())
+    fake = _FakeConnector()
+    runner = InProcessOrchestratorRunner(connector_factories={"fake": lambda: fake})
+    orchestrator = Orchestrator(registry=reg, runner=runner)
+    aggregator_registry = AggregatorRegistry()
+    aggregator_registry.register(StatisticsAggregator())
+    results_dir = tmp_path / "results"
+    sweep = SweepOrchestrator(
+        registry=reg,
+        orchestrator=orchestrator,
+        aggregator_registry=aggregator_registry,
+        connector_id="fake",
+        results_dir=results_dir,
+        result_loader=FilesystemResultLoader(),
+    )
+    return sweep, fake, results_dir
+
+
 # ----------------------------------------------------------------- Aggregators
 
 
@@ -529,3 +557,74 @@ class TestSweepReplicates:
         # ...and deterministic (common random numbers: same rep → same seed,
         # regardless of which cell requests it).
         assert seeds == [SweepOrchestrator._seed_for(plan, pack, rep) for rep in range(3)]
+
+
+class TestSweepCacheResume:
+    """Issue #21: deterministic experiment ids + --resume cache."""
+
+    def _plan(self, sweep_id: str = "s1") -> SweepPlan:
+        return SweepPlan(
+            sweep_id=sweep_id,
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=400.0, step=100.0),),  # 3 cells
+            aggregator_name="statistics",
+        )
+
+    def test_experiment_ids_are_deterministic(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        r1 = sweep.run(self._plan())
+        r2 = sweep.run(self._plan())
+        # Same plan → identical, content-addressable ids (not random UUIDs).
+        assert r1.experiment_ids == r2.experiment_ids
+        assert all(eid.startswith(f"sweep-{r1.plan_hash}-c") for eid in r1.experiment_ids)
+
+    def test_resume_reuses_all_cached_cells(self, tmp_path: Path) -> None:
+        sweep, fake, _ = _make_cached_fixture(tmp_path)
+        first = sweep.run(self._plan())
+        calls_after_first = len(fake.initialized_packs)
+
+        events: list = []
+        second = sweep.run(self._plan(), resume=True, on_child=events.append)
+        # No new simulation happened — every cell was a cache hit.
+        assert len(fake.initialized_packs) == calls_after_first
+        assert all(e.cached for e in events)
+        assert second.experiment_ids == first.experiment_ids
+        # Metrics survive the round-trip through the persisted JSON.
+        assert second.aggregated_metrics == first.aggregated_metrics
+
+    def test_resume_recomputes_only_missing_cells(self, tmp_path: Path) -> None:
+        sweep, fake, results_dir = _make_cached_fixture(tmp_path)
+        first = sweep.run(self._plan())
+        calls_after_first = len(fake.initialized_packs)
+        # Evict one cell (simulate a sweep that died partway).
+        victim = results_dir / f"{first.experiment_ids[1]}.json"
+        victim.unlink()
+
+        events: list = []
+        sweep.run(self._plan(), resume=True, on_child=events.append)
+        cached = [e for e in events if e.cached]
+        computed = [e for e in events if not e.cached]
+        assert len(cached) == 2 and len(computed) == 1
+        # Exactly one new simulation ran.
+        assert len(fake.initialized_packs) == calls_after_first + 1
+
+    def test_without_resume_recomputes_despite_cache(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        sweep.run(self._plan())
+        events: list = []
+        sweep.run(self._plan(), resume=False, on_child=events.append)
+        assert all(not e.cached for e in events)
+
+    def test_changed_plan_bypasses_stale_cache(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        sweep.run(self._plan())
+        # Different axis range → different plan_hash → different ids → miss.
+        other = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=500.0, step=100.0),),  # 4 cells
+            aggregator_name="statistics",
+        )
+        events: list = []
+        sweep.run(other, resume=True, on_child=events.append)
+        assert all(not e.cached for e in events)

@@ -57,7 +57,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
 | `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs (repeat the flags to pass replicates for a statistical verdict) |
-| `gridflow sweep --plan <sweep_plan.yaml>` | Run a parameter sweep |
+| `gridflow sweep --plan <sweep_plan.yaml> [--resume]` | Run a parameter sweep (`--resume` reuses already-computed cells) |
 | `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
 | `gridflow export paper <comparison.json> -o <dir>` | Paper-ready artifacts: LaTeX table, CSV, matplotlib script, caption |
 
@@ -80,6 +80,16 @@ Generate replicate groups with `sweep`'s `n_replicates:` (each cell runs that
 many times with distinct, deterministically-derived seeds), or with repeated
 `gridflow run`. `evaluate --parameter-sweep ... --bootstrap-n N` likewise adds
 a bootstrap CI to a sensitivity curve and warns when that CI is zero-width.
+
+### Resumable sweeps
+
+Every sweep child gets a deterministic `experiment_id` derived from the plan's
+content hash and the cell/replicate indices, so a sweep is content-addressable:
+re-running overwrites the same result files, and `gridflow sweep --resume`
+reuses cells already on disk and simulates only the missing ones (a sweep that
+died at cell 400/500 finishes by running just the remaining 100). Changing the
+plan changes the hash, so a stale cache is bypassed automatically; the number
+of reused vs recomputed cells is logged.
 
 ### Paper export (publication workflow)
 
