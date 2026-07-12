@@ -11,7 +11,10 @@ YAML schema (``sweep_plan.yaml``):
       id: demo                          # str
       base_pack_id: ieee13@1.0.0        # str
       aggregator: statistics            # registered Aggregator name
-      seed: 42                          # optional int
+      seed: 42                          # optional int (master seed for the sweep)
+      n_replicates: 1                   # optional int >= 1; >1 runs each cell
+                                        # that many times with distinct derived
+                                        # seeds so run-to-run variance is estimable
 
     axes:
       - name: pv_kw
@@ -140,6 +143,11 @@ def load_sweep_plan_bundle_from_dict(data: Mapping[str, Any]) -> LoadedSweepPlan
     aggregator_name = _require_str(sweep_section, "aggregator", "sweep")
     seed_raw = sweep_section.get("seed")
     seed = int(seed_raw) if seed_raw is not None else None
+    n_replicates_raw = sweep_section.get("n_replicates", 1)
+    try:
+        n_replicates = int(n_replicates_raw)
+    except (TypeError, ValueError) as exc:
+        raise SweepPlanLoadError(f"sweep.n_replicates must be an integer, got {n_replicates_raw!r}") from exc
 
     axes: list[ParamAxis] = []
     for index, axis_dict in enumerate(axes_section):
@@ -169,6 +177,7 @@ def load_sweep_plan_bundle_from_dict(data: Mapping[str, Any]) -> LoadedSweepPlan
             axes=tuple(axes),
             aggregator_name=aggregator_name,
             seed=seed,
+            n_replicates=n_replicates,
         )
     except ValueError as exc:
         raise SweepPlanLoadError(f"invalid SweepPlan: {exc}") from exc

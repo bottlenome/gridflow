@@ -37,6 +37,7 @@ from gridflow.adapter.benchmark.metrics import BUILTIN_METRICS, MetricCalculator
 from gridflow.domain.error import OrchestratorError, PackNotFoundError
 from gridflow.domain.scenario import PackMetadata, ScenarioPack, ScenarioRegistry
 from gridflow.domain.util.params import Params, as_params
+from gridflow.domain.util.stable_hash import derive_seed
 from gridflow.usecase.evaluation import MetricSpec, _NamedMetric
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult
@@ -219,24 +220,30 @@ class SweepOrchestrator:
         # so the orchestrator never holds two redundant shapes during
         # the loop.
         per_experiment_metrics_dicts: list[dict[str, float]] = []
+        # Positionally aligned with experiment_ids: with n_replicates > 1 each
+        # assignment yields n_replicates experiments, so the assignment is
+        # repeated once per replicate to keep the SweepResult 1:1 invariant.
+        aligned_assignments: list[ChildAssignment] = []
 
         for idx, assignment in enumerate(assignments):
             child_pack = self._derive_child_pack(base_pack, plan, idx, assignment)
             self._registry.register(child_pack)
-            run_request = RunRequest(
-                pack_id=child_pack.pack_id,
-                connector_id=self._connector_id,
-                total_steps=1,
-                seed=base_pack.metadata.seed,
-            )
-            result: ExperimentResult = self._orchestrator.run(run_request)
-            experiment_ids.append(result.experiment_id)
             # Build a per-child harness if any axis targets a metric;
             # otherwise reuse the shared harness (cheap common path).
             harness = self._harness_for_assignment(assignment)
-            summary = harness.evaluate(result)
-            per_experiment_metrics_dicts.append(dict(summary.values))
-            self._persist_child_result(result)
+            for rep in range(plan.n_replicates):
+                run_request = RunRequest(
+                    pack_id=child_pack.pack_id,
+                    connector_id=self._connector_id,
+                    total_steps=1,
+                    seed=self._seed_for(plan, base_pack, rep),
+                )
+                result: ExperimentResult = self._orchestrator.run(run_request)
+                experiment_ids.append(result.experiment_id)
+                summary = harness.evaluate(result)
+                per_experiment_metrics_dicts.append(dict(summary.values))
+                aligned_assignments.append(assignment)
+                self._persist_child_result(result)
 
         aggregated = aggregator.aggregate(per_experiment_metrics_dicts)
         elapsed = time.perf_counter() - start_wall
@@ -247,10 +254,28 @@ class SweepOrchestrator:
             experiment_ids=tuple(experiment_ids),
             aggregated_metrics=aggregated,
             per_experiment_metrics=_columnize_per_experiment(per_experiment_metrics_dicts),
-            assignments=tuple(assignments),
+            assignments=tuple(aligned_assignments),
             created_at=datetime.now(tz=UTC),
             elapsed_s=elapsed,
         )
+
+    @staticmethod
+    def _seed_for(plan: SweepPlan, base_pack: ScenarioPack, replicate: int) -> int | None:
+        """Seed for one child run.
+
+        * ``n_replicates == 1``: the base seed flows through unchanged — the
+          plan's master seed if set, else the base pack's own seed. This keeps
+          single-run sweeps bit-identical to Phase-1 behaviour and preserves
+          the "hold the seed fixed, vary the parameter" controlled design.
+        * ``n_replicates > 1``: each replicate gets a distinct seed derived
+          deterministically from the base seed and the replicate index (issue
+          #19). The seed depends only on ``replicate`` (not the cell), so
+          replicate ``r`` uses common random numbers across every cell.
+        """
+        base_seed = plan.seed if plan.seed is not None else base_pack.metadata.seed
+        if plan.n_replicates == 1:
+            return base_seed
+        return derive_seed(base_seed, replicate)
 
     # ------------------------------------------------------- per-child harness
 

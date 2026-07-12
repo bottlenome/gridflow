@@ -427,3 +427,105 @@ class TestSweepOrchestratorRun:
         # carry exactly the axis values the child saw.
         pv_kws = [dict(a.pack_params)["pv_kw"] for a in result.assignments]
         assert sorted(pv_kws) == [100.0, 200.0, 300.0]
+
+
+class TestSweepReplicates:
+    """Issue #19: replicate execution + deterministic per-replicate seeds."""
+
+    def test_replicates_multiply_experiment_count(self, tmp_path: Path) -> None:
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=300.0, step=100.0),),  # 2 cells
+            aggregator_name="statistics",
+            n_replicates=3,
+        )
+        result = sweep.run(plan)
+        # 2 cells x 3 replicates = 6 experiments, all with distinct IDs.
+        assert len(result.experiment_ids) == 6
+        assert len(set(result.experiment_ids)) == 6
+        # SweepResult 1:1 invariant survives replication.
+        assert len(result.assignments) == 6
+        for _name, values in result.per_experiment_metrics:
+            assert len(values) == 6
+
+    def test_replicate_assignments_repeat_per_cell(self, tmp_path: Path) -> None:
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=300.0, step=100.0),),  # 2 cells
+            aggregator_name="statistics",
+            n_replicates=3,
+        )
+        result = sweep.run(plan)
+        pv_kws = sorted(dict(a.pack_params)["pv_kw"] for a in result.assignments)
+        # Each cell's assignment appears exactly n_replicates times.
+        assert pv_kws == [100.0, 100.0, 100.0, 200.0, 200.0, 200.0]
+
+    def test_n_replicates_changes_plan_hash(self) -> None:
+        base = dict(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="pv_kw", values=(100.0,)),),
+            aggregator_name="statistics",
+        )
+        assert SweepPlan(**base, n_replicates=1).plan_hash() != SweepPlan(**base, n_replicates=3).plan_hash()
+
+    def test_seed_for_single_replicate_is_backward_compatible(self) -> None:
+        # n_replicates == 1, no master seed → base pack seed flows through
+        # unchanged (Phase-1 controlled-experiment behaviour).
+        pack = _make_pack()
+        pack = pack.__class__(  # rebuild with a concrete seed
+            pack_id=pack.pack_id,
+            name=pack.name,
+            version=pack.version,
+            metadata=PackMetadata(
+                name=pack.name,
+                version=pack.version,
+                description="t",
+                author="t",
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                connector="fake",
+                seed=7,
+            ),
+            network_dir=pack.network_dir,
+            timeseries_dir=pack.timeseries_dir,
+            config_dir=pack.config_dir,
+        )
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+        )
+        assert SweepOrchestrator._seed_for(plan, pack, 0) == 7
+
+    def test_seed_for_master_seed_overrides_pack(self) -> None:
+        pack = _make_pack()  # metadata.seed is None
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+            seed=123,
+        )
+        assert SweepOrchestrator._seed_for(plan, pack, 0) == 123
+
+    def test_seed_for_replicates_distinct_and_common_across_cells(self) -> None:
+        pack = _make_pack()
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+            seed=42,
+            n_replicates=3,
+        )
+        seeds = [SweepOrchestrator._seed_for(plan, pack, rep) for rep in range(3)]
+        # Distinct per replicate...
+        assert len(set(seeds)) == 3
+        # ...and deterministic (common random numbers: same rep → same seed,
+        # regardless of which cell requests it).
+        assert seeds == [SweepOrchestrator._seed_for(plan, pack, rep) for rep in range(3)]

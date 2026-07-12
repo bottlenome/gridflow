@@ -274,9 +274,19 @@ class SweepPlan:
         axes: Parameter axes. See module docstring for expansion semantics.
         aggregator_name: Registered aggregator used to reduce per-experiment
             metrics into sweep-level statistics.
-        seed: Master seed for the sweep (future use — axes carry their own
-            seeds today, but this enables a future "derive axis seeds from
-            plan seed" policy without a plan-shape change).
+        seed: Master seed for the sweep. When set, it becomes the base seed
+            handed to every child experiment (overriding the base pack's own
+            seed) so a whole sweep's stochastic behaviour is pinned by one
+            number. When ``None`` and ``n_replicates == 1`` the base pack seed
+            flows through unchanged (Phase-1 behaviour).
+        n_replicates: How many times to run *each* parameter assignment. The
+            default ``1`` reproduces the original one-run-per-cell behaviour.
+            With ``n_replicates > 1`` each replicate gets a distinct,
+            deterministically-derived seed (issue #19) so run-to-run variance
+            is estimable — the precondition for any honest significance test
+            (issue #18). Replicate ``r`` uses the same derived seed across all
+            cells (common random numbers), so cell-to-cell differences are not
+            confounded by seed differences.
     """
 
     sweep_id: str
@@ -284,10 +294,13 @@ class SweepPlan:
     axes: tuple[ParamAxis, ...]
     aggregator_name: str
     seed: int | None = None
+    n_replicates: int = 1
 
     def __post_init__(self) -> None:
         if not self.axes:
             raise ValueError(f"SweepPlan '{self.sweep_id}': axes must be non-empty")
+        if self.n_replicates < 1:
+            raise ValueError(f"SweepPlan '{self.sweep_id}': n_replicates must be >= 1, got {self.n_replicates}")
         names = [axis.name for axis in self.axes]
         if len(names) != len(set(names)):
             raise ValueError(f"SweepPlan '{self.sweep_id}': duplicate axis names in {names}")
@@ -359,7 +372,13 @@ class SweepPlan:
 
     def plan_hash(self) -> str:
         """Stable content hash of the plan (for SweepResult provenance)."""
-        parts: list[str] = [self.sweep_id, self.base_pack_id, self.aggregator_name, str(self.seed)]
+        parts: list[str] = [
+            self.sweep_id,
+            self.base_pack_id,
+            self.aggregator_name,
+            str(self.seed),
+            f"nrep={self.n_replicates}",
+        ]
         for axis in self.axes:
             parts.append(type(axis).__name__)
             parts.append(axis.name)
