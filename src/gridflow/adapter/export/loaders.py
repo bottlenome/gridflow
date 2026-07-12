@@ -41,9 +41,7 @@ def _metric_value_from_entry(entry: dict[str, Any], side: str) -> MetricValue:
     try:
         ci_low, ci_high = float(ci[0]), float(ci[1])
     except (TypeError, ValueError, IndexError) as exc:
-        raise ExportError(
-            f"benchmark comparison report {side}_ci must be a [low, high] pair, got {ci!r}"
-        ) from exc
+        raise ExportError(f"benchmark comparison report {side}_ci must be a [low, high] pair, got {ci!r}") from exc
     return MetricValue(mean=mean, ci_low=ci_low, ci_high=ci_high)
 
 

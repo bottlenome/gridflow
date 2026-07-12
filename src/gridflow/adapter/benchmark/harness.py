@@ -260,12 +260,7 @@ class BenchmarkHarness:
             warnings: list[str] = []
             if entry["reason"]:
                 warnings.append(str(entry["reason"]))
-            significant = (
-                not informational
-                and not entry["degenerate"]
-                and p_adj is not None
-                and p_adj < alpha
-            )
+            significant = not informational and not entry["degenerate"] and p_adj is not None and p_adj < alpha
             comparisons.append(
                 MetricComparison(
                     name=str(entry["name"]),

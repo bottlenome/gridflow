@@ -44,10 +44,7 @@ class TestStableHash:
     def test_stable_across_processes(self) -> None:
         # The whole point: no per-process salt. Recompute in a fresh
         # interpreter (which has a different PYTHONHASHSEED) and compare.
-        code = (
-            "from gridflow.domain.util.stable_hash import stable_hash;"
-            "print(stable_hash('kerber_dorf', 3, 0.42))"
-        )
+        code = "from gridflow.domain.util.stable_hash import stable_hash;print(stable_hash('kerber_dorf', 3, 0.42))"
         out = subprocess.run(
             [sys.executable, "-c", code],
             capture_output=True,
