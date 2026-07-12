@@ -381,3 +381,84 @@ class TestEvaluateInlineMode:
 
 # json import for the new test class
 import json  # noqa: E402  -- placed here to keep test_cli history-clean for pre-sweep tests
+
+
+class TestEvaluateBootstrap:
+    """Issue #23: ``gridflow evaluate --parameter-sweep`` now wires the
+    already-implemented bootstrap CI through to the CLI, and warns when the
+    resulting interval is zero-width (a misjudgment guard)."""
+
+    _PLUGIN = "tests.unit.usecase.test_sensitivity:_ThresholdedFraction"
+
+    def _one_result_on_disk(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> Path:
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+        runner.invoke(app, ["run", "demo@1.0.0", "--connector", "fake", "--format", "plain"])
+        result_jsons = list((gridflow_home / "results").glob("*.json"))
+        assert len(result_jsons) == 1
+        return result_jsons[0]
+
+    def test_bootstrap_flag_emits_ci_and_zero_width_warning(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        result_path = self._one_result_on_disk(gridflow_home, tmp_path, monkeypatch)
+        out = tmp_path / "sens.json"
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--results",
+                str(result_path),
+                "--metric",
+                f"tf:{self._PLUGIN}",
+                "--parameter-sweep",
+                "voltage_low:0.90:0.95:3",
+                "--bootstrap-n",
+                "20",
+                "--output",
+                str(out),
+            ],
+        )
+        assert rv.exit_code == 0, rv.output
+        payload = json.loads(out.read_text())
+        # CI bounds are now present in the persisted SensitivityResult.
+        assert payload["confidence_lower"]
+        assert payload["confidence_upper"]
+        # A single experiment cannot vary under resampling → zero-width CI →
+        # the guard must warn (stderr under CliRunner mixes into output).
+        assert "zero-width" in rv.output
+
+    def test_bootstrap_without_parameter_sweep_rejected(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        result_path = self._one_result_on_disk(gridflow_home, tmp_path, monkeypatch)
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--results",
+                str(result_path),
+                "--metric",
+                "voltage_deviation",
+                "--bootstrap-n",
+                "20",
+            ],
+        )
+        assert rv.exit_code == 2
+        assert "parameter-sweep" in rv.output

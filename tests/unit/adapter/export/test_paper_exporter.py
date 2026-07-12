@@ -142,6 +142,42 @@ class TestLoaders:
         assert tuple(m.name for m in table.metrics) == ("runtime", "voltage_deviation")
         assert table.rows[1].values[0].mean == pytest.approx(0.5)
 
+    def test_benchmark_report_preserves_ci_and_objective(self) -> None:
+        # Forward-compat: a benchmark report that carries CI + objective/unit
+        # (as issue #18 will emit) must not have those dropped by the loader.
+        report = {
+            "baseline": "exp-001",
+            "candidate": "exp-002",
+            "metrics": [
+                {
+                    "name": "unmet_kw",
+                    "unit": "kW",
+                    "objective": "min",
+                    "baseline": 3.0,
+                    "candidate": 2.0,
+                    "delta": -1.0,
+                    "baseline_ci": [2.5, 3.5],
+                    "candidate_ci": [1.6, 2.4],
+                },
+            ],
+        }
+        table = comparison_table_from_benchmark_report(report)
+        assert table.metrics[0].unit == "kW"
+        assert table.metrics[0].objective == "min"
+        base_cell = table.rows[0].values[0]
+        cand_cell = table.rows[1].values[0]
+        assert base_cell.has_ci and (base_cell.ci_low, base_cell.ci_high) == (2.5, 3.5)
+        assert cand_cell.has_ci and (cand_cell.ci_low, cand_cell.ci_high) == (1.6, 2.4)
+
+    def test_benchmark_report_malformed_ci_rejected(self) -> None:
+        report = {
+            "baseline": "b",
+            "candidate": "c",
+            "metrics": [{"name": "m", "baseline": 1.0, "candidate": 2.0, "baseline_ci": [1.0]}],
+        }
+        with pytest.raises(ExportError):
+            comparison_table_from_benchmark_report(report)
+
     def test_benchmark_report_builder_rejects_bad_payload(self) -> None:
         with pytest.raises(ExportError):
             comparison_table_from_benchmark_report({"nope": True})

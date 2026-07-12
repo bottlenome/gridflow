@@ -171,6 +171,20 @@ _EVAL_FEEDER_ID_OPT = typer.Option(
     "--feeder-id",
     help="Provenance label written to SensitivityResult.feeder_id (--parameter-sweep only).",
 )
+_EVAL_BOOTSTRAP_N_OPT = typer.Option(
+    0,
+    "--bootstrap-n",
+    min=0,
+    help=(
+        "If > 0, resample experiments this many times per grid point and "
+        "emit a 95% percentile CI on the mean (--parameter-sweep only)."
+    ),
+)
+_EVAL_BOOTSTRAP_SEED_OPT = typer.Option(
+    0,
+    "--bootstrap-seed",
+    help="Seed for --bootstrap-n resampling (deterministic; --parameter-sweep only).",
+)
 _EVAL_OUTPUT_OPT = typer.Option(
     None,
     "--output",
@@ -722,6 +736,8 @@ def evaluate_command(
     metrics: list[str] | None = _EVAL_METRIC_OPT,
     parameter_sweep: str | None = _EVAL_PARAMETER_SWEEP_OPT,
     feeder_id: str = _EVAL_FEEDER_ID_OPT,
+    bootstrap_n: int = _EVAL_BOOTSTRAP_N_OPT,
+    bootstrap_seed: int = _EVAL_BOOTSTRAP_SEED_OPT,
     output: Path | None = _EVAL_OUTPUT_OPT,
     fmt: str = _EVAL_FMT_OPT,
 ) -> None:
@@ -775,9 +791,14 @@ def evaluate_command(
             metric_strs=metrics,
             sweep_spec=parameter_sweep,
             feeder_id=feeder_id,
+            bootstrap_n=bootstrap_n,
+            bootstrap_seed=bootstrap_seed,
             output=output,
         )
     else:
+        if bootstrap_n:
+            typer.echo("--bootstrap-n / --bootstrap-seed only apply with --parameter-sweep.")
+            raise typer.Exit(code=2)
         _evaluate_inline(ctx, log, results=results, metric_strs=metrics, output=output)
 
 
@@ -847,6 +868,8 @@ def _evaluate_parameter_sweep(
     metric_strs: list[str],
     sweep_spec: str,
     feeder_id: str,
+    bootstrap_n: int,
+    bootstrap_seed: int,
     output: Path | None,
 ) -> None:
     """Case-A + parameter-sweep path: drive SensitivityAnalyzer."""
@@ -877,11 +900,37 @@ def _evaluate_parameter_sweep(
             metric_plugin=metric_spec.plugin,
             metric_kwargs_base=dict(metric_spec.kwargs),
             feeder_id=feeder_id,
+            bootstrap_n=bootstrap_n,
+            bootstrap_seed=bootstrap_seed,
         )
     except GridflowError as exc:
         log.error("sensitivity_failed", error_code=exc.error_code, message=exc.message)
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
+
+    # Guard against a subtle misjudgment (issue #18/#23): a zero-width CI
+    # means every bootstrap resample produced the same mean — the input
+    # is effectively a single point or fully deterministic across seeds.
+    # Reporting that CI as if it were a real interval invites treating a
+    # non-result as a tight, confident one. Warn loudly.
+    if bootstrap_n > 0:
+        n_experiments = len(experiments)
+        degenerate = n_experiments < 2 or any(
+            lo == hi for lo, hi in zip(sensitivity.confidence_lower, sensitivity.confidence_upper, strict=True)
+        )
+        if degenerate:
+            warning = (
+                f"WARNING: bootstrap CI is zero-width at one or more grid points "
+                f"(n_experiments={n_experiments}). This indicates no run-to-run "
+                f"variation to resample — the CI is not a meaningful interval. "
+                f"Add replicates or vary the seed before reading it as significance."
+            )
+            log.warning(
+                "bootstrap_ci_zero_width",
+                feeder_id=sensitivity.feeder_id,
+                n_experiments=n_experiments,
+            )
+            typer.echo(warning, err=True)
 
     _write_payload(
         ctx,
@@ -892,6 +941,7 @@ def _evaluate_parameter_sweep(
             "parameter_name": sensitivity.parameter_name,
             "n_grid_points": len(sensitivity.parameter_values),
             "metric_name": sensitivity.metric_name,
+            "bootstrap_n": bootstrap_n,
         },
     )
 
