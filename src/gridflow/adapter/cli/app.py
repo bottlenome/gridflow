@@ -56,6 +56,7 @@ from gridflow.infra.orchestrator import (
     InProcessOrchestratorRunner,
 )
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
+from gridflow.usecase.cross_validation import EngineCrossValidator
 from gridflow.usecase.evaluation import (
     EvaluationPlan,
     Evaluator,
@@ -104,6 +105,21 @@ _RUN_CONNECTOR_OPT = typer.Option("opendss", "--connector", help="Connector name
 _RUN_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _RESULTS_ID_ARG = typer.Argument(...)
 _RESULTS_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
+_VALIDATE_PACK_ARG = typer.Argument(..., help="Registered pack_id to solve on every engine")
+_VALIDATE_ENGINES_OPT = typer.Option(
+    "opendss,pandapower",
+    "--engines",
+    help="Comma-separated connector names to cross-check (>=2). The first is the reference.",
+)
+_VALIDATE_TOL_OPT = typer.Option(
+    1e-6,
+    "--tol",
+    min=0.0,
+    help="Max absolute per-node voltage difference (pu) still counted as agreement.",
+)
+_VALIDATE_STEPS_OPT = typer.Option(1, "--steps", "-n", help="Number of solver steps per engine")
+_VALIDATE_OUTPUT_OPT = typer.Option(None, "--output", help="Write CrossValidationReport JSON to this path")
+_VALIDATE_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _BENCH_BASE_OPT = typer.Option(
     ..., "--baseline", help="Baseline experiment_id. Repeat to pass replicates for a statistical comparison."
 )
@@ -568,6 +584,77 @@ def run_command(
             }
         )
     )
+
+
+@app.command("validate-engines")
+def validate_engines_command(
+    pack_id: str = _VALIDATE_PACK_ARG,
+    engines: str = _VALIDATE_ENGINES_OPT,
+    tol: float = _VALIDATE_TOL_OPT,
+    steps: int = _VALIDATE_STEPS_OPT,
+    output: Path | None = _VALIDATE_OUTPUT_OPT,
+    fmt: str = _VALIDATE_FMT_OPT,
+) -> None:
+    """Solve one pack on multiple engines and cross-check the results (#20).
+
+    Runs ``pack_id`` through each ``--engines`` connector, then compares every
+    engine's node voltages against the first (reference) engine within ``--tol``
+    and reports any solver that failed to converge. Exits non-zero when the
+    engines disagree — so a single-engine quirk (numerical artifact, local
+    optimum, bug) can no longer masquerade as a physical result.
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.validate_engines")
+
+    engine_names = [e.strip() for e in engines.split(",") if e.strip()]
+    if len(engine_names) < 2:
+        typer.echo("--engines needs at least two comma-separated connector names.")
+        raise typer.Exit(code=2)
+    if len(engine_names) != len(set(engine_names)):
+        typer.echo(f"--engines must be unique, got {engine_names}.")
+        raise typer.Exit(code=2)
+
+    results_by_engine: list[tuple[str, ExperimentResult]] = []
+    for engine in engine_names:
+        try:
+            runner = build_runner_from_env(connector=engine, connector_factory=ctx.connector_factory)
+            orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
+            result = orchestrator.run(RunRequest(pack_id=pack_id, connector_id=engine, total_steps=steps))
+        except GridflowError as exc:
+            log.error("validate_engine_run_failed", engine=engine, error_code=exc.error_code, message=exc.message)
+            typer.echo(f"engine '{engine}' failed: {exc}")
+            raise typer.Exit(code=1) from exc
+        results_by_engine.append((engine, result))
+
+    try:
+        report = EngineCrossValidator().validate(
+            pack_id=pack_id,
+            results_by_engine=results_by_engine,
+            tol=tol,
+        )
+    except GridflowError as exc:
+        log.error("validate_engines_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+
+    log.info(
+        "validate_engines_completed",
+        pack_id=pack_id,
+        engines=engine_names,
+        agree=report.agree,
+        tol=tol,
+    )
+    typer.echo(ctx.formatter.render(report.to_dict()))
+    if not report.agree:
+        # Non-zero exit is the machine-readable verdict: the engines disagree
+        # (or one did not converge), so any result built on a single engine is
+        # suspect until reconciled.
+        raise typer.Exit(code=1)
 
 
 @app.command("results")

@@ -56,6 +56,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow scenario clone <pack_id> --id <new_id>` | Clone a baseline pack to start a comparison study |
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
+| `gridflow validate-engines <pack_id> --engines opendss,pandapower` | Solve one pack on multiple engines and cross-check the results |
 | `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs (repeat the flags to pass replicates for a statistical verdict) |
 | `gridflow sweep --plan <sweep_plan.yaml> [--resume]` | Run a parameter sweep (`--resume` reuses already-computed cells) |
 | `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
@@ -80,6 +81,17 @@ Generate replicate groups with `sweep`'s `n_replicates:` (each cell runs that
 many times with distinct, deterministically-derived seeds), or with repeated
 `gridflow run`. `evaluate --parameter-sweep ... --bootstrap-n N` likewise adds
 a bootstrap CI to a sensitivity curve and warns when that CI is zero-width.
+
+### Engine cross-validation (single-engine bug guard)
+
+`gridflow validate-engines <pack_id> --engines opendss,pandapower --tol 1e-6`
+solves the same pack on every listed engine and compares each one's node
+voltages against the first (reference) engine within `--tol`, also reporting
+any solver that failed to converge. It exits non-zero when the engines
+disagree — so a quirk of a single solver (a numerical artifact, a local
+optimum, an outright bug) can no longer be mistaken for a physical result. A
+node present on one engine but not the other, or voltage vectors of different
+length, count as disagreement rather than being silently skipped.
 
 ### Resumable sweeps
 

@@ -510,3 +510,73 @@ class TestEvaluateBootstrap:
         )
         assert rv.exit_code == 2
         assert "parameter-sweep" in rv.output
+
+
+class _OffsetConnector:
+    """Connector emitting a fixed voltage offset so two 'engines' can be made
+    to agree or disagree on demand (issue #20 CLI test)."""
+
+    name = "offset"
+
+    def __init__(self, offset: float = 0.0, *, converged: bool = True) -> None:
+        self._offset = offset
+        self._converged = converged
+
+    def initialize(self, pack) -> None:  # type: ignore[no-untyped-def]
+        pass
+
+    def step(self, step_index: int):  # type: ignore[no-untyped-def]
+        from gridflow.domain.result import NodeResult
+        from gridflow.usecase.interfaces import ConnectorStepOutput
+
+        return ConnectorStepOutput(
+            step=step_index,
+            node_result=NodeResult(node_id="__network__", voltages=(1.0 + self._offset,)),
+            converged=self._converged,
+        )
+
+    def teardown(self) -> None:
+        pass
+
+
+class TestValidateEnginesCommand:
+    """Issue #20: `gridflow validate-engines` cross-checks engines and exits
+    non-zero when they disagree."""
+
+    def _register(self, tmp_path: Path) -> None:
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+
+    def test_agreeing_engines_exit_zero(
+        self, gridflow_home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._register(tmp_path)
+        import gridflow.adapter.cli.app as cli_module
+
+        # Both engines emit identical voltages → agreement.
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _name: _OffsetConnector(0.0))
+        out = tmp_path / "xval.json"
+        rv = runner.invoke(
+            app,
+            ["validate-engines", "demo@1.0.0", "--engines", "e_a,e_b", "--tol", "1e-6", "--output", str(out)],
+        )
+        assert rv.exit_code == 0, rv.output
+        report = json.loads(out.read_text())
+        assert report["agree"] is True
+        assert report["reference_engine"] == "e_a"
+
+    def test_disagreeing_engines_exit_nonzero(
+        self, gridflow_home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._register(tmp_path)
+        import gridflow.adapter.cli.app as cli_module
+
+        offsets = {"e_a": 0.0, "e_b": 0.05}
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda name: _OffsetConnector(offsets[name]))
+        rv = runner.invoke(app, ["validate-engines", "demo@1.0.0", "--engines", "e_a,e_b", "--tol", "1e-3"])
+        assert rv.exit_code == 1, rv.output
+
+    def test_single_engine_rejected(self, gridflow_home: Path, tmp_path: Path) -> None:
+        self._register(tmp_path)
+        rv = runner.invoke(app, ["validate-engines", "demo@1.0.0", "--engines", "only"])
+        assert rv.exit_code == 2
