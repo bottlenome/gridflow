@@ -38,6 +38,7 @@ from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
 from gridflow.adapter.export import PaperExporter, load_comparison_table_json
 from gridflow.domain.error import (
+    BenchmarkError,
     ConfigError,
     ExperimentNotFoundError,
     ExportError,
@@ -102,10 +103,22 @@ _RUN_CONNECTOR_OPT = typer.Option("opendss", "--connector", help="Connector name
 _RUN_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _RESULTS_ID_ARG = typer.Argument(...)
 _RESULTS_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
-_BENCH_BASE_OPT = typer.Option(..., "--baseline", help="Baseline experiment_id")
-_BENCH_CAND_OPT = typer.Option(..., "--candidate", help="Candidate experiment_id")
+_BENCH_BASE_OPT = typer.Option(
+    ..., "--baseline", help="Baseline experiment_id. Repeat to pass replicates for a statistical comparison."
+)
+_BENCH_CAND_OPT = typer.Option(
+    ..., "--candidate", help="Candidate experiment_id. Repeat to pass replicates for a statistical comparison."
+)
 _BENCH_OUTPUT_OPT = typer.Option(None, "--output", help="Write JSON report to path")
 _BENCH_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_BENCH_ALPHA_OPT = typer.Option(0.05, "--alpha", help="Significance level (statistical comparison).")
+_BENCH_CORRECTION_OPT = typer.Option(
+    "holm", "--correction", help="Multiple-comparison correction: holm | bh (statistical comparison)."
+)
+_BENCH_BOOTSTRAP_N_OPT = typer.Option(
+    2000, "--bootstrap-n", min=0, help="Bootstrap resamples for the mean CIs (statistical comparison)."
+)
+_BENCH_SEED_OPT = typer.Option(0, "--seed", help="Seed for permutation/bootstrap resampling (deterministic).")
 _SWEEP_PLAN_OPT = typer.Option(
     ...,
     "--plan",
@@ -560,15 +573,50 @@ def results_command(
 
 @app.command("benchmark")
 def benchmark_command(
-    baseline: str = _BENCH_BASE_OPT,
-    candidate: str = _BENCH_CAND_OPT,
+    baseline: list[str] = _BENCH_BASE_OPT,
+    candidate: list[str] = _BENCH_CAND_OPT,
     output: Path | None = _BENCH_OUTPUT_OPT,
     fmt: str = _BENCH_FMT_OPT,
+    alpha: float = _BENCH_ALPHA_OPT,
+    correction: str = _BENCH_CORRECTION_OPT,
+    bootstrap_n: int = _BENCH_BOOTSTRAP_N_OPT,
+    seed: int = _BENCH_SEED_OPT,
 ) -> None:
-    """Compare two saved experiments via the benchmark harness."""
+    """Compare saved experiments via the benchmark harness.
+
+    One ``--baseline`` and one ``--candidate`` → the legacy mean-delta report.
+    Repeat either flag (replicates) → a statistical comparison with effect
+    size, permutation p-values (corrected for multiple metrics), bootstrap CIs
+    and a ``significant`` verdict that a mean delta alone can no longer earn
+    (issue #18).
+    """
     ctx = _build_context(fmt=OutputFormat(fmt))
-    base = _load_result(ctx, baseline)
-    cand = _load_result(ctx, candidate)
+
+    if len(baseline) > 1 or len(candidate) > 1:
+        base_group = [_load_result(ctx, b) for b in baseline]
+        cand_group = [_load_result(ctx, c) for c in candidate]
+        try:
+            stat_report = ctx.harness.compare_groups(
+                base_group,
+                cand_group,
+                alpha=alpha,
+                correction=correction,
+                bootstrap_n=bootstrap_n,
+                seed=seed,
+            )
+        except (BenchmarkError, ValueError) as exc:
+            typer.echo(str(exc))
+            raise typer.Exit(code=2) from exc
+        if output is not None:
+            ctx.report_gen.write_comparison(stat_report, output)
+        if ctx.formatter.format is OutputFormat.PLAIN:
+            typer.echo(ctx.report_gen.render_statistical_text(stat_report))
+        else:
+            typer.echo(ctx.formatter.render(stat_report.to_dict()))
+        return
+
+    base = _load_result(ctx, baseline[0])
+    cand = _load_result(ctx, candidate[0])
     report = ctx.harness.compare(base, cand)
     if output is not None:
         ctx.report_gen.write_comparison(report, output)

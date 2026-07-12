@@ -56,12 +56,30 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow scenario clone <pack_id> --id <new_id>` | Clone a baseline pack to start a comparison study |
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
-| `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs |
+| `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs (repeat the flags to pass replicates for a statistical verdict) |
 | `gridflow sweep --plan <sweep_plan.yaml>` | Run a parameter sweep |
 | `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
 | `gridflow export paper <comparison.json> -o <dir>` | Paper-ready artifacts: LaTeX table, CSV, matplotlib script, caption |
 
 All commands accept `--format plain|json|table`.
+
+### Statistical comparison (avoiding false positives)
+
+A single `--baseline`/`--candidate` pair gives the legacy mean-delta report.
+Repeat either flag to pass **replicate groups** and get a statistical verdict
+instead: each metric reports an effect size (Cohen's d), a permutation
+p-value corrected for multiple metrics (`--correction holm|bh`), bootstrap
+confidence intervals on both means, and a `significant` flag. A metric is
+called `significant` only when the corrected p clears `--alpha`, **both sides
+carry ≥2 replicates, and the within-group variance is non-zero** — so a mean
+delta of the right sign, a single-run comparison, or a fully deterministic
+input can no longer be mistaken for a real improvement. `runtime` is treated
+as informational and never asserted significant.
+
+Generate replicate groups with `sweep`'s `n_replicates:` (each cell runs that
+many times with distinct, deterministically-derived seeds), or with repeated
+`gridflow run`. `evaluate --parameter-sweep ... --bootstrap-n N` likewise adds
+a bootstrap CI to a sensitivity curve and warns when that CI is zero-width.
 
 ### Paper export (publication workflow)
 
