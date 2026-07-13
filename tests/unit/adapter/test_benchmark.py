@@ -9,11 +9,17 @@ from pathlib import Path
 import pytest
 
 from gridflow.adapter.benchmark import BenchmarkHarness, ReportGenerator
-from gridflow.adapter.benchmark.metrics import RuntimeMetric, VoltageDeviationMetric
+from gridflow.adapter.benchmark.metrics import (
+    BUILTIN_METRICS,
+    NonConvergenceRateMetric,
+    RuntimeMetric,
+    VoltageDeviationMetric,
+    VoltageViolationRateMetric,
+)
 from gridflow.domain.cdl import ExperimentMetadata
-from gridflow.domain.error import BenchmarkError
+from gridflow.domain.error import BenchmarkError, MetricCalculationError
 from gridflow.domain.result import NodeResult
-from gridflow.usecase.result import ExperimentResult
+from gridflow.usecase.result import ExperimentResult, StepResult, StepStatus
 
 
 def _result(experiment_id: str, voltages: tuple[float, ...], elapsed: float) -> ExperimentResult:
@@ -52,6 +58,61 @@ class TestVoltageDeviationMetric:
         assert VoltageDeviationMetric().calculate(empty) == 0.0
 
 
+class TestVoltageViolationRateMetric:
+    def test_zero_within_band(self) -> None:
+        m = VoltageViolationRateMetric()  # ANSI 0.95-1.05
+        assert m.calculate(_result("e", (1.0, 0.96, 1.04), 0.5)) == 0.0
+
+    def test_fraction_outside_band(self) -> None:
+        m = VoltageViolationRateMetric(v_min=0.95, v_max=1.05)
+        # 2 of 4 samples breach the band.
+        assert m.calculate(_result("e", (0.90, 1.10, 1.00, 0.98), 0.5)) == pytest.approx(0.5)
+
+    def test_custom_envelope(self) -> None:
+        strict = VoltageViolationRateMetric(v_min=0.99, v_max=1.01)
+        assert strict.calculate(_result("e", (0.98, 1.0), 0.5)) == pytest.approx(0.5)
+
+    def test_bad_envelope_rejected(self) -> None:
+        with pytest.raises(MetricCalculationError):
+            VoltageViolationRateMetric(v_min=1.05, v_max=0.95)
+
+    def test_empty_returns_zero(self) -> None:
+        meta = ExperimentMetadata(
+            experiment_id="e",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p",
+            connector="opendss",
+        )
+        empty = ExperimentResult(experiment_id="e", metadata=meta)
+        assert VoltageViolationRateMetric().calculate(empty) == 0.0
+
+
+class TestNonConvergenceRateMetric:
+    def _with_steps(self, statuses: tuple[StepStatus, ...]) -> ExperimentResult:
+        meta = ExperimentMetadata(
+            experiment_id="e",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p",
+            connector="opendss",
+        )
+        steps = tuple(
+            StepResult(step_id=i, timestamp=datetime(2026, 1, 1, tzinfo=UTC), status=s, elapsed_ms=1.0)
+            for i, s in enumerate(statuses)
+        )
+        return ExperimentResult(experiment_id="e", metadata=meta, steps=steps)
+
+    def test_all_converged_is_zero(self) -> None:
+        r = self._with_steps((StepStatus.SUCCESS, StepStatus.SUCCESS))
+        assert NonConvergenceRateMetric().calculate(r) == 0.0
+
+    def test_fraction_non_converged(self) -> None:
+        r = self._with_steps((StepStatus.SUCCESS, StepStatus.ERROR, StepStatus.WARNING, StepStatus.SUCCESS))
+        assert NonConvergenceRateMetric().calculate(r) == pytest.approx(0.5)
+
+    def test_no_steps_is_zero(self) -> None:
+        assert NonConvergenceRateMetric().calculate(_result("e", (1.0,), 0.5)) == 0.0
+
+
 class TestRuntimeMetric:
     def test_returns_elapsed(self) -> None:
         assert RuntimeMetric().calculate(_result("e", (1.0,), 1.5)) == 1.5
@@ -63,6 +124,8 @@ class TestBenchmarkHarness:
         summary = harness.evaluate(_result("e1", (1.0, 0.98), 0.5))
         names = dict(summary.values)
         assert "voltage_deviation" in names
+        assert "voltage_violation_rate" in names
+        assert "non_convergence_rate" in names
         assert "runtime" in names
         assert names["runtime"] == 0.5
 
@@ -73,7 +136,8 @@ class TestBenchmarkHarness:
         report = harness.compare(base, cand)
         assert report.baseline_id == "e1"
         assert report.candidate_id == "e2"
-        assert len(report.diffs) == 2
+        # One diff per built-in metric.
+        assert len(report.diffs) == len(BUILTIN_METRICS)
 
     def test_empty_metrics_rejected(self) -> None:
         harness = BenchmarkHarness(metrics=())

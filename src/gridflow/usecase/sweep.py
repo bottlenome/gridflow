@@ -24,6 +24,7 @@ Design principles (CLAUDE.md §0.1):
 from __future__ import annotations
 
 import json
+import math
 import statistics
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -85,7 +86,13 @@ class StatisticsAggregator:
     """Standard descriptive statistics for every metric key.
 
     For each metric ``m`` in the input, emits
-    ``{m}_mean / {m}_median / {m}_min / {m}_max / {m}_stdev``.
+    ``{m}_mean / {m}_median / {m}_min / {m}_max / {m}_stdev`` plus
+    ``{m}_valid_n`` — the count of finite samples the statistics were computed
+    over. Non-finite values (NaN/inf, e.g. a metric that could not be computed
+    for some child) are excluded so they never silently corrupt the mean, and
+    ``{m}_valid_n`` makes any such exclusion visible rather than hidden
+    (issue #22). A key whose samples are all non-finite emits only
+    ``{m}_valid_n = 0``.
     """
 
     name = "statistics"
@@ -96,7 +103,11 @@ class StatisticsAggregator:
         keys: list[str] = sorted({k for d in per_experiment for k in d})
         out: list[tuple[str, float]] = []
         for key in keys:
-            values = [float(d[key]) for d in per_experiment if key in d]
+            present = [float(d[key]) for d in per_experiment if key in d]
+            values = [v for v in present if math.isfinite(v)]
+            # Always report how many finite samples fed the statistics, so a
+            # dropped NaN is auditable (never a silent hole in the mean).
+            out.append((f"{key}_valid_n", float(len(values))))
             if not values:
                 continue
             out.append((f"{key}_mean", float(statistics.fmean(values))))

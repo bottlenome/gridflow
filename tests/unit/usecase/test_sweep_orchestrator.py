@@ -195,6 +195,20 @@ class TestStatisticsAggregator:
     def test_registered_name(self) -> None:
         assert StatisticsAggregator().name == "statistics"
 
+    def test_nan_excluded_and_counted(self) -> None:
+        # Issue #22: a NaN metric value must not corrupt the mean; the
+        # exclusion is made visible via {key}_valid_n.
+        agg = StatisticsAggregator()
+        result = dict(agg.aggregate([{"m": 1.0}, {"m": float("nan")}, {"m": 3.0}]))
+        assert result["m_mean"] == pytest.approx(2.0)  # NaN dropped, not propagated
+        assert result["m_valid_n"] == 2.0
+
+    def test_all_nan_key_reports_zero_valid(self) -> None:
+        agg = StatisticsAggregator()
+        result = dict(agg.aggregate([{"m": float("nan")}, {"m": float("inf")}]))
+        assert result["m_valid_n"] == 0.0
+        assert "m_mean" not in result  # no statistics computed over an empty set
+
 
 class TestExtremaAggregator:
     def test_min_max_only(self) -> None:

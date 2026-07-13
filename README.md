@@ -82,6 +82,23 @@ many times with distinct, deterministically-derived seeds), or with repeated
 `gridflow run`. `evaluate --parameter-sweep ... --bootstrap-n N` likewise adds
 a bootstrap CI to a sensitivity curve and warns when that CI is zero-width.
 
+### Built-in metrics
+
+Every `benchmark` / `sweep` / `evaluate` run computes these built-in metrics
+(all "lower is better"):
+
+- `voltage_deviation` — RMS |V − 1.0| pu across all bus voltages.
+- `voltage_violation_rate` — fraction of bus voltages outside the envelope
+  (default ANSI C84.1 Range A, 0.95–1.05 pu; the band is a parameter so it
+  travels with the number).
+- `non_convergence_rate` — fraction of steps whose solve did not converge, so
+  a sweep can no longer silently average over failed cells.
+- `runtime` — wall-clock seconds (informational; never asserted "significant").
+
+The statistics aggregator excludes non-finite (NaN/inf) samples from each
+metric and reports `{metric}_valid_n`, so a dropped value is auditable rather
+than silently corrupting the mean.
+
 ### Engine cross-validation (single-engine bug guard)
 
 `gridflow validate-engines <pack_id> --engines opendss,pandapower --tol 1e-6`
