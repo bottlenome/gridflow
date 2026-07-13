@@ -76,6 +76,7 @@ from gridflow.usecase.sweep import (
     build_default_aggregator_registry,
 )
 from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_bundle_from_yaml
+from gridflow.usecase.violation_attribution import ViolationAttributor
 
 app = typer.Typer(
     name="gridflow",
@@ -120,6 +121,12 @@ _VALIDATE_TOL_OPT = typer.Option(
 _VALIDATE_STEPS_OPT = typer.Option(1, "--steps", "-n", help="Number of solver steps per engine")
 _VALIDATE_OUTPUT_OPT = typer.Option(None, "--output", help="Write CrossValidationReport JSON to this path")
 _VALIDATE_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_ATTR_BASELINE_OPT = typer.Option(..., "--baseline", help="No-control (existing-load) experiment_id")
+_ATTR_CANDIDATE_OPT = typer.Option(..., "--candidate", help="With-control experiment_id to attribute")
+_ATTR_VMIN_OPT = typer.Option(..., "--v-min", help="Envelope lower bound (pu). Required — no default band.")
+_ATTR_VMAX_OPT = typer.Option(..., "--v-max", help="Envelope upper bound (pu). Required — no default band.")
+_ATTR_OUTPUT_OPT = typer.Option(None, "--output", help="Write ViolationAttribution JSON to this path")
+_ATTR_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _BENCH_BASE_OPT = typer.Option(
     ..., "--baseline", help="Baseline experiment_id. Repeat to pass replicates for a statistical comparison."
 )
@@ -655,6 +662,48 @@ def validate_engines_command(
         # (or one did not converge), so any result built on a single engine is
         # suspect until reconciled.
         raise typer.Exit(code=1)
+
+
+@app.command("attribute-violations")
+def attribute_violations_command(
+    baseline: str = _ATTR_BASELINE_OPT,
+    candidate: str = _ATTR_CANDIDATE_OPT,
+    v_min: float = _ATTR_VMIN_OPT,
+    v_max: float = _ATTR_VMAX_OPT,
+    output: Path | None = _ATTR_OUTPUT_OPT,
+    fmt: str = _ATTR_FMT_OPT,
+) -> None:
+    """Split a candidate's voltage violations into pre-existing vs induced (#24).
+
+    Compares the with-control ``--candidate`` against the no-control
+    ``--baseline`` over the required ``--v-min`` / ``--v-max`` envelope and
+    reports ``baseline_only`` (already out of band under existing load — not the
+    controller's doing) vs ``dispatch_induced`` (the controller pushed it out of
+    band) vs ``total``. This prevents crediting a controller for pre-existing
+    violations it cannot fix — the try11 "5x reduction" misjudgment.
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.attribute_violations")
+
+    base = _load_result(ctx, baseline)
+    cand = _load_result(ctx, candidate)
+    try:
+        attribution = ViolationAttributor().attribute(
+            baseline=base,
+            candidate=cand,
+            v_min=v_min,
+            v_max=v_max,
+        )
+    except GridflowError as exc:
+        log.error("attribute_violations_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(attribution.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+    typer.echo(ctx.formatter.render(attribution.to_dict()))
 
 
 @app.command("results")

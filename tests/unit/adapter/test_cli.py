@@ -580,3 +580,74 @@ class TestValidateEnginesCommand:
         self._register(tmp_path)
         rv = runner.invoke(app, ["validate-engines", "demo@1.0.0", "--engines", "only"])
         assert rv.exit_code == 2
+
+
+class TestAttributeViolationsCommand:
+    """Issue #24: `gridflow attribute-violations` splits pre-existing vs
+    controller-induced voltage violations over a required envelope."""
+
+    def _persist(self, gridflow_home: Path, exp_id: str, voltages: tuple[float, ...]) -> None:
+        from datetime import UTC, datetime
+
+        from gridflow.domain.cdl import ExperimentMetadata
+        from gridflow.domain.result import NodeResult
+        from gridflow.usecase.result import ExperimentResult
+
+        meta = ExperimentMetadata(
+            experiment_id=exp_id,
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p@1.0.0",
+            connector="fake",
+        )
+        result = ExperimentResult(
+            experiment_id=exp_id,
+            metadata=meta,
+            node_results=(NodeResult(node_id="n1", voltages=voltages),),
+        )
+        results_dir = gridflow_home / "results"
+        results_dir.mkdir(parents=True, exist_ok=True)
+        (results_dir / f"{exp_id}.json").write_text(json.dumps(result.to_dict()), encoding="utf-8")
+
+    def test_attribution_separates_causes(self, gridflow_home: Path, tmp_path: Path) -> None:
+        # baseline sample0 already low; candidate adds an induced high at sample1.
+        self._persist(gridflow_home, "base", (0.90, 1.00))
+        self._persist(gridflow_home, "cand", (0.90, 1.10))
+        out = tmp_path / "attr.json"
+        rv = runner.invoke(
+            app,
+            [
+                "attribute-violations",
+                "--baseline",
+                "base",
+                "--candidate",
+                "cand",
+                "--v-min",
+                "0.95",
+                "--v-max",
+                "1.05",
+                "--output",
+                str(out),
+            ],
+        )
+        assert rv.exit_code == 0, rv.output
+        payload = json.loads(out.read_text())
+        assert payload["envelope"] == {"v_min": 0.95, "v_max": 1.05}
+        assert payload["baseline_only_rate"] == 0.5
+        assert payload["dispatch_induced_rate"] == 0.5
+        assert payload["total_rate"] == 1.0
+
+    def test_missing_envelope_is_error(self, gridflow_home: Path) -> None:
+        self._persist(gridflow_home, "base", (1.0,))
+        self._persist(gridflow_home, "cand", (1.0,))
+        rv = runner.invoke(app, ["attribute-violations", "--baseline", "base", "--candidate", "cand"])
+        # --v-min / --v-max are required options → typer usage error.
+        assert rv.exit_code == 2
+
+    def test_mismatched_networks_rejected(self, gridflow_home: Path) -> None:
+        self._persist(gridflow_home, "base", (1.0,))
+        self._persist(gridflow_home, "cand", (1.0, 1.0))  # different sample count
+        rv = runner.invoke(
+            app,
+            ["attribute-violations", "--baseline", "base", "--candidate", "cand", "--v-min", "0.95", "--v-max", "1.05"],
+        )
+        assert rv.exit_code == 2

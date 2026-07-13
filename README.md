@@ -57,6 +57,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
 | `gridflow validate-engines <pack_id> --engines opendss,pandapower` | Solve one pack on multiple engines and cross-check the results |
+| `gridflow attribute-violations --baseline <id> --candidate <id> --v-min 0.95 --v-max 1.05` | Split voltage violations into pre-existing vs controller-induced |
 | `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs (repeat the flags to pass replicates for a statistical verdict) |
 | `gridflow sweep --plan <sweep_plan.yaml> [--resume]` | Run a parameter sweep (`--resume` reuses already-computed cells) |
 | `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
@@ -109,6 +110,18 @@ disagree — so a quirk of a single solver (a numerical artifact, a local
 optimum, an outright bug) can no longer be mistaken for a physical result. A
 node present on one engine but not the other, or voltage vectors of different
 length, count as disagreement rather than being silently skipped.
+
+### Violation attribution (crediting only what the controller caused)
+
+`gridflow attribute-violations --baseline <no_control_id> --candidate <id>
+--v-min 0.95 --v-max 1.05` decomposes the candidate's voltage violations, over
+a **required** envelope, into `baseline_only` (already out of band under the
+existing load — not the controller's doing), `dispatch_induced` (the controller
+pushed it out of band), and `total`. This stops a controller being credited for
+pre-existing violations it cannot fix, and — because the band must be named at
+the call site and is stamped into the output — stops a relaxed-vs-strict band
+mix-up. The two results must describe the same network (same buses, same sample
+counts), or the command errors rather than attributing across a mismatch.
 
 ### Resumable sweeps
 
