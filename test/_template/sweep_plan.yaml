@@ -1,0 +1,33 @@
+# Sweep plan template — copy into test/mvp_tryNN/ and edit.
+# Run with:  gridflow sweep --plan sweep_plan.yaml --connector opendss --output sweep.json
+# Resume a partial run with:  ... --resume   (deterministic experiment ids)
+#
+# See docs/mvp_standard_workflow.md §2.2.
+
+sweep:
+  id: REPLACE_ME_sweep_id
+  base_pack_id: REPLACE_ME@1.0.0     # clone of a standard baseline (scenario clone)
+  aggregator: statistics             # emits {metric}_mean/median/min/max/stdev/valid_n
+  seed: 42                           # master seed for the sweep
+  n_replicates: 3                    # >1 => run-to-run variance is estimable (needed by
+                                     # `benchmark`'s significance test). Distinct derived
+                                     # seeds per replicate; common random numbers across cells.
+
+axes:
+  - name: pv_kw                      # -> pack.metadata.parameters (implicit target: pack)
+    type: range
+    start: 100.0
+    stop: 500.0
+    step: 100.0
+  # A metric-targeted axis re-applies a metric kwarg without re-simulating:
+  # - name: voltage_low
+  #   type: range
+  #   start: 0.90
+  #   stop: 0.96
+  #   step: 0.01
+  #   target: "metric:hc_metric"
+
+# Optional: custom metric plugins loaded into the sweep harness.
+# metrics:
+#   - name: hc_metric
+#     plugin: "mypkg.metrics:HostingCapacity"
