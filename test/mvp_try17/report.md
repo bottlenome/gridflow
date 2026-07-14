@@ -81,3 +81,33 @@ for c in root end; do gridflow sweep --plan test/mvp_try17/plans/sweep_$c.yaml -
 gridflow benchmark <ROOT ids...> <END ids...> --correction holm --alpha 0.05 --output test/mvp_try17/results/bench_root_vs_end.json
 gridflow export paper test/mvp_try17/results/bench_root_vs_end.json -o test/mvp_try17/results/paper_export
 ```
+
+---
+
+## 8. 査読後訂正（独立査読の結果を受けて）— 中心的主張を撤回
+
+独立査読（`review_record.md`, 著者≠査読者）で **CRITICAL 欠陥**が指摘され、判定は**不合格**。
+著者はこれを受け入れ、§4.3 / §6 の位置効果に関する中心的主張を**撤回**する。
+
+- **疑似反復（pseudo-replication）**: 位置条件 ROOT/END の候補母線は各4個で、`RandomSampleAxis`
+  が24回**復元抽出**していた。per-experiment 値は実際には**各群3通り**しかない
+  （ROOT: 0.244/0.488/0.732, END: 0.146/0.302/0.500）。benchmark はこの疑似反復を n=24 の
+  独立標本として扱い、d=−1.55 / Holm p_adj=2×10⁻⁴ / CI 非重複 を算出したが、**母線を独立単位
+  （実効 4 vs 4, 実質 3 通り）として再検定すると vvr p≈0.14 で非有意**。4v4 の最小到達 two-sided p は
+  0.029 であり、報告の 2×10⁻⁴ は独立標本では原理的に到達不能＝反復数え上げの artifact。
+- したがって「容量より位置が効く」という §6 のリフレーズは**証拠に支持されない**。正しい結論は
+  「**本試行の設計では、容量効果も位置効果も、独立標本ベースでは有意差を示せなかった**」。
+- §3 で「シード反復ではない」と try11 型 artifact を否定した一方、**候補が4母線で復元抽出している
+  事実を非開示**にしていた点が査読の核心的指摘であり、妥当。
+
+### この失敗が示すこと（本試行の真の価値）
+
+1. **機構的ガードは疑似反復を検出できなかった**。`voltage_violation_rate_valid_n=24` は額面通り24を
+   報告し、benchmark は `significant=True` を返した。`insufficient_replicates` ガードは「n<2」しか
+   見ず、「N個の標本が少数の離散値の反復」を捕捉しない。
+2. **独立査読（§4.1.3）がツールの盲点を捕捉した**。著者が仕込んだ穴を、成果物のみを渡された独立
+   査読者が厳密再検定で暴いた。→ 「機構的ガード＋独立査読の両輪」という設計思想（PR #27）の妥当性を
+   実証。どちらか一方では try11 型（実効標本数の水増し）を止められない。
+3. **framework の実ギャップを発見**: 標本の**実効独立数 / 疑似反復**を検知するガードが無い。
+   → follow-up issue 化（distinct(values) ≪ N や、RandomSampleAxis の復元抽出で候補数≪N_samples の
+   ときに警告する effective-sample-size ガード）。これは try11「sample-of-1 artifact」の一般化。
