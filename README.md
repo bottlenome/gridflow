@@ -56,12 +56,82 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | `gridflow scenario clone <pack_id> --id <new_id>` | Clone a baseline pack to start a comparison study |
 | `gridflow run <pack_id> [--steps N]` | Execute an experiment |
 | `gridflow results <experiment_id>` | Print a saved experiment result |
-| `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs |
-| `gridflow sweep --plan <sweep_plan.yaml>` | Run a parameter sweep |
+| `gridflow validate-engines <pack_id> --engines opendss,pandapower` | Solve one pack on multiple engines and cross-check the results |
+| `gridflow attribute-violations --baseline <id> --candidate <id> --v-min 0.95 --v-max 1.05` | Split voltage violations into pre-existing vs controller-induced |
+| `gridflow benchmark --baseline <id> --candidate <id>` | Compare two runs (repeat the flags to pass replicates for a statistical verdict) |
+| `gridflow sweep --plan <sweep_plan.yaml> [--resume]` | Run a parameter sweep (`--resume` reuses already-computed cells) |
 | `gridflow evaluate --plan <plan.yaml>` | Evaluate metrics over saved results |
 | `gridflow export paper <comparison.json> -o <dir>` | Paper-ready artifacts: LaTeX table, CSV, matplotlib script, caption |
 
 All commands accept `--format plain|json|table`.
+
+### Statistical comparison (avoiding false positives)
+
+A single `--baseline`/`--candidate` pair gives the legacy mean-delta report.
+Repeat either flag to pass **replicate groups** and get a statistical verdict
+instead: each metric reports an effect size (Cohen's d), a permutation
+p-value corrected for multiple metrics (`--correction holm|bh`), bootstrap
+confidence intervals on both means, and a `significant` flag. A metric is
+called `significant` only when the corrected p clears `--alpha`, **both sides
+carry ≥2 replicates, and the within-group variance is non-zero** — so a mean
+delta of the right sign, a single-run comparison, or a fully deterministic
+input can no longer be mistaken for a real improvement. `runtime` is treated
+as informational and never asserted significant.
+
+Generate replicate groups with `sweep`'s `n_replicates:` (each cell runs that
+many times with distinct, deterministically-derived seeds), or with repeated
+`gridflow run`. `evaluate --parameter-sweep ... --bootstrap-n N` likewise adds
+a bootstrap CI to a sensitivity curve and warns when that CI is zero-width.
+
+### Built-in metrics
+
+Every `benchmark` / `sweep` / `evaluate` run computes these built-in metrics
+(all "lower is better"):
+
+- `voltage_deviation` — RMS |V − 1.0| pu across all bus voltages.
+- `voltage_violation_rate` — fraction of bus voltages outside the envelope
+  (default ANSI C84.1 Range A, 0.95–1.05 pu; the band is a parameter so it
+  travels with the number).
+- `non_convergence_rate` — fraction of steps whose solve did not converge, so
+  a sweep can no longer silently average over failed cells.
+- `runtime` — wall-clock seconds (informational; never asserted "significant").
+
+The statistics aggregator excludes non-finite (NaN/inf) samples from each
+metric and reports `{metric}_valid_n`, so a dropped value is auditable rather
+than silently corrupting the mean.
+
+### Engine cross-validation (single-engine bug guard)
+
+`gridflow validate-engines <pack_id> --engines opendss,pandapower --tol 1e-6`
+solves the same pack on every listed engine and compares each one's node
+voltages against the first (reference) engine within `--tol`, also reporting
+any solver that failed to converge. It exits non-zero when the engines
+disagree — so a quirk of a single solver (a numerical artifact, a local
+optimum, an outright bug) can no longer be mistaken for a physical result. A
+node present on one engine but not the other, or voltage vectors of different
+length, count as disagreement rather than being silently skipped.
+
+### Violation attribution (crediting only what the controller caused)
+
+`gridflow attribute-violations --baseline <no_control_id> --candidate <id>
+--v-min 0.95 --v-max 1.05` decomposes the candidate's voltage violations, over
+a **required** envelope, into `baseline_only` (already out of band under the
+existing load — not the controller's doing), `dispatch_induced` (the controller
+pushed it out of band), and `total`. This stops a controller being credited for
+pre-existing violations it cannot fix, and — because the band must be named at
+the call site and is stamped into the output — stops a relaxed-vs-strict band
+mix-up. The two results must describe the same network (same buses, same sample
+counts), or the command errors rather than attributing across a mismatch.
+
+### Resumable sweeps
+
+Every sweep child gets a deterministic `experiment_id` derived from the plan's
+content hash and the cell/replicate indices, so a sweep is content-addressable:
+re-running overwrites the same result files, and `gridflow sweep --resume`
+reuses cells already on disk and simulates only the missing ones (a sweep that
+died at cell 400/500 finishes by running just the remaining 100). Changing the
+plan changes the hash, so a stale cache is bypassed automatically; the number
+of reused vs recomputed cells is logged.
 
 ### Paper export (publication workflow)
 

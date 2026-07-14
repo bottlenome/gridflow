@@ -1,0 +1,18 @@
+# Evaluation plan template — re-apply metrics to already-simulated results
+# WITHOUT re-running the simulation.
+# Run with:  gridflow evaluate --plan eval_plan.yaml --output eval.json
+#
+# For a CI-bearing parameter sweep of one metric kwarg, prefer the inline form:
+#   gridflow evaluate --results <dir> --metric "hc:mypkg:HC" \
+#     --parameter-sweep "voltage_low:0.90:0.95:11" --bootstrap-n 1000
+# (a zero-width CI triggers a warning — see docs/mvp_standard_workflow.md §2.3).
+
+evaluation:
+  id: REPLACE_ME_eval_id
+  results:
+    - path/to/result_or_sweep.json    # ExperimentResult JSON, results dir, or SweepResult JSON
+
+metrics:
+  - name: voltage_deviation
+  - name: voltage_violation_rate      # built-in; ANSI 0.95-1.05 band by default
+  - name: non_convergence_rate        # built-in; 0.0 == every step converged

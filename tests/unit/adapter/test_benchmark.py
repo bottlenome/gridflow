@@ -9,11 +9,17 @@ from pathlib import Path
 import pytest
 
 from gridflow.adapter.benchmark import BenchmarkHarness, ReportGenerator
-from gridflow.adapter.benchmark.metrics import RuntimeMetric, VoltageDeviationMetric
+from gridflow.adapter.benchmark.metrics import (
+    BUILTIN_METRICS,
+    NonConvergenceRateMetric,
+    RuntimeMetric,
+    VoltageDeviationMetric,
+    VoltageViolationRateMetric,
+)
 from gridflow.domain.cdl import ExperimentMetadata
-from gridflow.domain.error import BenchmarkError
+from gridflow.domain.error import BenchmarkError, MetricCalculationError
 from gridflow.domain.result import NodeResult
-from gridflow.usecase.result import ExperimentResult
+from gridflow.usecase.result import ExperimentResult, StepResult, StepStatus
 
 
 def _result(experiment_id: str, voltages: tuple[float, ...], elapsed: float) -> ExperimentResult:
@@ -52,6 +58,61 @@ class TestVoltageDeviationMetric:
         assert VoltageDeviationMetric().calculate(empty) == 0.0
 
 
+class TestVoltageViolationRateMetric:
+    def test_zero_within_band(self) -> None:
+        m = VoltageViolationRateMetric()  # ANSI 0.95-1.05
+        assert m.calculate(_result("e", (1.0, 0.96, 1.04), 0.5)) == 0.0
+
+    def test_fraction_outside_band(self) -> None:
+        m = VoltageViolationRateMetric(v_min=0.95, v_max=1.05)
+        # 2 of 4 samples breach the band.
+        assert m.calculate(_result("e", (0.90, 1.10, 1.00, 0.98), 0.5)) == pytest.approx(0.5)
+
+    def test_custom_envelope(self) -> None:
+        strict = VoltageViolationRateMetric(v_min=0.99, v_max=1.01)
+        assert strict.calculate(_result("e", (0.98, 1.0), 0.5)) == pytest.approx(0.5)
+
+    def test_bad_envelope_rejected(self) -> None:
+        with pytest.raises(MetricCalculationError):
+            VoltageViolationRateMetric(v_min=1.05, v_max=0.95)
+
+    def test_empty_returns_zero(self) -> None:
+        meta = ExperimentMetadata(
+            experiment_id="e",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p",
+            connector="opendss",
+        )
+        empty = ExperimentResult(experiment_id="e", metadata=meta)
+        assert VoltageViolationRateMetric().calculate(empty) == 0.0
+
+
+class TestNonConvergenceRateMetric:
+    def _with_steps(self, statuses: tuple[StepStatus, ...]) -> ExperimentResult:
+        meta = ExperimentMetadata(
+            experiment_id="e",
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p",
+            connector="opendss",
+        )
+        steps = tuple(
+            StepResult(step_id=i, timestamp=datetime(2026, 1, 1, tzinfo=UTC), status=s, elapsed_ms=1.0)
+            for i, s in enumerate(statuses)
+        )
+        return ExperimentResult(experiment_id="e", metadata=meta, steps=steps)
+
+    def test_all_converged_is_zero(self) -> None:
+        r = self._with_steps((StepStatus.SUCCESS, StepStatus.SUCCESS))
+        assert NonConvergenceRateMetric().calculate(r) == 0.0
+
+    def test_fraction_non_converged(self) -> None:
+        r = self._with_steps((StepStatus.SUCCESS, StepStatus.ERROR, StepStatus.WARNING, StepStatus.SUCCESS))
+        assert NonConvergenceRateMetric().calculate(r) == pytest.approx(0.5)
+
+    def test_no_steps_is_zero(self) -> None:
+        assert NonConvergenceRateMetric().calculate(_result("e", (1.0,), 0.5)) == 0.0
+
+
 class TestRuntimeMetric:
     def test_returns_elapsed(self) -> None:
         assert RuntimeMetric().calculate(_result("e", (1.0,), 1.5)) == 1.5
@@ -63,6 +124,8 @@ class TestBenchmarkHarness:
         summary = harness.evaluate(_result("e1", (1.0, 0.98), 0.5))
         names = dict(summary.values)
         assert "voltage_deviation" in names
+        assert "voltage_violation_rate" in names
+        assert "non_convergence_rate" in names
         assert "runtime" in names
         assert names["runtime"] == 0.5
 
@@ -73,7 +136,8 @@ class TestBenchmarkHarness:
         report = harness.compare(base, cand)
         assert report.baseline_id == "e1"
         assert report.candidate_id == "e2"
-        assert len(report.diffs) == 2
+        # One diff per built-in metric.
+        assert len(report.diffs) == len(BUILTIN_METRICS)
 
     def test_empty_metrics_rejected(self) -> None:
         harness = BenchmarkHarness(metrics=())
@@ -104,3 +168,82 @@ class TestReportGenerator:
         text = ReportGenerator().render_comparison_text(report)
         assert "e1" in text and "e2" in text
         assert "voltage_deviation" in text
+
+
+def _vgroup(prefix: str, voltages_per_rep: list[float]) -> list[ExperimentResult]:
+    """One-node experiments; voltage_deviation of rep i is |voltages[i] - 1.0|."""
+    return [_result(f"{prefix}{i}", (v,), 0.5 + 0.01 * i) for i, v in enumerate(voltages_per_rep)]
+
+
+class TestCompareGroups:
+    """Issue #18: replicate-aware statistical verdict."""
+
+    _voltage_only = None  # sentinel; built per-test to keep metric set controlled
+
+    def _harness(self) -> BenchmarkHarness:
+        return BenchmarkHarness(metrics=(VoltageDeviationMetric(),))
+
+    def test_clear_separation_is_significant(self) -> None:
+        base = _vgroup("b", [0.90, 0.89, 0.88, 0.87])  # dev ~0.10-0.13
+        cand = _vgroup("c", [0.99, 0.98, 0.97, 0.96])  # dev ~0.01-0.04
+        report = self._harness().compare_groups(base, cand, seed=1)
+        m = report.metrics[0]
+        assert m.name == "voltage_deviation"
+        assert m.significant is True
+        assert m.p_value_adjusted is not None and m.p_value_adjusted < 0.05
+        assert m.effect_size is not None
+        assert m.baseline_ci is not None and m.candidate_ci is not None
+        assert report.any_significant is True
+
+    def test_overlapping_groups_not_significant(self) -> None:
+        base = _vgroup("b", [0.95, 0.94, 0.93, 0.92])
+        cand = _vgroup("c", [0.945, 0.935, 0.925, 0.915])
+        report = self._harness().compare_groups(base, cand, seed=1)
+        assert report.metrics[0].significant is False
+        assert report.any_significant is False
+
+    def test_insufficient_replicates_guarded(self) -> None:
+        # 1 vs 1 — the delta may look big but variance is unknown.
+        base = _vgroup("b", [0.90])
+        cand = _vgroup("c", [0.99])
+        report = self._harness().compare_groups(base, cand)
+        m = report.metrics[0]
+        assert m.significant is False
+        assert "insufficient_replicates" in m.warnings
+        assert m.p_value is None
+
+    def test_zero_variance_is_not_significant(self) -> None:
+        # The try11 trap: both groups internally constant. Means differ, but
+        # there is no run-to-run variation to generalise from.
+        base = _vgroup("b", [0.90, 0.90, 0.90])  # dev 0.10 each, variance 0
+        cand = _vgroup("c", [0.80, 0.80, 0.80])  # dev 0.20 each, variance 0
+        report = self._harness().compare_groups(base, cand)
+        m = report.metrics[0]
+        assert m.delta != 0.0
+        assert m.significant is False
+        assert "zero_variance" in m.warnings
+
+    def test_runtime_is_informational_never_significant(self) -> None:
+        # Full harness includes runtime; give runtime a clean separation and
+        # confirm it is still not called significant.
+        base = [_result(f"b{i}", (0.9 - 0.01 * i,), 0.10 + 0.01 * i) for i in range(4)]
+        cand = [_result(f"c{i}", (0.99 - 0.01 * i,), 5.00 + 0.01 * i) for i in range(4)]
+        report = BenchmarkHarness().compare_groups(base, cand, seed=1)
+        runtime = next(m for m in report.metrics if m.name == "runtime")
+        assert runtime.informational is True
+        assert runtime.significant is False
+
+    def test_to_dict_is_loader_compatible(self) -> None:
+        base = _vgroup("b", [0.90, 0.89, 0.88, 0.87])
+        cand = _vgroup("c", [0.99, 0.98, 0.97, 0.96])
+        report = self._harness().compare_groups(base, cand, seed=1)
+        data = report.to_dict()
+        entry = data["metrics"][0]
+        # Loader contract (#23): baseline/candidate + {side}_ci + objective.
+        assert {"baseline", "candidate", "delta", "objective"} <= entry.keys()
+        assert "baseline_ci" in entry and "candidate_ci" in entry
+        assert {"p_value", "p_value_adjusted", "effect_size", "significant"} <= entry.keys()
+
+    def test_empty_side_rejected(self) -> None:
+        with pytest.raises(BenchmarkError):
+            self._harness().compare_groups([], _vgroup("c", [0.9, 0.8]))

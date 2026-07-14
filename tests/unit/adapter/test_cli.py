@@ -235,6 +235,54 @@ axes:
         # missing file).
         assert result.exit_code != 0
 
+    def test_sweep_resume_reuses_deterministic_results(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Issue #21: a second `sweep --resume` reuses the persisted child
+        results (deterministic ids) instead of re-simulating."""
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+
+        plan_path = tmp_path / "sweep.yaml"
+        plan_path.write_text(
+            """
+sweep:
+  id: resume_smoke
+  base_pack_id: demo@1.0.0
+  aggregator: statistics
+axes:
+  - name: pv_kw
+    type: range
+    start: 100
+    stop: 400
+    step: 100
+""",
+            encoding="utf-8",
+        )
+        base_args = ["sweep", "--plan", str(plan_path), "--connector", "fake", "--format", "json"]
+
+        first = tmp_path / "r1.json"
+        r1 = runner.invoke(app, [*base_args, "--output", str(first)])
+        assert r1.exit_code == 0, r1.output
+        ids1 = json.loads(first.read_text())["experiment_ids"]
+        # Deterministic, content-addressable ids landed on disk.
+        assert all(eid.startswith("sweep-") for eid in ids1)
+        assert all((gridflow_home / "results" / f"{eid}.json").exists() for eid in ids1)
+
+        second = tmp_path / "r2.json"
+        r2 = runner.invoke(app, [*base_args, "--resume", "--output", str(second)])
+        assert r2.exit_code == 0, r2.output
+        ids2 = json.loads(second.read_text())["experiment_ids"]
+        assert ids2 == ids1
+
 
 class TestEvaluateCommand:
     """Phase 2 §5.1.1 Option B: ``gridflow evaluate --plan ...``."""
@@ -381,3 +429,225 @@ class TestEvaluateInlineMode:
 
 # json import for the new test class
 import json  # noqa: E402  -- placed here to keep test_cli history-clean for pre-sweep tests
+
+
+class TestEvaluateBootstrap:
+    """Issue #23: ``gridflow evaluate --parameter-sweep`` now wires the
+    already-implemented bootstrap CI through to the CLI, and warns when the
+    resulting interval is zero-width (a misjudgment guard)."""
+
+    _PLUGIN = "tests.unit.usecase.test_sensitivity:_ThresholdedFraction"
+
+    def _one_result_on_disk(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> Path:
+        from tests.unit.usecase.test_orchestrator import FakeConnector
+
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+        import gridflow.adapter.cli.app as cli_module
+
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _: FakeConnector())
+        runner.invoke(app, ["run", "demo@1.0.0", "--connector", "fake", "--format", "plain"])
+        result_jsons = list((gridflow_home / "results").glob("*.json"))
+        assert len(result_jsons) == 1
+        return result_jsons[0]
+
+    def test_bootstrap_flag_emits_ci_and_zero_width_warning(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        result_path = self._one_result_on_disk(gridflow_home, tmp_path, monkeypatch)
+        out = tmp_path / "sens.json"
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--results",
+                str(result_path),
+                "--metric",
+                f"tf:{self._PLUGIN}",
+                "--parameter-sweep",
+                "voltage_low:0.90:0.95:3",
+                "--bootstrap-n",
+                "20",
+                "--output",
+                str(out),
+            ],
+        )
+        assert rv.exit_code == 0, rv.output
+        payload = json.loads(out.read_text())
+        # CI bounds are now present in the persisted SensitivityResult.
+        assert payload["confidence_lower"]
+        assert payload["confidence_upper"]
+        # A single experiment cannot vary under resampling → zero-width CI →
+        # the guard must warn (stderr under CliRunner mixes into output).
+        assert "zero-width" in rv.output
+
+    def test_bootstrap_without_parameter_sweep_rejected(
+        self,
+        gridflow_home: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        result_path = self._one_result_on_disk(gridflow_home, tmp_path, monkeypatch)
+        rv = runner.invoke(
+            app,
+            [
+                "evaluate",
+                "--results",
+                str(result_path),
+                "--metric",
+                "voltage_deviation",
+                "--bootstrap-n",
+                "20",
+            ],
+        )
+        assert rv.exit_code == 2
+        assert "parameter-sweep" in rv.output
+
+
+class _OffsetConnector:
+    """Connector emitting a fixed voltage offset so two 'engines' can be made
+    to agree or disagree on demand (issue #20 CLI test)."""
+
+    name = "offset"
+
+    def __init__(self, offset: float = 0.0, *, converged: bool = True) -> None:
+        self._offset = offset
+        self._converged = converged
+
+    def initialize(self, pack) -> None:  # type: ignore[no-untyped-def]
+        pass
+
+    def step(self, step_index: int):  # type: ignore[no-untyped-def]
+        from gridflow.domain.result import NodeResult
+        from gridflow.usecase.interfaces import ConnectorStepOutput
+
+        return ConnectorStepOutput(
+            step=step_index,
+            node_result=NodeResult(node_id="__network__", voltages=(1.0 + self._offset,)),
+            converged=self._converged,
+        )
+
+    def teardown(self) -> None:
+        pass
+
+
+class TestValidateEnginesCommand:
+    """Issue #20: `gridflow validate-engines` cross-checks engines and exits
+    non-zero when they disagree."""
+
+    def _register(self, tmp_path: Path) -> None:
+        yaml_path = _write_pack_yaml(tmp_path / "pack.yaml")
+        runner.invoke(app, ["scenario", "register", str(yaml_path)])
+
+    def test_agreeing_engines_exit_zero(
+        self, gridflow_home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._register(tmp_path)
+        import gridflow.adapter.cli.app as cli_module
+
+        # Both engines emit identical voltages → agreement.
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda _name: _OffsetConnector(0.0))
+        out = tmp_path / "xval.json"
+        rv = runner.invoke(
+            app,
+            ["validate-engines", "demo@1.0.0", "--engines", "e_a,e_b", "--tol", "1e-6", "--output", str(out)],
+        )
+        assert rv.exit_code == 0, rv.output
+        report = json.loads(out.read_text())
+        assert report["agree"] is True
+        assert report["reference_engine"] == "e_a"
+
+    def test_disagreeing_engines_exit_nonzero(
+        self, gridflow_home: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._register(tmp_path)
+        import gridflow.adapter.cli.app as cli_module
+
+        offsets = {"e_a": 0.0, "e_b": 0.05}
+        monkeypatch.setattr(cli_module, "_default_connector_factory", lambda name: _OffsetConnector(offsets[name]))
+        rv = runner.invoke(app, ["validate-engines", "demo@1.0.0", "--engines", "e_a,e_b", "--tol", "1e-3"])
+        assert rv.exit_code == 1, rv.output
+
+    def test_single_engine_rejected(self, gridflow_home: Path, tmp_path: Path) -> None:
+        self._register(tmp_path)
+        rv = runner.invoke(app, ["validate-engines", "demo@1.0.0", "--engines", "only"])
+        assert rv.exit_code == 2
+
+
+class TestAttributeViolationsCommand:
+    """Issue #24: `gridflow attribute-violations` splits pre-existing vs
+    controller-induced voltage violations over a required envelope."""
+
+    def _persist(self, gridflow_home: Path, exp_id: str, voltages: tuple[float, ...]) -> None:
+        from datetime import UTC, datetime
+
+        from gridflow.domain.cdl import ExperimentMetadata
+        from gridflow.domain.result import NodeResult
+        from gridflow.usecase.result import ExperimentResult
+
+        meta = ExperimentMetadata(
+            experiment_id=exp_id,
+            created_at=datetime(2026, 1, 1, tzinfo=UTC),
+            scenario_pack_id="p@1.0.0",
+            connector="fake",
+        )
+        result = ExperimentResult(
+            experiment_id=exp_id,
+            metadata=meta,
+            node_results=(NodeResult(node_id="n1", voltages=voltages),),
+        )
+        results_dir = gridflow_home / "results"
+        results_dir.mkdir(parents=True, exist_ok=True)
+        (results_dir / f"{exp_id}.json").write_text(json.dumps(result.to_dict()), encoding="utf-8")
+
+    def test_attribution_separates_causes(self, gridflow_home: Path, tmp_path: Path) -> None:
+        # baseline sample0 already low; candidate adds an induced high at sample1.
+        self._persist(gridflow_home, "base", (0.90, 1.00))
+        self._persist(gridflow_home, "cand", (0.90, 1.10))
+        out = tmp_path / "attr.json"
+        rv = runner.invoke(
+            app,
+            [
+                "attribute-violations",
+                "--baseline",
+                "base",
+                "--candidate",
+                "cand",
+                "--v-min",
+                "0.95",
+                "--v-max",
+                "1.05",
+                "--output",
+                str(out),
+            ],
+        )
+        assert rv.exit_code == 0, rv.output
+        payload = json.loads(out.read_text())
+        assert payload["envelope"] == {"v_min": 0.95, "v_max": 1.05}
+        assert payload["baseline_only_rate"] == 0.5
+        assert payload["dispatch_induced_rate"] == 0.5
+        assert payload["total_rate"] == 1.0
+
+    def test_missing_envelope_is_error(self, gridflow_home: Path) -> None:
+        self._persist(gridflow_home, "base", (1.0,))
+        self._persist(gridflow_home, "cand", (1.0,))
+        rv = runner.invoke(app, ["attribute-violations", "--baseline", "base", "--candidate", "cand"])
+        # --v-min / --v-max are required options → typer usage error.
+        assert rv.exit_code == 2
+
+    def test_mismatched_networks_rejected(self, gridflow_home: Path) -> None:
+        self._persist(gridflow_home, "base", (1.0,))
+        self._persist(gridflow_home, "cand", (1.0, 1.0))  # different sample count
+        rv = runner.invoke(
+            app,
+            ["attribute-violations", "--baseline", "base", "--candidate", "cand", "--v-min", "0.95", "--v-max", "1.05"],
+        )
+        assert rv.exit_code == 2

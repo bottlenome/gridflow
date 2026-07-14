@@ -25,15 +25,48 @@ from gridflow.domain.result.comparison_table import (
 )
 
 
+def _metric_value_from_entry(entry: dict[str, Any], side: str) -> MetricValue:
+    """Build a :class:`MetricValue` for the baseline/candidate side of a metric.
+
+    The mandatory scalar lives under ``entry[side]`` (e.g. ``entry["baseline"]``).
+    A confidence interval, when the producer emits one, lives under
+    ``entry[f"{side}_ci"]`` as a ``[low, high]`` pair. Older benchmark reports
+    (mean only) omit it and yield a CI-less value — so this loader carries CI
+    through when it exists (issue #23) without breaking the pre-CI schema.
+    """
+    mean = float(entry[side])
+    ci = entry.get(f"{side}_ci")
+    if ci is None:
+        return MetricValue(mean=mean)
+    try:
+        ci_low, ci_high = float(ci[0]), float(ci[1])
+    except (TypeError, ValueError, IndexError) as exc:
+        raise ExportError(f"benchmark comparison report {side}_ci must be a [low, high] pair, got {ci!r}") from exc
+    return MetricValue(mean=mean, ci_low=ci_low, ci_high=ci_high)
+
+
 def comparison_table_from_benchmark_report(data: dict[str, Any]) -> ComparisonTable:
-    """Map a ``gridflow benchmark`` comparison report onto a ComparisonTable."""
+    """Map a ``gridflow benchmark`` comparison report onto a ComparisonTable.
+
+    Confidence intervals and per-metric objective/unit are preserved when the
+    report carries them (``{side}_ci``, ``objective``, ``unit`` on each metric
+    entry); reports that only carry means still load, with CI-less values and a
+    ``min`` objective default.
+    """
     try:
         baseline = str(data["baseline"])
         candidate = str(data["candidate"])
         metric_entries = list(data["metrics"])
-        specs = tuple(MetricSpec(name=str(m["name"]), unit="", objective="min") for m in metric_entries)
-        baseline_values = tuple(MetricValue(mean=float(m["baseline"])) for m in metric_entries)
-        candidate_values = tuple(MetricValue(mean=float(m["candidate"])) for m in metric_entries)
+        specs = tuple(
+            MetricSpec(
+                name=str(m["name"]),
+                unit=str(m.get("unit", "")),
+                objective=str(m.get("objective", "min")),
+            )
+            for m in metric_entries
+        )
+        baseline_values = tuple(_metric_value_from_entry(m, "baseline") for m in metric_entries)
+        candidate_values = tuple(_metric_value_from_entry(m, "candidate") for m in metric_entries)
     except (KeyError, TypeError, ValueError) as exc:
         raise ExportError(
             f"benchmark comparison report is malformed: {exc!r}. "

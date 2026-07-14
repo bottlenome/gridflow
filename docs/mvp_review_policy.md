@@ -471,6 +471,46 @@ test/
 レビューは **ゼロベース** で行う。実験の実施経緯や開発の苦労は考慮しない。
 成果物（JSON, PNG, スクリプト, ソースコード）と report.md の突き合わせのみで判定する。
 
+#### 4.1.1 独立査読プロトコル（査読者と著者の分離）
+
+査読の独立性は「気持ちの上でゼロベース」では担保されない。try16 では著者＝査読者の
+self-review が P99 順位の artifact（builtin `hash` によるプロセス間非再現）を見逃し、
+revision まで検出できなかった。以下を **実行時の手続きとして義務化** する。
+
+1. **査読者は著者と別のエージェント/人間が担う**。同一セッションの著者が自分の成果を
+   採点してはならない。
+2. **査読者に渡す入力を限定する**: `report.md` と結果 JSON（成果物）**のみ**を渡す。
+   著者の中間生成物（思考ログ、下書き、"うまくいった"という主観）は渡さない。査読者は
+   成果物だけから主張を再構成できるかを検証する。
+3. **査読者はまず §4.5 のリフレーズを成果物のみから書く**。著者のリフレーズと食い違えば、
+   その時点で主張と証拠のギャップが露呈している。
+
+#### 4.1.2 ツールによる機構的ガードの活用（査読前チェックリスト）
+
+以下は gridflow が機構的に検証できる項目であり、査読者は該当ツールの出力を根拠として
+確認する。ルールで「気をつける」のではなく、ツールの verdict を証拠とする。
+
+| 失敗パターン | 機構的ガード（ツール） |
+|---|---|
+| 統計的に無意味な差を改善と誤断（誤判定 try12） | `gridflow benchmark`（レプリケート群）: 効果量・permutation 検定・多重比較補正・`significant` 判定。有意でなければ改善と書けない |
+| 見かけの一致（共有 seed / 決定論入力）を実結果と誤認（誤判定 try11 CI ゼロ幅） | benchmark の `zero_variance` / `insufficient_replicates` 警告、`evaluate --bootstrap-n` の CI ゼロ幅警告 |
+| 単一エンジンのソルバ癖を発見と誤認（誤判定 try13→14） | `gridflow validate-engines`: 両エンジンの母線電圧を許容誤差で突合、不一致なら exit≠0 |
+| 電圧違反率の relaxed/strict 混同・起因合算（誤判定 try11 "5x reduction"） | `gridflow attribute-violations --v-min --v-max`: envelope 必須、baseline_only / dispatch_induced / total を分離 |
+| プロセス間再現不能な合成属性（誤判定 try16 salted hash） | `gridflow.domain.util.stable_hash`（builtin `hash` 禁止）、`sweep` の決定的 experiment_id |
+| 非収束セルを平均に混入 | 標準メトリクス `non_convergence_rate`、`StatisticsAggregator` の `{metric}_valid_n`（NaN 除外の可視化） |
+
+#### 4.1.3 ツールで防げない残課題（査読者の認知作業）
+
+以下は自動検出が困難であり、査読者の領域知識で判断する（機構化しない）。
+
+- **意味的 non-sequitur**: データと主張の物理的対応。例（誤判定 try11 C）: California ISO の
+  系統需要 forecast（15-28 GW）を「ドイツ LV フィーダー（0.4 MVA）上の個別 DER churn の実データ検証」
+  と主張するのは、規模も物理も対応しない non-sequitur。ツールは数値を検証できても「この
+  データがこの主張の証拠になるか」は判断できない。
+- **paradigm fixation**（Rule 6）: 同一 paradigm への制約逐次追加を「独立 cycle」と誤申告して
+  いないか（誤判定 try12-14）。手法の遠近は意味判断。
+- **novelty の文献確証**: 外部 Scopus 検索が必須で、AI 単独 ideation の構造的上限。
+
 ### 4.2 レビュー観点
 
 #### A. 方針適合性（前提条件、これが不合格なら他の観点を問わず不合格）
@@ -479,6 +519,7 @@ test/
 |---|---|
 | gridflow 自体を論文 contribution に含めていないか | Abstract / Contribution に gridflow の提案・設計の議論があれば不合格 |
 | 課題の出典が査読論文の Future Work か | research_landscape.md の引用を確認 |
+| 標準経路（`docs/mvp_standard_workflow.md`）を使ったか | review_record の「標準経路の使用状況」欄を確認。sweep/CI/baseline/属性生成を自作している場合、理由が「framework に機能が無い」なら issue 化を要求（try11-16 のバイパスが誤判定を招いた教訓、issue #25）|
 
 #### B. 数値の信頼性
 
@@ -616,3 +657,4 @@ MDPI Energies / IEEE Access 等のよりアクセスしやすい venue では E 
 | 2026-04-28 | §2.5.2 に Rule 7 (乱数アンカリング) / Rule 8 (課題深掘り連鎖 S0-S8) / Rule 9 (TRIZ 遠隔ドメイン移植) を追加。try10 で v1 (Novelty Gate を文献検索なしに通過させた) → v2 (課題深掘り後付け) → v3 (乱数 anchor で phyllotactic charging に到達) の試行錯誤を経て、3 ルールが揃って初めて非妥当 anchor から手法強制が成立することが判明したため。Novelty Gate を 6 → 9 項目に拡張、根拠論文 4 本 (Tversky & Kahneman / de Bono / Niederreiter / Mitchison) を追加引用 |
 | 2026-04-28 | Rule 9 を v2 に拡張。try10 phyllotactic charging が単一遠隔ドメインのワンショット移植のため experiment 後に MILP に対して 6% 劣る (= invariant 不整合) ことを後付け発見した教訓から、step 5-9 を追加: **(a) ≥3 候補の並列抽象化**, **(b) invariant 保存検査** (元ドメイン暗黙前提が target で成立するか), **(c) 機械的脱落** (preservation 不成立で除外), **(d) Rule 8 S6-S7 で残候補から強制絞込**。try10 phyllo の失敗を worked anti-pattern として本文に埋込 (botany の「葉同種」「目的=被覆均一」前提が EV charging で成立しないことを mechanical に確認すべきだった)。AI ideation の "another domain method を 1 個持ってくれば novel になる" バイアス対策 |
 | 2026-04-29 | §2.3 に「MVP 課題候補プール」を新設。try1-10 で問題定義が試行ごとに発散していた (try1-9 HCA / try10 EV) ため、try11 以降は `docs/mvp_problem_candidates.md` から問題を採用する。3 候補 (Volt-VAR / VPP churn / 復旧順序) を初版に登録。**課題側の発散を禁じ、手法側 (Rule 7-9) の発散に思考リソースを集中** する分業ルール |
+| 2026-07-13 | §4.1.1 独立査読プロトコル（著者と査読者の分離・入力限定）、§4.1.2 ツールによる機構的ガードのチェックリスト、§4.1.3 ツールで防げない残課題を新設。try16 の self-review すり抜け（salted hash artifact）と、誤判定 try11-14 が明文ルールはあったのに実行時強制がなかった問題を受け、機構的ガード（`benchmark` 統計判定 / `validate-engines` / `attribute-violations` / `stable_hash` / `non_convergence_rate`）を査読の証拠として義務化（issue #18/#19/#20/#22/#24）|

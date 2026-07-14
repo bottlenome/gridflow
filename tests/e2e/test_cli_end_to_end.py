@@ -170,3 +170,52 @@ def test_benchmark_compare_two_experiments(gridflow_home: Path, tmp_path: Path) 
     assert report["candidate"] == ids[1]
     metric_names = {entry["name"] for entry in report["metrics"]}
     assert {"voltage_deviation", "runtime"}.issubset(metric_names)
+
+
+def test_benchmark_statistical_path_guards_zero_variance(gridflow_home: Path, tmp_path: Path) -> None:
+    """Issue #18: repeated --baseline/--candidate triggers the statistical
+    report. With the deterministic connector every replicate is identical, so
+    the within-group variance is zero and the harness must refuse to call the
+    difference significant — the exact guard the try11 zero-width-CI trap needed."""
+    yaml_path = _write_pack(tmp_path / "pack.yaml")
+    runner.invoke(app, ["scenario", "register", str(yaml_path)])
+
+    ids: list[str] = []
+    for _ in range(6):
+        run = runner.invoke(
+            app,
+            ["run", "e2e-pack@1.0.0", "--steps", "2", "--connector", "determ", "--format", "json"],
+        )
+        ids.append(json.loads(run.stdout)["experiment_id"])
+
+    out_path = tmp_path / "stat.json"
+    bench = runner.invoke(
+        app,
+        [
+            "benchmark",
+            "--baseline",
+            ids[0],
+            "--baseline",
+            ids[1],
+            "--baseline",
+            ids[2],
+            "--candidate",
+            ids[3],
+            "--candidate",
+            ids[4],
+            "--candidate",
+            ids[5],
+            "--output",
+            str(out_path),
+            "--format",
+            "json",
+        ],
+    )
+    assert bench.exit_code == 0, bench.output
+    report = json.loads(out_path.read_text(encoding="utf-8"))
+    assert "alpha" in report and "correction" in report
+    vd = next(m for m in report["metrics"] if m["name"] == "voltage_deviation")
+    # Deterministic connector → identical replicates → zero variance guard.
+    assert vd["significant"] is False
+    assert "zero_variance" in vd["warnings"]
+    assert vd["n_baseline"] == 3 and vd["n_candidate"] == 3

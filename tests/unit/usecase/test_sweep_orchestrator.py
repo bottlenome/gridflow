@@ -140,6 +140,34 @@ def _make_orchestrator_fixture(tmp_path: Path) -> tuple[FileScenarioRegistry, Sw
     return reg, sweep, fake
 
 
+def _make_cached_fixture(
+    tmp_path: Path,
+) -> tuple[SweepOrchestrator, _FakeConnector, Path]:
+    """Like :func:`_make_orchestrator_fixture` but with a results dir + loader
+    so cache/resume (issue #21) can be exercised end-to-end."""
+    from gridflow.infra.orchestrator import InProcessOrchestratorRunner
+    from gridflow.usecase.evaluation import FilesystemResultLoader
+    from gridflow.usecase.orchestrator import Orchestrator
+
+    reg = FileScenarioRegistry(tmp_path / "packs")
+    reg.register(_make_pack())
+    fake = _FakeConnector()
+    runner = InProcessOrchestratorRunner(connector_factories={"fake": lambda: fake})
+    orchestrator = Orchestrator(registry=reg, runner=runner)
+    aggregator_registry = AggregatorRegistry()
+    aggregator_registry.register(StatisticsAggregator())
+    results_dir = tmp_path / "results"
+    sweep = SweepOrchestrator(
+        registry=reg,
+        orchestrator=orchestrator,
+        aggregator_registry=aggregator_registry,
+        connector_id="fake",
+        results_dir=results_dir,
+        result_loader=FilesystemResultLoader(),
+    )
+    return sweep, fake, results_dir
+
+
 # ----------------------------------------------------------------- Aggregators
 
 
@@ -166,6 +194,20 @@ class TestStatisticsAggregator:
 
     def test_registered_name(self) -> None:
         assert StatisticsAggregator().name == "statistics"
+
+    def test_nan_excluded_and_counted(self) -> None:
+        # Issue #22: a NaN metric value must not corrupt the mean; the
+        # exclusion is made visible via {key}_valid_n.
+        agg = StatisticsAggregator()
+        result = dict(agg.aggregate([{"m": 1.0}, {"m": float("nan")}, {"m": 3.0}]))
+        assert result["m_mean"] == pytest.approx(2.0)  # NaN dropped, not propagated
+        assert result["m_valid_n"] == 2.0
+
+    def test_all_nan_key_reports_zero_valid(self) -> None:
+        agg = StatisticsAggregator()
+        result = dict(agg.aggregate([{"m": float("nan")}, {"m": float("inf")}]))
+        assert result["m_valid_n"] == 0.0
+        assert "m_mean" not in result  # no statistics computed over an empty set
 
 
 class TestExtremaAggregator:
@@ -427,3 +469,176 @@ class TestSweepOrchestratorRun:
         # carry exactly the axis values the child saw.
         pv_kws = [dict(a.pack_params)["pv_kw"] for a in result.assignments]
         assert sorted(pv_kws) == [100.0, 200.0, 300.0]
+
+
+class TestSweepReplicates:
+    """Issue #19: replicate execution + deterministic per-replicate seeds."""
+
+    def test_replicates_multiply_experiment_count(self, tmp_path: Path) -> None:
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=300.0, step=100.0),),  # 2 cells
+            aggregator_name="statistics",
+            n_replicates=3,
+        )
+        result = sweep.run(plan)
+        # 2 cells x 3 replicates = 6 experiments, all with distinct IDs.
+        assert len(result.experiment_ids) == 6
+        assert len(set(result.experiment_ids)) == 6
+        # SweepResult 1:1 invariant survives replication.
+        assert len(result.assignments) == 6
+        for _name, values in result.per_experiment_metrics:
+            assert len(values) == 6
+
+    def test_replicate_assignments_repeat_per_cell(self, tmp_path: Path) -> None:
+        _, sweep, _ = _make_orchestrator_fixture(tmp_path)
+        plan = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=300.0, step=100.0),),  # 2 cells
+            aggregator_name="statistics",
+            n_replicates=3,
+        )
+        result = sweep.run(plan)
+        pv_kws = sorted(dict(a.pack_params)["pv_kw"] for a in result.assignments)
+        # Each cell's assignment appears exactly n_replicates times.
+        assert pv_kws == [100.0, 100.0, 100.0, 200.0, 200.0, 200.0]
+
+    def test_n_replicates_changes_plan_hash(self) -> None:
+        base = dict(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="pv_kw", values=(100.0,)),),
+            aggregator_name="statistics",
+        )
+        assert SweepPlan(**base, n_replicates=1).plan_hash() != SweepPlan(**base, n_replicates=3).plan_hash()
+
+    def test_seed_for_single_replicate_is_backward_compatible(self) -> None:
+        # n_replicates == 1, no master seed → base pack seed flows through
+        # unchanged (Phase-1 controlled-experiment behaviour).
+        pack = _make_pack()
+        pack = pack.__class__(  # rebuild with a concrete seed
+            pack_id=pack.pack_id,
+            name=pack.name,
+            version=pack.version,
+            metadata=PackMetadata(
+                name=pack.name,
+                version=pack.version,
+                description="t",
+                author="t",
+                created_at=datetime(2026, 1, 1, tzinfo=UTC),
+                connector="fake",
+                seed=7,
+            ),
+            network_dir=pack.network_dir,
+            timeseries_dir=pack.timeseries_dir,
+            config_dir=pack.config_dir,
+        )
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+        )
+        assert SweepOrchestrator._seed_for(plan, pack, 0) == 7
+
+    def test_seed_for_master_seed_overrides_pack(self) -> None:
+        pack = _make_pack()  # metadata.seed is None
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+            seed=123,
+        )
+        assert SweepOrchestrator._seed_for(plan, pack, 0) == 123
+
+    def test_seed_for_replicates_distinct_and_common_across_cells(self) -> None:
+        pack = _make_pack()
+        plan = SweepPlan(
+            sweep_id="s",
+            base_pack_id="base@1.0.0",
+            axes=(ChoiceAxis(name="x", values=(1,)),),
+            aggregator_name="statistics",
+            seed=42,
+            n_replicates=3,
+        )
+        seeds = [SweepOrchestrator._seed_for(plan, pack, rep) for rep in range(3)]
+        # Distinct per replicate...
+        assert len(set(seeds)) == 3
+        # ...and deterministic (common random numbers: same rep → same seed,
+        # regardless of which cell requests it).
+        assert seeds == [SweepOrchestrator._seed_for(plan, pack, rep) for rep in range(3)]
+
+
+class TestSweepCacheResume:
+    """Issue #21: deterministic experiment ids + --resume cache."""
+
+    def _plan(self, sweep_id: str = "s1") -> SweepPlan:
+        return SweepPlan(
+            sweep_id=sweep_id,
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=400.0, step=100.0),),  # 3 cells
+            aggregator_name="statistics",
+        )
+
+    def test_experiment_ids_are_deterministic(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        r1 = sweep.run(self._plan())
+        r2 = sweep.run(self._plan())
+        # Same plan → identical, content-addressable ids (not random UUIDs).
+        assert r1.experiment_ids == r2.experiment_ids
+        assert all(eid.startswith(f"sweep-{r1.plan_hash}-c") for eid in r1.experiment_ids)
+
+    def test_resume_reuses_all_cached_cells(self, tmp_path: Path) -> None:
+        sweep, fake, _ = _make_cached_fixture(tmp_path)
+        first = sweep.run(self._plan())
+        calls_after_first = len(fake.initialized_packs)
+
+        events: list = []
+        second = sweep.run(self._plan(), resume=True, on_child=events.append)
+        # No new simulation happened — every cell was a cache hit.
+        assert len(fake.initialized_packs) == calls_after_first
+        assert all(e.cached for e in events)
+        assert second.experiment_ids == first.experiment_ids
+        # Metrics survive the round-trip through the persisted JSON.
+        assert second.aggregated_metrics == first.aggregated_metrics
+
+    def test_resume_recomputes_only_missing_cells(self, tmp_path: Path) -> None:
+        sweep, fake, results_dir = _make_cached_fixture(tmp_path)
+        first = sweep.run(self._plan())
+        calls_after_first = len(fake.initialized_packs)
+        # Evict one cell (simulate a sweep that died partway).
+        victim = results_dir / f"{first.experiment_ids[1]}.json"
+        victim.unlink()
+
+        events: list = []
+        sweep.run(self._plan(), resume=True, on_child=events.append)
+        cached = [e for e in events if e.cached]
+        computed = [e for e in events if not e.cached]
+        assert len(cached) == 2 and len(computed) == 1
+        # Exactly one new simulation ran.
+        assert len(fake.initialized_packs) == calls_after_first + 1
+
+    def test_without_resume_recomputes_despite_cache(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        sweep.run(self._plan())
+        events: list = []
+        sweep.run(self._plan(), resume=False, on_child=events.append)
+        assert all(not e.cached for e in events)
+
+    def test_changed_plan_bypasses_stale_cache(self, tmp_path: Path) -> None:
+        sweep, _, _ = _make_cached_fixture(tmp_path)
+        sweep.run(self._plan())
+        # Different axis range → different plan_hash → different ids → miss.
+        other = SweepPlan(
+            sweep_id="s1",
+            base_pack_id="base@1.0.0",
+            axes=(RangeAxis(name="pv_kw", start=100.0, stop=500.0, step=100.0),),  # 4 cells
+            aggregator_name="statistics",
+        )
+        events: list = []
+        sweep.run(other, resume=True, on_child=events.append)
+        assert all(not e.cached for e in events)

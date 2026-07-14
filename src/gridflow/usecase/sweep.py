@@ -24,9 +24,10 @@ Design principles (CLAUDE.md §0.1):
 from __future__ import annotations
 
 import json
+import math
 import statistics
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -37,10 +38,30 @@ from gridflow.adapter.benchmark.metrics import BUILTIN_METRICS, MetricCalculator
 from gridflow.domain.error import OrchestratorError, PackNotFoundError
 from gridflow.domain.scenario import PackMetadata, ScenarioPack, ScenarioRegistry
 from gridflow.domain.util.params import Params, as_params
-from gridflow.usecase.evaluation import MetricSpec, _NamedMetric
+from gridflow.domain.util.stable_hash import derive_seed
+from gridflow.usecase.evaluation import MetricSpec, ResultLoader, _NamedMetric
 from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult
 from gridflow.usecase.sweep_plan import ChildAssignment, SweepPlan, SweepResult
+
+
+@dataclass(frozen=True)
+class ChildProgress:
+    """One child experiment's outcome, reported to an optional progress hook.
+
+    Attributes:
+        index: Child assignment index within the expanded plan.
+        replicate: Replicate index (0-based) within that assignment.
+        experiment_id: Deterministic experiment id for this (index, replicate).
+        cached: True if the result was loaded from ``results_dir`` instead of
+            re-simulated (a ``--resume`` cache hit).
+    """
+
+    index: int
+    replicate: int
+    experiment_id: str
+    cached: bool
+
 
 # ----------------------------------------------------------------- Aggregator
 
@@ -65,7 +86,13 @@ class StatisticsAggregator:
     """Standard descriptive statistics for every metric key.
 
     For each metric ``m`` in the input, emits
-    ``{m}_mean / {m}_median / {m}_min / {m}_max / {m}_stdev``.
+    ``{m}_mean / {m}_median / {m}_min / {m}_max / {m}_stdev`` plus
+    ``{m}_valid_n`` — the count of finite samples the statistics were computed
+    over. Non-finite values (NaN/inf, e.g. a metric that could not be computed
+    for some child) are excluded so they never silently corrupt the mean, and
+    ``{m}_valid_n`` makes any such exclusion visible rather than hidden
+    (issue #22). A key whose samples are all non-finite emits only
+    ``{m}_valid_n = 0``.
     """
 
     name = "statistics"
@@ -76,7 +103,11 @@ class StatisticsAggregator:
         keys: list[str] = sorted({k for d in per_experiment for k in d})
         out: list[tuple[str, float]] = []
         for key in keys:
-            values = [float(d[key]) for d in per_experiment if key in d]
+            present = [float(d[key]) for d in per_experiment if key in d]
+            values = [v for v in present if math.isfinite(v)]
+            # Always report how many finite samples fed the statistics, so a
+            # dropped NaN is auditable (never a silent hole in the mean).
+            out.append((f"{key}_valid_n", float(len(values))))
             if not values:
                 continue
             out.append((f"{key}_mean", float(statistics.fmean(values))))
@@ -170,6 +201,7 @@ class SweepOrchestrator:
         harness: BenchmarkHarness | None = None,
         metric_specs: tuple[MetricSpec, ...] = (),
         results_dir: Path | None = None,
+        result_loader: ResultLoader | None = None,
     ) -> None:
         self._registry = registry
         self._orchestrator = orchestrator
@@ -188,8 +220,33 @@ class SweepOrchestrator:
         # plot_stochastic_hca, custom analysis scripts) need to inspect
         # individual placements.
         self._results_dir = results_dir
+        # Loader used to rehydrate an already-persisted child result on a
+        # ``--resume`` cache hit. Without it, resume cannot reuse anything
+        # and every cell is recomputed.
+        self._result_loader = result_loader
 
-    def run(self, plan: SweepPlan) -> SweepResult:
+    def run(
+        self,
+        plan: SweepPlan,
+        *,
+        resume: bool = False,
+        on_child: Callable[[ChildProgress], None] | None = None,
+    ) -> SweepResult:
+        """Expand ``plan`` and run every child (x replicate) experiment.
+
+        Args:
+            plan: The sweep to execute.
+            resume: When True, a child whose deterministic result JSON already
+                exists under ``results_dir`` is loaded instead of re-simulated
+                (a cache hit). Requires ``results_dir`` and ``result_loader``.
+                Because every child's ``experiment_id`` is derived from
+                ``plan_hash`` + indices, a changed plan yields new ids and the
+                stale cache is naturally bypassed. This turns a sweep that died
+                at cell 400/500 into one that only runs the missing 100.
+            on_child: Optional hook invoked once per child with a
+                :class:`ChildProgress` (used by the CLI to report cache hits vs
+                computed cells).
+        """
         # Fail fast if the aggregator name is bad — no point expanding 500
         # assignments then failing at the end.
         aggregator = self._aggregator_registry.get(plan.aggregator_name)
@@ -211,6 +268,7 @@ class SweepOrchestrator:
         # blowing up on child N.
         self._validate_metric_targets(plan)
 
+        plan_hash = plan.plan_hash()
         start_wall = time.perf_counter()
         experiment_ids: list[str] = []
         # Per-child dict form is the Aggregator Protocol's input. The
@@ -219,38 +277,95 @@ class SweepOrchestrator:
         # so the orchestrator never holds two redundant shapes during
         # the loop.
         per_experiment_metrics_dicts: list[dict[str, float]] = []
+        # Positionally aligned with experiment_ids: with n_replicates > 1 each
+        # assignment yields n_replicates experiments, so the assignment is
+        # repeated once per replicate to keep the SweepResult 1:1 invariant.
+        aligned_assignments: list[ChildAssignment] = []
 
         for idx, assignment in enumerate(assignments):
-            child_pack = self._derive_child_pack(base_pack, plan, idx, assignment)
-            self._registry.register(child_pack)
-            run_request = RunRequest(
-                pack_id=child_pack.pack_id,
-                connector_id=self._connector_id,
-                total_steps=1,
-                seed=base_pack.metadata.seed,
-            )
-            result: ExperimentResult = self._orchestrator.run(run_request)
-            experiment_ids.append(result.experiment_id)
             # Build a per-child harness if any axis targets a metric;
             # otherwise reuse the shared harness (cheap common path).
             harness = self._harness_for_assignment(assignment)
-            summary = harness.evaluate(result)
-            per_experiment_metrics_dicts.append(dict(summary.values))
-            self._persist_child_result(result)
+            # Register the child pack lazily — only if at least one of its
+            # replicates actually needs simulating. A fully-cached cell on
+            # resume touches neither the registry nor the connector.
+            child_registered = False
+            child_pack: ScenarioPack | None = None
+            for rep in range(plan.n_replicates):
+                experiment_id = _child_experiment_id(plan_hash, idx, rep)
+                cached = self._load_cached(experiment_id) if resume else None
+                if cached is not None:
+                    result: ExperimentResult = cached
+                else:
+                    if not child_registered:
+                        child_pack = self._derive_child_pack(base_pack, plan, idx, assignment)
+                        self._registry.register(child_pack)
+                        child_registered = True
+                    assert child_pack is not None
+                    run_request = RunRequest(
+                        pack_id=child_pack.pack_id,
+                        connector_id=self._connector_id,
+                        total_steps=1,
+                        seed=self._seed_for(plan, base_pack, rep),
+                        experiment_id=experiment_id,
+                    )
+                    result = self._orchestrator.run(run_request)
+                    self._persist_child_result(result)
+                experiment_ids.append(result.experiment_id)
+                per_experiment_metrics_dicts.append(dict(harness.evaluate(result).values))
+                aligned_assignments.append(assignment)
+                if on_child is not None:
+                    on_child(ChildProgress(idx, rep, experiment_id, cached is not None))
 
         aggregated = aggregator.aggregate(per_experiment_metrics_dicts)
         elapsed = time.perf_counter() - start_wall
         return SweepResult(
             sweep_id=plan.sweep_id,
             base_pack_id=plan.base_pack_id,
-            plan_hash=plan.plan_hash(),
+            plan_hash=plan_hash,
             experiment_ids=tuple(experiment_ids),
             aggregated_metrics=aggregated,
             per_experiment_metrics=_columnize_per_experiment(per_experiment_metrics_dicts),
-            assignments=tuple(assignments),
+            assignments=tuple(aligned_assignments),
             created_at=datetime.now(tz=UTC),
             elapsed_s=elapsed,
         )
+
+    def _load_cached(self, experiment_id: str) -> ExperimentResult | None:
+        """Return a persisted child result for ``experiment_id`` if reusable.
+
+        A cache hit requires a ``results_dir``, an injected ``result_loader``,
+        and an on-disk JSON at ``<results_dir>/<experiment_id>.json``. Any load
+        error (corrupt/partial file) is treated as a miss so a damaged cache
+        entry is transparently recomputed rather than aborting the sweep.
+        """
+        if self._results_dir is None or self._result_loader is None:
+            return None
+        path = self._results_dir / f"{experiment_id}.json"
+        if not path.exists():
+            return None
+        try:
+            return self._result_loader.load(path)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _seed_for(plan: SweepPlan, base_pack: ScenarioPack, replicate: int) -> int | None:
+        """Seed for one child run.
+
+        * ``n_replicates == 1``: the base seed flows through unchanged — the
+          plan's master seed if set, else the base pack's own seed. This keeps
+          single-run sweeps bit-identical to Phase-1 behaviour and preserves
+          the "hold the seed fixed, vary the parameter" controlled design.
+        * ``n_replicates > 1``: each replicate gets a distinct seed derived
+          deterministically from the base seed and the replicate index (issue
+          #19). The seed depends only on ``replicate`` (not the cell), so
+          replicate ``r`` uses common random numbers across every cell.
+        """
+        base_seed = plan.seed if plan.seed is not None else base_pack.metadata.seed
+        if plan.n_replicates == 1:
+            return base_seed
+        return derive_seed(base_seed, replicate)
 
     # ------------------------------------------------------- per-child harness
 
@@ -381,6 +496,18 @@ def build_default_sweep_orchestrator(
 
 
 # ----------------------------------------------------------------- helpers
+
+
+def _child_experiment_id(plan_hash: str, index: int, replicate: int) -> str:
+    """Deterministic experiment id for one sweep child (issue #21).
+
+    Derived from the plan content hash plus the child/replicate indices, so
+    the same plan always maps a cell to the same id. This makes a sweep
+    content-addressable: reruns overwrite the same files (reproducibility),
+    and ``--resume`` can detect an already-computed cell by existence alone. A
+    changed plan changes ``plan_hash`` → new ids → the stale cache is skipped.
+    """
+    return f"sweep-{plan_hash}-c{index:05d}-r{replicate:03d}"
 
 
 def _columnize_per_experiment(

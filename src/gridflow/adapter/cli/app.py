@@ -38,6 +38,7 @@ from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
 from gridflow.adapter.export import PaperExporter, load_comparison_table_json
 from gridflow.domain.error import (
+    BenchmarkError,
     ConfigError,
     ExperimentNotFoundError,
     ExportError,
@@ -55,6 +56,7 @@ from gridflow.infra.orchestrator import (
     InProcessOrchestratorRunner,
 )
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
+from gridflow.usecase.cross_validation import EngineCrossValidator
 from gridflow.usecase.evaluation import (
     EvaluationPlan,
     Evaluator,
@@ -69,10 +71,12 @@ from gridflow.usecase.orchestrator import Orchestrator, RunRequest
 from gridflow.usecase.result import ExperimentResult, StepResult
 from gridflow.usecase.sensitivity import SensitivityAnalyzer
 from gridflow.usecase.sweep import (
+    ChildProgress,
     SweepOrchestrator,
     build_default_aggregator_registry,
 )
 from gridflow.usecase.sweep_yaml_loader import load_sweep_plan_bundle_from_yaml
+from gridflow.usecase.violation_attribution import ViolationAttributor
 
 app = typer.Typer(
     name="gridflow",
@@ -102,10 +106,43 @@ _RUN_CONNECTOR_OPT = typer.Option("opendss", "--connector", help="Connector name
 _RUN_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _RESULTS_ID_ARG = typer.Argument(...)
 _RESULTS_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
-_BENCH_BASE_OPT = typer.Option(..., "--baseline", help="Baseline experiment_id")
-_BENCH_CAND_OPT = typer.Option(..., "--candidate", help="Candidate experiment_id")
+_VALIDATE_PACK_ARG = typer.Argument(..., help="Registered pack_id to solve on every engine")
+_VALIDATE_ENGINES_OPT = typer.Option(
+    "opendss,pandapower",
+    "--engines",
+    help="Comma-separated connector names to cross-check (>=2). The first is the reference.",
+)
+_VALIDATE_TOL_OPT = typer.Option(
+    1e-6,
+    "--tol",
+    min=0.0,
+    help="Max absolute per-node voltage difference (pu) still counted as agreement.",
+)
+_VALIDATE_STEPS_OPT = typer.Option(1, "--steps", "-n", help="Number of solver steps per engine")
+_VALIDATE_OUTPUT_OPT = typer.Option(None, "--output", help="Write CrossValidationReport JSON to this path")
+_VALIDATE_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_ATTR_BASELINE_OPT = typer.Option(..., "--baseline", help="No-control (existing-load) experiment_id")
+_ATTR_CANDIDATE_OPT = typer.Option(..., "--candidate", help="With-control experiment_id to attribute")
+_ATTR_VMIN_OPT = typer.Option(..., "--v-min", help="Envelope lower bound (pu). Required — no default band.")
+_ATTR_VMAX_OPT = typer.Option(..., "--v-max", help="Envelope upper bound (pu). Required — no default band.")
+_ATTR_OUTPUT_OPT = typer.Option(None, "--output", help="Write ViolationAttribution JSON to this path")
+_ATTR_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_BENCH_BASE_OPT = typer.Option(
+    ..., "--baseline", help="Baseline experiment_id. Repeat to pass replicates for a statistical comparison."
+)
+_BENCH_CAND_OPT = typer.Option(
+    ..., "--candidate", help="Candidate experiment_id. Repeat to pass replicates for a statistical comparison."
+)
 _BENCH_OUTPUT_OPT = typer.Option(None, "--output", help="Write JSON report to path")
 _BENCH_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_BENCH_ALPHA_OPT = typer.Option(0.05, "--alpha", help="Significance level (statistical comparison).")
+_BENCH_CORRECTION_OPT = typer.Option(
+    "holm", "--correction", help="Multiple-comparison correction: holm | bh (statistical comparison)."
+)
+_BENCH_BOOTSTRAP_N_OPT = typer.Option(
+    2000, "--bootstrap-n", min=0, help="Bootstrap resamples for the mean CIs (statistical comparison)."
+)
+_BENCH_SEED_OPT = typer.Option(0, "--seed", help="Seed for permutation/bootstrap resampling (deterministic).")
 _SWEEP_PLAN_OPT = typer.Option(
     ...,
     "--plan",
@@ -124,6 +161,15 @@ _SWEEP_OUTPUT_OPT = typer.Option(
     help="Write SweepResult JSON to this path (default: stdout)",
 )
 _SWEEP_FMT_OPT = typer.Option("json", "--format", help="plain|json|table")
+_SWEEP_RESUME_OPT = typer.Option(
+    False,
+    "--resume",
+    help=(
+        "Reuse already-computed child results under GRIDFLOW_HOME/results "
+        "(matched by the plan's deterministic experiment ids). Only the "
+        "missing cells are simulated; skipped cells are logged."
+    ),
+)
 _SWEEP_METRIC_PLUGIN_OPT = typer.Option(
     None,
     "--metric-plugin",
@@ -170,6 +216,20 @@ _EVAL_FEEDER_ID_OPT = typer.Option(
     "unknown",
     "--feeder-id",
     help="Provenance label written to SensitivityResult.feeder_id (--parameter-sweep only).",
+)
+_EVAL_BOOTSTRAP_N_OPT = typer.Option(
+    0,
+    "--bootstrap-n",
+    min=0,
+    help=(
+        "If > 0, resample experiments this many times per grid point and "
+        "emit a 95% percentile CI on the mean (--parameter-sweep only)."
+    ),
+)
+_EVAL_BOOTSTRAP_SEED_OPT = typer.Option(
+    0,
+    "--bootstrap-seed",
+    help="Seed for --bootstrap-n resampling (deterministic; --parameter-sweep only).",
 )
 _EVAL_OUTPUT_OPT = typer.Option(
     None,
@@ -533,6 +593,119 @@ def run_command(
     )
 
 
+@app.command("validate-engines")
+def validate_engines_command(
+    pack_id: str = _VALIDATE_PACK_ARG,
+    engines: str = _VALIDATE_ENGINES_OPT,
+    tol: float = _VALIDATE_TOL_OPT,
+    steps: int = _VALIDATE_STEPS_OPT,
+    output: Path | None = _VALIDATE_OUTPUT_OPT,
+    fmt: str = _VALIDATE_FMT_OPT,
+) -> None:
+    """Solve one pack on multiple engines and cross-check the results (#20).
+
+    Runs ``pack_id`` through each ``--engines`` connector, then compares every
+    engine's node voltages against the first (reference) engine within ``--tol``
+    and reports any solver that failed to converge. Exits non-zero when the
+    engines disagree — so a single-engine quirk (numerical artifact, local
+    optimum, bug) can no longer masquerade as a physical result.
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.validate_engines")
+
+    engine_names = [e.strip() for e in engines.split(",") if e.strip()]
+    if len(engine_names) < 2:
+        typer.echo("--engines needs at least two comma-separated connector names.")
+        raise typer.Exit(code=2)
+    if len(engine_names) != len(set(engine_names)):
+        typer.echo(f"--engines must be unique, got {engine_names}.")
+        raise typer.Exit(code=2)
+
+    results_by_engine: list[tuple[str, ExperimentResult]] = []
+    for engine in engine_names:
+        try:
+            runner = build_runner_from_env(connector=engine, connector_factory=ctx.connector_factory)
+            orchestrator = Orchestrator(registry=ctx.registry, runner=runner)
+            result = orchestrator.run(RunRequest(pack_id=pack_id, connector_id=engine, total_steps=steps))
+        except GridflowError as exc:
+            log.error("validate_engine_run_failed", engine=engine, error_code=exc.error_code, message=exc.message)
+            typer.echo(f"engine '{engine}' failed: {exc}")
+            raise typer.Exit(code=1) from exc
+        results_by_engine.append((engine, result))
+
+    try:
+        report = EngineCrossValidator().validate(
+            pack_id=pack_id,
+            results_by_engine=results_by_engine,
+            tol=tol,
+        )
+    except GridflowError as exc:
+        log.error("validate_engines_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+
+    log.info(
+        "validate_engines_completed",
+        pack_id=pack_id,
+        engines=engine_names,
+        agree=report.agree,
+        tol=tol,
+    )
+    typer.echo(ctx.formatter.render(report.to_dict()))
+    if not report.agree:
+        # Non-zero exit is the machine-readable verdict: the engines disagree
+        # (or one did not converge), so any result built on a single engine is
+        # suspect until reconciled.
+        raise typer.Exit(code=1)
+
+
+@app.command("attribute-violations")
+def attribute_violations_command(
+    baseline: str = _ATTR_BASELINE_OPT,
+    candidate: str = _ATTR_CANDIDATE_OPT,
+    v_min: float = _ATTR_VMIN_OPT,
+    v_max: float = _ATTR_VMAX_OPT,
+    output: Path | None = _ATTR_OUTPUT_OPT,
+    fmt: str = _ATTR_FMT_OPT,
+) -> None:
+    """Split a candidate's voltage violations into pre-existing vs induced (#24).
+
+    Compares the with-control ``--candidate`` against the no-control
+    ``--baseline`` over the required ``--v-min`` / ``--v-max`` envelope and
+    reports ``baseline_only`` (already out of band under existing load — not the
+    controller's doing) vs ``dispatch_induced`` (the controller pushed it out of
+    band) vs ``total``. This prevents crediting a controller for pre-existing
+    violations it cannot fix — the try11 "5x reduction" misjudgment.
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.attribute_violations")
+
+    base = _load_result(ctx, baseline)
+    cand = _load_result(ctx, candidate)
+    try:
+        attribution = ViolationAttributor().attribute(
+            baseline=base,
+            candidate=cand,
+            v_min=v_min,
+            v_max=v_max,
+        )
+    except GridflowError as exc:
+        log.error("attribute_violations_failed", error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=2) from exc
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(attribution.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+    typer.echo(ctx.formatter.render(attribution.to_dict()))
+
+
 @app.command("results")
 def results_command(
     experiment_id: str = _RESULTS_ID_ARG,
@@ -546,15 +719,50 @@ def results_command(
 
 @app.command("benchmark")
 def benchmark_command(
-    baseline: str = _BENCH_BASE_OPT,
-    candidate: str = _BENCH_CAND_OPT,
+    baseline: list[str] = _BENCH_BASE_OPT,
+    candidate: list[str] = _BENCH_CAND_OPT,
     output: Path | None = _BENCH_OUTPUT_OPT,
     fmt: str = _BENCH_FMT_OPT,
+    alpha: float = _BENCH_ALPHA_OPT,
+    correction: str = _BENCH_CORRECTION_OPT,
+    bootstrap_n: int = _BENCH_BOOTSTRAP_N_OPT,
+    seed: int = _BENCH_SEED_OPT,
 ) -> None:
-    """Compare two saved experiments via the benchmark harness."""
+    """Compare saved experiments via the benchmark harness.
+
+    One ``--baseline`` and one ``--candidate`` → the legacy mean-delta report.
+    Repeat either flag (replicates) → a statistical comparison with effect
+    size, permutation p-values (corrected for multiple metrics), bootstrap CIs
+    and a ``significant`` verdict that a mean delta alone can no longer earn
+    (issue #18).
+    """
     ctx = _build_context(fmt=OutputFormat(fmt))
-    base = _load_result(ctx, baseline)
-    cand = _load_result(ctx, candidate)
+
+    if len(baseline) > 1 or len(candidate) > 1:
+        base_group = [_load_result(ctx, b) for b in baseline]
+        cand_group = [_load_result(ctx, c) for c in candidate]
+        try:
+            stat_report = ctx.harness.compare_groups(
+                base_group,
+                cand_group,
+                alpha=alpha,
+                correction=correction,
+                bootstrap_n=bootstrap_n,
+                seed=seed,
+            )
+        except (BenchmarkError, ValueError) as exc:
+            typer.echo(str(exc))
+            raise typer.Exit(code=2) from exc
+        if output is not None:
+            ctx.report_gen.write_comparison(stat_report, output)
+        if ctx.formatter.format is OutputFormat.PLAIN:
+            typer.echo(ctx.report_gen.render_statistical_text(stat_report))
+        else:
+            typer.echo(ctx.formatter.render(stat_report.to_dict()))
+        return
+
+    base = _load_result(ctx, baseline[0])
+    cand = _load_result(ctx, candidate[0])
     report = ctx.harness.compare(base, cand)
     if output is not None:
         ctx.report_gen.write_comparison(report, output)
@@ -606,6 +814,7 @@ def sweep_command(
     output: Path | None = _SWEEP_OUTPUT_OPT,
     fmt: str = _SWEEP_FMT_OPT,
     metric_plugins: list[str] | None = _SWEEP_METRIC_PLUGIN_OPT,
+    resume: bool = _SWEEP_RESUME_OPT,
 ) -> None:
     """Run a parameter sweep defined by a sweep_plan.yaml file.
 
@@ -671,9 +880,19 @@ def sweep_command(
         # targets 'metric:<name>' (§5.1.1 Option A).
         metric_specs=bundle.metric_specs,
         results_dir=ctx.results_dir,
+        result_loader=FilesystemResultLoader(),
     )
+    # Count cache hits so a --resume run reports what it skipped (never
+    # silently — a skipped cell must not read as "recomputed", issue #21).
+    cache_hits = 0
+
+    def _on_child(progress: ChildProgress) -> None:
+        nonlocal cache_hits
+        if progress.cached:
+            cache_hits += 1
+
     try:
-        result = sweep_orchestrator.run(sweep_plan)
+        result = sweep_orchestrator.run(sweep_plan, resume=resume, on_child=_on_child)
     except GridflowError as exc:
         log.error(
             "sweep_failed",
@@ -696,6 +915,9 @@ def sweep_command(
         "sweep_completed",
         sweep_id=result.sweep_id,
         n_experiments=len(result.experiment_ids),
+        cache_hits=cache_hits,
+        computed=len(result.experiment_ids) - cache_hits,
+        resume=resume,
         elapsed_s=result.elapsed_s,
     )
 
@@ -722,6 +944,8 @@ def evaluate_command(
     metrics: list[str] | None = _EVAL_METRIC_OPT,
     parameter_sweep: str | None = _EVAL_PARAMETER_SWEEP_OPT,
     feeder_id: str = _EVAL_FEEDER_ID_OPT,
+    bootstrap_n: int = _EVAL_BOOTSTRAP_N_OPT,
+    bootstrap_seed: int = _EVAL_BOOTSTRAP_SEED_OPT,
     output: Path | None = _EVAL_OUTPUT_OPT,
     fmt: str = _EVAL_FMT_OPT,
 ) -> None:
@@ -775,9 +999,14 @@ def evaluate_command(
             metric_strs=metrics,
             sweep_spec=parameter_sweep,
             feeder_id=feeder_id,
+            bootstrap_n=bootstrap_n,
+            bootstrap_seed=bootstrap_seed,
             output=output,
         )
     else:
+        if bootstrap_n:
+            typer.echo("--bootstrap-n / --bootstrap-seed only apply with --parameter-sweep.")
+            raise typer.Exit(code=2)
         _evaluate_inline(ctx, log, results=results, metric_strs=metrics, output=output)
 
 
@@ -847,6 +1076,8 @@ def _evaluate_parameter_sweep(
     metric_strs: list[str],
     sweep_spec: str,
     feeder_id: str,
+    bootstrap_n: int,
+    bootstrap_seed: int,
     output: Path | None,
 ) -> None:
     """Case-A + parameter-sweep path: drive SensitivityAnalyzer."""
@@ -877,11 +1108,37 @@ def _evaluate_parameter_sweep(
             metric_plugin=metric_spec.plugin,
             metric_kwargs_base=dict(metric_spec.kwargs),
             feeder_id=feeder_id,
+            bootstrap_n=bootstrap_n,
+            bootstrap_seed=bootstrap_seed,
         )
     except GridflowError as exc:
         log.error("sensitivity_failed", error_code=exc.error_code, message=exc.message)
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
+
+    # Guard against a subtle misjudgment (issue #18/#23): a zero-width CI
+    # means every bootstrap resample produced the same mean — the input
+    # is effectively a single point or fully deterministic across seeds.
+    # Reporting that CI as if it were a real interval invites treating a
+    # non-result as a tight, confident one. Warn loudly.
+    if bootstrap_n > 0:
+        n_experiments = len(experiments)
+        degenerate = n_experiments < 2 or any(
+            lo == hi for lo, hi in zip(sensitivity.confidence_lower, sensitivity.confidence_upper, strict=True)
+        )
+        if degenerate:
+            warning = (
+                f"WARNING: bootstrap CI is zero-width at one or more grid points "
+                f"(n_experiments={n_experiments}). This indicates no run-to-run "
+                f"variation to resample — the CI is not a meaningful interval. "
+                f"Add replicates or vary the seed before reading it as significance."
+            )
+            log.warning(
+                "bootstrap_ci_zero_width",
+                feeder_id=sensitivity.feeder_id,
+                n_experiments=n_experiments,
+            )
+            typer.echo(warning, err=True)
 
     _write_payload(
         ctx,
@@ -892,6 +1149,7 @@ def _evaluate_parameter_sweep(
             "parameter_name": sensitivity.parameter_name,
             "n_grid_points": len(sensitivity.parameter_values),
             "metric_name": sensitivity.metric_name,
+            "bootstrap_n": bootstrap_n,
         },
     )
 
