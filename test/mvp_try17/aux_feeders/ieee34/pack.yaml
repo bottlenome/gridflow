@@ -1,0 +1,15 @@
+pack:
+  name: ieee34
+  version: "1.0.0"
+  description: IEEE 34-node test feeder (Mod 1) for hosting-capacity study.
+  author: gridflow team
+  connector: opendss
+  seed: 42
+network:
+  master_file: ieee34Mod1.dss
+parameters:
+  master_file: ieee34Mod1.dss
+  voltage_base_kv: 24.9
+  source_bus: "800"
+  max_iterations: 100
+  tolerance: 0.0001

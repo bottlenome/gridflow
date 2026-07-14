@@ -1,0 +1,19 @@
+sweep:
+  id: hc13
+  base_pack_id: ieee13-voltvar@1.0.0
+  aggregator: statistics
+axes:
+  - name: pv_bus
+    type: choice
+    values: ["632.1.2.3","633.1.2.3","670.1.2.3","671.1.2.3","675.1.2.3","680.1.2.3","692.1.2.3"]
+  - name: pv_kw
+    type: range
+    start: 0.0
+    stop: 4001.0
+    step: 250.0
+  - name: pv_kv
+    type: choice
+    values: [4.16]
+  - name: pv_phases
+    type: choice
+    values: [3]
