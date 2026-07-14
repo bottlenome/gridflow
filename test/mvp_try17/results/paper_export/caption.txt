@@ -1,0 +1,4 @@
+Benchmark comparison: sweep-76727f40175cae52-c00000-r000(+23) vs sweep-bdab58a4923ba944-c00000-r000(+23). Comparison of 2 methods (sweep-76727f40175cae52-c00000-r000(+23), sweep-bdab58a4923ba944-c00000-r000(+23)).
+Error bounds are 95% confidence intervals; the best value per metric is shown in bold.
+sweep-bdab58a4923ba944-c00000-r000(+23) is the proposed method.
+Experiment conditions: baseline: sweep-76727f40175cae52-c00000-r000(+23); candidate: sweep-bdab58a4923ba944-c00000-r000(+23).

@@ -1,0 +1,18 @@
+# Position study — end buses at high PV (pv_kw=1800). Sample = random bus within the subset.
+sweep:
+  id: voltvar_pos_end
+  base_pack_id: ieee13-voltvar@1.0.0
+  aggregator: statistics
+  seed: 42
+axes:
+  - name: pv_bus
+    type: random_choice
+    values: ["675.1.2.3","611.3","652.1","680.1.2.3"]
+    n_samples: 24
+    seed: 100
+  - name: pv_kw
+    type: choice
+    values: [1800.0]
+  - name: pv_kv
+    type: choice
+    values: [2.4]

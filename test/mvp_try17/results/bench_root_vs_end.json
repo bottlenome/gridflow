@@ -1,0 +1,102 @@
+{
+  "alpha": 0.05,
+  "baseline": "sweep-76727f40175cae52-c00000-r000(+23)",
+  "candidate": "sweep-bdab58a4923ba944-c00000-r000(+23)",
+  "correction": "holm",
+  "metrics": [
+    {
+      "baseline": 0.06623077239532855,
+      "baseline_ci": [
+        0.05904026073973825,
+        0.07337116405172898
+      ],
+      "candidate": 0.12918851916344773,
+      "candidate_ci": [
+        0.0932354373146278,
+        0.16377845713682773
+      ],
+      "delta": 0.06295774676811917,
+      "effect_size": 0.9878120030042066,
+      "informational": false,
+      "n_baseline": 24,
+      "n_candidate": 24,
+      "name": "voltage_deviation",
+      "objective": "min",
+      "p_value": 0.0021997800219978004,
+      "p_value_adjusted": 0.0021997800219978004,
+      "significant": true,
+      "warnings": []
+    },
+    {
+      "baseline": 0.5691056910569106,
+      "baseline_ci": [
+        0.49796747967479676,
+        0.6402439024390244
+      ],
+      "candidate": 0.3032236717716014,
+      "candidate_ci": [
+        0.24254348648137644,
+        0.36390385706182643
+      ],
+      "delta": -0.26588201928530913,
+      "effect_size": -1.5525673711109647,
+      "informational": false,
+      "n_baseline": 24,
+      "n_candidate": 24,
+      "name": "voltage_violation_rate",
+      "objective": "min",
+      "p_value": 9.999000099990002e-05,
+      "p_value_adjusted": 0.00019998000199980003,
+      "significant": true,
+      "warnings": []
+    },
+    {
+      "baseline": 0.0,
+      "baseline_ci": [
+        0.0,
+        0.0
+      ],
+      "candidate": 0.0,
+      "candidate_ci": [
+        0.0,
+        0.0
+      ],
+      "delta": 0.0,
+      "effect_size": null,
+      "informational": false,
+      "n_baseline": 24,
+      "n_candidate": 24,
+      "name": "non_convergence_rate",
+      "objective": "min",
+      "p_value": null,
+      "p_value_adjusted": null,
+      "significant": false,
+      "warnings": [
+        "zero_variance"
+      ]
+    },
+    {
+      "baseline": 0.025741050374994263,
+      "baseline_ci": [
+        0.007530059708329873,
+        0.06205220366664813
+      ],
+      "candidate": 0.02687697733332565,
+      "candidate_ci": [
+        0.007955112875009718,
+        0.06445342087500212
+      ],
+      "delta": 0.0011359269583313888,
+      "effect_size": 0.012593211723006788,
+      "informational": true,
+      "n_baseline": 24,
+      "n_candidate": 24,
+      "name": "runtime",
+      "objective": "min",
+      "p_value": 0.47735226477352266,
+      "p_value_adjusted": null,
+      "significant": false,
+      "warnings": []
+    }
+  ]
+}
