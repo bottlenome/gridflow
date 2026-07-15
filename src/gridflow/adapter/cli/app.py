@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,6 +37,7 @@ from gridflow.adapter.cli.evaluate_dsl import (
 )
 from gridflow.adapter.cli.formatter import OutputFormat, OutputFormatter
 from gridflow.adapter.connector import OpenDSSConnector
+from gridflow.adapter.connector.opendss_control import OpenDSSGridModel, PVDeviceSpec
 from gridflow.adapter.export import PaperExporter, load_comparison_table_json
 from gridflow.domain.error import (
     BenchmarkError,
@@ -46,6 +48,7 @@ from gridflow.domain.error import (
     PackNotFoundError,
 )
 from gridflow.domain.scenario.registry import ScenarioRegistry
+from gridflow.domain.util.params import get_param
 from gridflow.infra.container_manager import (
     ContainerEndpoint,
     NoOpContainerManager,
@@ -56,6 +59,12 @@ from gridflow.infra.orchestrator import (
     InProcessOrchestratorRunner,
 )
 from gridflow.infra.scenario import FileScenarioRegistry, load_pack_from_yaml
+from gridflow.usecase.control import (
+    ControllableDevice,
+    LocalDroop,
+    NoControl,
+    run_control_experiment,
+)
 from gridflow.usecase.cross_validation import EngineCrossValidator
 from gridflow.usecase.evaluation import (
     EvaluationPlan,
@@ -127,6 +136,29 @@ _ATTR_VMIN_OPT = typer.Option(..., "--v-min", help="Envelope lower bound (pu). R
 _ATTR_VMAX_OPT = typer.Option(..., "--v-max", help="Envelope upper bound (pu). Required — no default band.")
 _ATTR_OUTPUT_OPT = typer.Option(None, "--output", help="Write ViolationAttribution JSON to this path")
 _ATTR_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
+_CTRL_PACK_ARG = typer.Argument(..., help="Registered pack_id to run the control study on")
+_CTRL_STRATEGY_OPT = typer.Option("local_droop", "--strategy", help="Control strategy: no_control | local_droop")
+_CTRL_PV_BUS_OPT = typer.Option(
+    ..., "--pv-bus", help="Bus (with phases) the controllable PV attaches to, e.g. 675.1.2.3"
+)
+_CTRL_PV_KW_OPT = typer.Option(..., "--pv-kw", help="Controllable PV active power (kW)")
+_CTRL_PV_KV_OPT = typer.Option(4.16, "--pv-kv", help="PV line-to-line nominal voltage (kV)")
+_CTRL_PV_PHASES_OPT = typer.Option(3, "--pv-phases", help="PV phase count")
+_CTRL_SENSE_BUS_OPT = typer.Option(
+    None, "--sense-bus", help="Bus the controller senses (default: the PV bus without its phase suffix)"
+)
+_CTRL_KVAR_LIMIT_OPT = typer.Option(
+    ..., "--kvar-limit", help="Inverter reactive limit (kvar); action clamped to +/- this"
+)
+_CTRL_RELAX_OPT = typer.Option(
+    0.3, "--relaxation", min=0.0, help="Loop damping in (0,1]; <1 avoids bang-bang on stiff feeders"
+)
+_CTRL_MAXITERS_OPT = typer.Option(40, "--max-iters", help="Max control iterations")
+_CTRL_FREEZE_OPT = typer.Option(
+    False, "--freeze-regulators", help="Hold regulator/cap taps fixed (isolate the Volt-VAR effect)"
+)
+_CTRL_OUTPUT_OPT = typer.Option(None, "--output", help="Write the ExperimentResult JSON to this path")
+_CTRL_FMT_OPT = typer.Option("plain", "--format", help="plain|json|table")
 _BENCH_BASE_OPT = typer.Option(
     ..., "--baseline", help="Baseline experiment_id. Repeat to pass replicates for a statistical comparison."
 )
@@ -706,6 +738,99 @@ def attribute_violations_command(
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(attribution.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
     typer.echo(ctx.formatter.render(attribution.to_dict()))
+
+
+@app.command("control")
+def control_command(
+    pack_id: str = _CTRL_PACK_ARG,
+    strategy: str = _CTRL_STRATEGY_OPT,
+    pv_bus: str = _CTRL_PV_BUS_OPT,
+    pv_kw: float = _CTRL_PV_KW_OPT,
+    pv_kv: float = _CTRL_PV_KV_OPT,
+    pv_phases: int = _CTRL_PV_PHASES_OPT,
+    sense_bus: str | None = _CTRL_SENSE_BUS_OPT,
+    kvar_limit: float = _CTRL_KVAR_LIMIT_OPT,
+    relaxation: float = _CTRL_RELAX_OPT,
+    max_iters: int = _CTRL_MAXITERS_OPT,
+    freeze_regulators: bool = _CTRL_FREEZE_OPT,
+    output: Path | None = _CTRL_OUTPUT_OPT,
+    fmt: str = _CTRL_FMT_OPT,
+) -> None:
+    """Run a Volt-VAR control strategy on a feeder and persist the result (#29).
+
+    A controllable PV inverter (``--pv-bus``/``--pv-kw``) is placed on the
+    feeder; the chosen ``--strategy`` sets its reactive power to regulate the
+    sensed bus. The result is a normal ExperimentResult, so its experiment_id
+    feeds straight into ``gridflow benchmark`` — letting a new strategy be
+    compared statistically against the reference ``no_control`` / ``local_droop``
+    (the method comparison the framework previously could not do).
+    """
+    ctx = _build_context(fmt=OutputFormat(fmt))
+    configure_logging(level="INFO")
+    log = get_logger("gridflow.cli.control")
+
+    strategies = {"no_control": NoControl, "local_droop": LocalDroop}
+    if strategy not in strategies:
+        typer.echo(f"--strategy must be one of {sorted(strategies)}, got {strategy!r}.")
+        raise typer.Exit(code=2)
+
+    try:
+        pack = ctx.registry.get(pack_id)
+    except GridflowError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    master_name = str(get_param(pack.metadata.parameters, "master_file") or "IEEE13Nodeckt.dss")
+    master_path = pack.network_dir / master_name
+    if not master_path.exists():
+        typer.echo(f"master DSS file not found for pack '{pack_id}': {master_path}")
+        raise typer.Exit(code=1)
+
+    resolved_sense = sense_bus or pv_bus.split(".", 1)[0]
+    spec = PVDeviceSpec(
+        device_id="PV", sense_bus=resolved_sense, inject_bus=pv_bus, kw=pv_kw, kv=pv_kv, phases=pv_phases
+    )
+    device = ControllableDevice(device_id="PV", bus=resolved_sense, kvar_limit=kvar_limit)
+    experiment_id = f"ctrl-{strategy}-{uuid.uuid4().hex[:10]}"
+    try:
+        grid = OpenDSSGridModel(master_path=str(master_path), devices=(spec,), freeze_regulators=freeze_regulators)
+        result = run_control_experiment(
+            grid,
+            (device,),
+            strategies[strategy](),
+            experiment_id=experiment_id,
+            pack_id=pack_id,
+            connector="opendss",
+            parameters={"pv_bus": pv_bus, "pv_kw": pv_kw, "sense_bus": resolved_sense, "kvar_limit": kvar_limit},
+            max_iters=max_iters,
+            relaxation=relaxation,
+        )
+    except GridflowError as exc:
+        log.error("control_failed", pack_id=pack_id, error_code=exc.error_code, message=exc.message)
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+
+    path = _save_result(ctx, result)
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(result.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
+    params = dict(result.metadata.parameters)
+    vmax = max(result.node_results[0].voltages, default=0.0) if result.node_results else 0.0
+    log.info(
+        "control_completed", experiment_id=experiment_id, strategy=strategy, iterations=params.get("control_iterations")
+    )
+    typer.echo(
+        ctx.formatter.render(
+            {
+                "experiment_id": experiment_id,
+                "strategy": strategy,
+                "iterations": params.get("control_iterations"),
+                "settled": params.get("control_settled"),
+                "final_kvar": params.get("control_kvar_PV"),
+                "vmax": vmax,
+                "result_path": str(path),
+            }
+        )
+    )
 
 
 @app.command("results")

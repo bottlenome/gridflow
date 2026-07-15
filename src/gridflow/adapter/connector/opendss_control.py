@@ -55,6 +55,7 @@ class OpenDSSGridModel:
 
     master_path: str
     devices: tuple[PVDeviceSpec, ...]
+    freeze_regulators: bool = False
     _driver: Any = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -67,6 +68,11 @@ class OpenDSSGridModel:
         driver = self._driver
         driver.Basic.ClearAll()
         driver.Command(f"Redirect [{self.master_path}]")
+        if self.freeze_regulators:
+            # Hold regulator/cap-bank taps fixed so the measured voltage change
+            # is attributable to the Volt-VAR strategy, not tap dynamics that
+            # re-run on every solve.
+            driver.Command("Set ControlMode=OFF")
         for d in self.devices:
             driver.Command(
                 f"New Generator.{d.device_id} bus1={d.inject_bus} phases={d.phases} "
@@ -87,6 +93,11 @@ class OpenDSSGridModel:
             bus = str(node).split(".", 1)[0]
             per_bus[bus] = max(per_bus.get(bus, 0.0), float(mag))
         return tuple(sorted(per_bus.items()))
+
+    def node_voltages(self) -> tuple[tuple[str, float], ...]:
+        node_names = self._driver.Circuit.AllNodeNames()
+        mags = self._driver.Circuit.AllBusMagPu()
+        return tuple((str(n), float(v)) for n, v in zip(node_names, mags, strict=False))
 
     def set_reactive(self, device_id: str, kvar: float) -> None:
         # Editing kvar overrides the pf=1.0 the generator was created with;

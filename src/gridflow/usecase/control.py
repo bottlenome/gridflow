@@ -22,7 +22,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Protocol, runtime_checkable
+
+from gridflow.domain.cdl import ExperimentMetadata
+from gridflow.domain.result import NodeResult
+from gridflow.domain.util.params import as_params
+from gridflow.usecase.result import ExperimentResult, StepResult, StepStatus
 
 
 @dataclass(frozen=True)
@@ -126,9 +132,16 @@ class GridModel(Protocol):
 
     Implemented by a live connector (OpenDSS/pandapower) or a fake grid in
     tests. ``solve`` returns whether the power flow converged.
+
+    ``bus_voltages`` is the per-bus view the controller *senses* (worst-case
+    per bus for OpenDSS); ``node_voltages`` is the finest-grained per-node view
+    used to build the experiment result / metrics (all phases). For a
+    single-node engine (pandapower) the two coincide.
     """
 
     def bus_voltages(self) -> tuple[tuple[str, float], ...]: ...
+
+    def node_voltages(self) -> tuple[tuple[str, float], ...]: ...
 
     def set_reactive(self, device_id: str, kvar: float) -> None: ...
 
@@ -213,6 +226,66 @@ def run_volt_var(
     )
 
 
+def run_control_experiment(
+    grid: GridModel,
+    devices: Sequence[ControllableDevice],
+    strategy: ControlStrategy,
+    *,
+    experiment_id: str,
+    pack_id: str,
+    connector: str,
+    parameters: dict[str, object] | None = None,
+    max_iters: int = 20,
+    tol_kvar: float = 1e-3,
+    relaxation: float = 1.0,
+) -> ExperimentResult:
+    """Run a control strategy and package the result as an :class:`ExperimentResult`.
+
+    This is the bridge that puts a control *method* on the standard path: the
+    returned result flows into ``benchmark`` / ``export paper`` exactly like a
+    plain run, so a new strategy can be compared statistically against the
+    reference strategies (issue #29). The control outcome (strategy, iteration
+    count, settled flag, per-device final kvar) is recorded in the metadata
+    parameters so it survives to the report.
+    """
+    control = run_volt_var(grid, devices, strategy, max_iters=max_iters, tol_kvar=tol_kvar, relaxation=relaxation)
+    node_voltages = grid.node_voltages()
+    voltages = tuple(v for _, v in node_voltages)
+    status = StepStatus.SUCCESS if control.converged else StepStatus.ERROR
+    step = StepResult(
+        step_id=0,
+        timestamp=datetime.now(tz=UTC),
+        status=status,
+        elapsed_ms=0.0,
+        node_result=NodeResult(node_id="__network__", voltages=voltages),
+        bus_voltages=node_voltages,
+        error=None if control.converged else "control-loop final solve did not converge",
+    )
+    merged: dict[str, object] = dict(parameters or {})
+    merged.update(
+        {
+            "control_strategy": strategy.name,
+            "control_iterations": control.iterations,
+            "control_settled": control.settled,
+        }
+    )
+    for device_id, kvar in control.final_actions:
+        merged[f"control_kvar_{device_id}"] = kvar
+    metadata = ExperimentMetadata(
+        experiment_id=experiment_id,
+        created_at=datetime.now(tz=UTC),
+        scenario_pack_id=pack_id,
+        connector=connector,
+        parameters=as_params(merged),
+    )
+    return ExperimentResult(
+        experiment_id=experiment_id,
+        metadata=metadata,
+        steps=(step,),
+        node_results=(NodeResult(node_id="__network__", voltages=voltages),),
+    )
+
+
 __all__ = [
     "ControlResult",
     "ControlState",
@@ -221,5 +294,6 @@ __all__ = [
     "GridModel",
     "LocalDroop",
     "NoControl",
+    "run_control_experiment",
     "run_volt_var",
 ]

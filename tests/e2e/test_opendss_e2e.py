@@ -43,3 +43,60 @@ def test_ieee13_e2e_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None
     data = json.loads(results.stdout)
     assert data["metadata"]["scenario_pack_id"] == "ieee13@1.0.0"
     assert len(data["steps"]) == 2
+
+
+@pytest.mark.spike
+def test_ieee13_control_cli_strategy_comparison(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`gridflow control` runs each strategy on the real feeder and the result
+    flows onto the standard path (results/benchmark) — the method-comparison
+    loop try17 found the framework could not close.
+    """
+    pytest.importorskip("opendssdirect")
+    monkeypatch.setenv("GRIDFLOW_HOME", str(tmp_path / ".gridflow"))
+
+    reg = runner.invoke(app, ["scenario", "register", str(EXAMPLES_DIR / "pack.yaml")])
+    assert reg.exit_code == 0, reg.output
+
+    common = ["--pv-bus", "675.1.2.3", "--pv-kw", "9000", "--kvar-limit", "5000", "--freeze-regulators"]
+    none = runner.invoke(app, ["control", "ieee13@1.0.0", "--strategy", "no_control", "--format", "json", *common])
+    droop = runner.invoke(
+        app,
+        [
+            "control",
+            "ieee13@1.0.0",
+            "--strategy",
+            "local_droop",
+            "--relaxation",
+            "0.3",
+            "--max-iters",
+            "60",
+            "--format",
+            "json",
+            *common,
+        ],
+    )
+    assert none.exit_code == 0, none.output
+    assert droop.exit_code == 0, droop.output
+
+    none_out = json.loads(none.stdout)
+    droop_out = json.loads(droop.stdout)
+    # 9 MW PV over-volts the bus; the pluggable strategy absorbs vars and clears it.
+    assert none_out["vmax"] > 1.05
+    assert droop_out["vmax"] <= 1.05
+    assert droop_out["final_kvar"] < 0.0
+
+    # The saved control results score on the standard benchmark path.
+    bench = runner.invoke(
+        app,
+        [
+            "benchmark",
+            "--baseline",
+            none_out["experiment_id"],
+            "--candidate",
+            droop_out["experiment_id"],
+            "--format",
+            "json",
+        ],
+    )
+    assert bench.exit_code == 0, bench.output
+    assert "voltage_violation_rate" in bench.stdout

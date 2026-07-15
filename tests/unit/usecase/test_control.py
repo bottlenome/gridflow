@@ -37,6 +37,10 @@ class _LinearGrid:
             v[bus] = self._v0[bus] + self._sens * kvar
         return tuple(sorted(v.items()))
 
+    def node_voltages(self) -> tuple[tuple[str, float], ...]:
+        # Single-node buses in the fake — node view coincides with bus view.
+        return self.bus_voltages()
+
     def set_reactive(self, device_id: str, kvar: float) -> None:
         self._kvar[device_id] = kvar
 
@@ -118,8 +122,59 @@ class TestRunVoltVar:
         assert res.settled is False
 
     def test_to_dict_shape(self) -> None:
-        grid = _LinearGrid(v0={"b": 1.06}, device_bus={"pv": "b"}, sensitivity=-1e-4)
+        grid = _LinearGrid(v0={"b": 1.06}, device_bus={"pv": "b"}, sensitivity=2e-5)
         res = run_volt_var(grid, self._devices(), LocalDroop())
         d = res.to_dict()
         assert d["strategy"] == "local_droop"
         assert "iterations" in d and "final_actions" in d and "final_bus_voltages" in d
+
+
+class TestRunControlExperiment:
+    def test_builds_experiment_result_on_standard_path(self) -> None:
+        from gridflow.adapter.benchmark import BenchmarkHarness
+        from gridflow.usecase.control import run_control_experiment
+
+        grid = _LinearGrid(v0={"b": 1.08}, device_bus={"pv": "b"}, sensitivity=2e-5)
+        device = ControllableDevice(device_id="pv", bus="b", kvar_limit=5000.0)
+        result = run_control_experiment(
+            grid,
+            (device,),
+            LocalDroop(),
+            experiment_id="ctrl-x",
+            pack_id="pk@1.0.0",
+            connector="opendss",
+            parameters={"pv_kw": 9000.0},
+            max_iters=50,
+            relaxation=0.3,
+        )
+        # It is a normal ExperimentResult that the benchmark harness can score.
+        assert result.experiment_id == "ctrl-x"
+        params = dict(result.metadata.parameters)
+        assert params["control_strategy"] == "local_droop"
+        assert params["pv_kw"] == 9000.0
+        assert "control_iterations" in params and "control_kvar_pv" in params
+        # Per-node voltages are carried so metrics work on the standard path.
+        assert result.node_results and result.node_results[0].voltages
+        summary = BenchmarkHarness().evaluate(result)
+        assert "voltage_violation_rate" in dict(summary.values)
+
+    def test_no_control_vs_droop_differ(self) -> None:
+        from gridflow.usecase.control import run_control_experiment
+
+        def _run(strategy):  # type: ignore[no-untyped-def]
+            grid = _LinearGrid(v0={"b": 1.08}, device_bus={"pv": "b"}, sensitivity=2e-5)
+            device = ControllableDevice(device_id="pv", bus="b", kvar_limit=5000.0)
+            return run_control_experiment(
+                grid,
+                (device,),
+                strategy,
+                experiment_id="e",
+                pack_id="p",
+                connector="opendss",
+                max_iters=50,
+                relaxation=0.3,
+            )
+
+        v_none = _run(NoControl()).node_results[0].voltages[0]
+        v_droop = _run(LocalDroop()).node_results[0].voltages[0]
+        assert v_droop < v_none  # the strategy lowered the (over-)voltage
