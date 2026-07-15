@@ -32,6 +32,7 @@ class _SolveState:
     driver: ModuleType | Any
     master_file: str
     bus_names: tuple[str, ...]
+    node_names: tuple[str, ...]
     last_voltages: tuple[float, ...]
 
 
@@ -102,11 +103,16 @@ class OpenDSSConnector(ConnectorInterface):
             ) from exc
 
         bus_names = tuple(driver.Circuit.AllBusNames())
+        # AllBusMagPu() is per-NODE (bus.phase) and aligns with AllNodeNames(),
+        # NOT AllBusNames() (which is per-bus and shorter). Store node names so
+        # the per-node voltage mapping (#30) is correctly aligned.
+        node_names = tuple(driver.Circuit.AllNodeNames())
         voltages = tuple(driver.Circuit.AllBusMagPu())
         self._state = _SolveState(
             driver=driver,
             master_file=master_label,
             bus_names=bus_names,
+            node_names=node_names,
             last_voltages=voltages,
         )
 
@@ -126,12 +132,13 @@ class OpenDSSConnector(ConnectorInterface):
 
         state.last_voltages = voltages
         # Aggregate into a single "network" NodeResult for the flat-vector
-        # metrics, and additionally expose the per-bus mapping (issue #30) so
-        # downstream analysis / control can address individual buses. bus_names
-        # and voltages come from AllBusNames()/AllBusMagPu() in the same order.
+        # metrics, and additionally expose the per-node mapping (issue #30) so
+        # downstream analysis / control can address individual nodes. The node
+        # names (bus.phase) align 1:1 with AllBusMagPu() — using AllBusNames()
+        # here would be a length mismatch and mis-key the voltages.
         meta = {"bus_names": state.bus_names}
         node_result = NodeResult(node_id="__network__", voltages=voltages)
-        bus_voltages = tuple((str(name), float(v)) for name, v in zip(state.bus_names, voltages, strict=False))
+        bus_voltages = tuple((str(name), float(v)) for name, v in zip(state.node_names, voltages, strict=False))
         return ConnectorStepOutput(
             step=step_index,
             node_result=node_result,

@@ -164,6 +164,7 @@ def run_volt_var(
     *,
     max_iters: int = 20,
     tol_kvar: float = 1e-3,
+    relaxation: float = 1.0,
 ) -> ControlResult:
     """Iterate ``{solve -> sense -> decide -> apply -> re-solve}`` until the
     reactive setpoints settle (change by <= ``tol_kvar``) or ``max_iters``.
@@ -172,33 +173,42 @@ def run_volt_var(
     the setpoints converged within ``max_iters``; ``converged`` is the power
     flow's convergence at the final solve. Recording the iteration count is the
     honest signal a delay/latency study (issue #29 item 4) will read.
+
+    ``relaxation`` in ``(0, 1]`` damps the update
+    (``applied = prev + relaxation * (decided - prev)``). A memoryless droop
+    applied at full step (``relaxation=1``) can bang-bang on a stiff feeder;
+    ``relaxation < 1`` converges it to the droop's fixed point, the way a real
+    inverter's response time damps the loop.
     """
+    if not 0.0 < relaxation <= 1.0:
+        raise ValueError(f"relaxation must be in (0, 1], got {relaxation}")
     device_tuple = tuple(devices)
     grid.solve()
     prev: dict[str, float] = {d.device_id: 0.0 for d in device_tuple}
-    actions: dict[str, float] = dict(prev)
+    applied: dict[str, float] = dict(prev)
     converged = True
     settled = False
     iterations = 0
     for i in range(1, max_iters + 1):
         iterations = i
         state = ControlState(bus_voltages=grid.bus_voltages(), devices=device_tuple)
-        actions = strategy.decide(state)
-        for device_id, kvar in actions.items():
+        decided = strategy.decide(state)
+        applied = {d: prev.get(d, 0.0) + relaxation * (q - prev.get(d, 0.0)) for d, q in decided.items()}
+        for device_id, kvar in applied.items():
             grid.set_reactive(device_id, kvar)
         converged = grid.solve()
-        max_delta = max((abs(actions[d] - prev.get(d, 0.0)) for d in actions), default=0.0)
+        max_delta = max((abs(applied[d] - prev.get(d, 0.0)) for d in applied), default=0.0)
         if max_delta <= tol_kvar:
             settled = True
             break
-        prev = dict(actions)
+        prev = dict(applied)
 
     return ControlResult(
         strategy=strategy.name,
         iterations=iterations,
         settled=settled,
         converged=converged,
-        final_actions=tuple(sorted(actions.items())),
+        final_actions=tuple(sorted(applied.items())),
         final_bus_voltages=tuple(grid.bus_voltages()),
     )
 
