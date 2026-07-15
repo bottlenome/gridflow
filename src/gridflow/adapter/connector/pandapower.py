@@ -137,12 +137,25 @@ class PandaPowerConnector(ConnectorInterface):
                 cause=exc,
             ) from exc
 
-        voltages = tuple(float(v) for v in state.net.res_bus.vm_pu.tolist())
+        res_bus = state.net.res_bus
+        voltages = tuple(float(v) for v in res_bus.vm_pu.tolist())
         node_result = NodeResult(node_id="__network__", voltages=voltages)
+        # Per-bus exposure (issue #30): pair each voltage with its bus name
+        # (falling back to the integer bus index when unnamed), aligned with
+        # res_bus row order.
+        bus_names = state.net.bus.get("name", None)
+        bus_voltages = tuple(
+            (
+                str(bus_names.get(idx) if bus_names is not None and bus_names.get(idx) is not None else idx),
+                float(v),
+            )
+            for idx, v in zip(res_bus.index.tolist(), voltages, strict=False)
+        )
         return ConnectorStepOutput(
             step=step_index,
             node_result=node_result,
             converged=True,
+            bus_voltages=bus_voltages,
             metadata=(("pp_network", state.pp_network_name),),
         )
 

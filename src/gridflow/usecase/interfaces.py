@@ -29,12 +29,19 @@ class ConnectorStepOutput:
         node_result: Node voltages captured at this step. ``None`` when the
             connector emits no node data (e.g. initialization-only step).
         converged: ``True`` iff the underlying solver reached convergence.
+        bus_voltages: Per-bus voltages as ordered ``(bus_name, voltage_pu)``
+            pairs (issue #30). Empty when the connector does not expose
+            per-bus identity. Kept as an ordered tuple-of-pairs (not sorted)
+            so it stays aligned with ``node_result.voltages``; this is the
+            state a control strategy reads (issue #29) and the key a
+            bus-feature analysis needs.
         metadata: Free-form extra info (iterations, residuals, …).
     """
 
     step: int
     node_result: NodeResult | None
     converged: bool
+    bus_voltages: tuple[tuple[str, float], ...] = ()
     metadata: tuple[tuple[str, object], ...] = ()
 
 

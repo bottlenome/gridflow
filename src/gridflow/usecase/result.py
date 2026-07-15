@@ -47,6 +47,10 @@ class StepResult:
         node_result: Node-level simulation output captured at this step.
             ``None`` when the step produced no node-level data (e.g. a
             setup/teardown step).
+        bus_voltages: Per-bus voltages as ordered ``(bus_name, voltage_pu)``
+            pairs (issue #30). Empty when the connector does not expose
+            per-bus identity. Preserves which voltage belongs to which bus,
+            which the flat ``node_result.voltages`` throws away.
         error: Error message when ``status`` is :attr:`StepStatus.ERROR` /
             :attr:`StepStatus.WARNING`. ``None`` on success.
     """
@@ -56,6 +60,7 @@ class StepResult:
     status: StepStatus
     elapsed_ms: float
     node_result: NodeResult | None = None
+    bus_voltages: tuple[tuple[str, float], ...] = ()
     error: str | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -71,6 +76,7 @@ class StepResult:
                 "node_id": self.node_result.node_id,
                 "voltages": list(self.node_result.voltages),
             },
+            "bus_voltages": [[bus, v] for bus, v in self.bus_voltages],
             "error": self.error,
         }
 
@@ -112,6 +118,29 @@ class ExperimentResult:
     def metrics_dict(self) -> dict[str, float]:
         """Return a plain ``dict`` view of :attr:`metrics`."""
         return dict(self.metrics)
+
+    def final_bus_voltages(self) -> tuple[tuple[str, float], ...]:
+        """Per-bus voltages from the last step that carries them (issue #30).
+
+        Returns ordered ``(bus_name, voltage_pu)`` pairs, or an empty tuple
+        when no step exposed per-bus identity (e.g. a connector that only
+        emits the flat network vector).
+        """
+        for step in reversed(self.steps):
+            if step.bus_voltages:
+                return step.bus_voltages
+        return ()
+
+    def voltage_at(self, bus: str) -> float:
+        """Final-step voltage (pu) at ``bus``.
+
+        Raises:
+            KeyError: If no per-bus voltages are recorded, or ``bus`` is absent.
+        """
+        for name, value in self.final_bus_voltages():
+            if name == bus:
+                return value
+        raise KeyError(bus)
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dict for logging / JSON export."""

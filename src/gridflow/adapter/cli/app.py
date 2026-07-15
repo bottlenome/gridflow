@@ -433,6 +433,7 @@ def _rehydrate_experiment_result(data: dict[str, Any]) -> ExperimentResult:
         nr = None
         if isinstance(nr_raw, dict):
             nr = NodeResult(node_id=nr_raw["node_id"], voltages=tuple(nr_raw["voltages"]))
+        bus_voltages = tuple((str(bus), float(v)) for bus, v in (s.get("bus_voltages") or ()))
         steps.append(
             StepResult(
                 step_id=int(s["step_id"]),
@@ -440,6 +441,7 @@ def _rehydrate_experiment_result(data: dict[str, Any]) -> ExperimentResult:
                 status=StepStatus(s["status"]),
                 elapsed_ms=float(s.get("elapsed_ms", 0.0)),
                 node_result=nr,
+                bus_voltages=bus_voltages,
                 error=s.get("error"),
             )
         )

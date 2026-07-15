@@ -134,6 +134,7 @@ class InProcessOrchestratorRunner(OrchestratorRunner):
             status=status,
             elapsed_ms=elapsed_ms,
             node_result=output.node_result,
+            bus_voltages=output.bus_voltages,
             error=None if output.converged else "solver did not converge",
         )
 
@@ -430,5 +431,12 @@ def _step_result_from_payload(payload: dict[str, Any]) -> StepResult:
         status=status,
         elapsed_ms=float(payload.get("elapsed_ms", 0.0)),
         node_result=node_result,
+        bus_voltages=_bus_voltages_from_payload(payload),
         error=payload.get("error"),
     )
+
+
+def _bus_voltages_from_payload(payload: dict[str, Any]) -> tuple[tuple[str, float], ...]:
+    """Restore per-bus ``(bus, voltage)`` pairs from a StepResult payload (#30)."""
+    raw = payload.get("bus_voltages") or ()
+    return tuple((str(bus), float(v)) for bus, v in raw)

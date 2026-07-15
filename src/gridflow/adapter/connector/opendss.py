@@ -125,14 +125,18 @@ class OpenDSSConnector(ConnectorInterface):
             ) from exc
 
         state.last_voltages = voltages
-        # Aggregate into a single "network" NodeResult — callers can reach
-        # individual bus voltages through ``metadata``.
+        # Aggregate into a single "network" NodeResult for the flat-vector
+        # metrics, and additionally expose the per-bus mapping (issue #30) so
+        # downstream analysis / control can address individual buses. bus_names
+        # and voltages come from AllBusNames()/AllBusMagPu() in the same order.
         meta = {"bus_names": state.bus_names}
         node_result = NodeResult(node_id="__network__", voltages=voltages)
+        bus_voltages = tuple((str(name), float(v)) for name, v in zip(state.bus_names, voltages, strict=False))
         return ConnectorStepOutput(
             step=step_index,
             node_result=node_result,
             converged=converged,
+            bus_voltages=bus_voltages,
             metadata=tuple(sorted(meta.items())),
         )
 
